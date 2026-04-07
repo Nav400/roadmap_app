@@ -33,21 +33,30 @@ const SKILL_DESCRIPTIONS: Record<string, string> = {
 const LEVEL_LABELS = ["None", "Heard of it", "Beginner", "Comfortable", "Strong"];
 const SKILL_SHEET_HEIGHT = 220;
 
-export default function OnboardingScreen({ onComplete }: { onComplete: (data: any) => void }) {
+type OnboardingScreenProps = {
+  onComplete: (data: any) => void;
+  startAtQuestions?: boolean;
+};
+
+export default function OnboardingScreen({ onComplete, startAtQuestions = false }: OnboardingScreenProps) {
   const TOTAL_STEPS = 4;
   const [selectedMajor, setSelectedMajor] = useState("Computer Science");
   const [selectedYear, setSelectedYear] = useState("Freshman");
   const [selectedGoals, setSelectedGoals] = useState<string[]>(["Get a SWE internship"]);
   const [step, setStep] = useState(0);
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(startAtQuestions);
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
   const [progressTrackWidth, setProgressTrackWidth] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [skillLevels, setSkillLevels] = useState<Record<string, number>>({
     coding: 0, dsa: 0, git: 0, web: 0, math: 0, systems: 0,
   });
+  const containerBottomPadding = started ? (step <= 1 ? 120 : 180) : 48;
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
   const contentTranslateY = useRef(new Animated.Value(0)).current;
+  const exitFadeAnim = useRef(new Animated.Value(1)).current;
+  const exitSlideAnim = useRef(new Animated.Value(0)).current;
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
   const activeSkillRef = useRef<string | null>(null);
   const prevStepRef = useRef(0);
@@ -88,7 +97,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
 
     Animated.timing(progressAnim, {
       toValue: (step + 1) / TOTAL_STEPS,
-      duration: 320,
+      duration: 420,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -100,13 +109,13 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
     Animated.parallel([
       Animated.timing(contentOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: 380,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(contentTranslateY, {
         toValue: 0,
-        duration: 300,
+        duration: 380,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
@@ -151,12 +160,32 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
     setActiveSkillId(null);
   }
 
-  function handleSubmit() {
-    onComplete({
-      major: selectedMajor,
-      year: selectedYear,
-      goals: selectedGoals,
-      skills: skillLevels,
+  function handleSubmitWithAnimation() {
+    if (isTransitioning) {
+      return;
+    }
+
+    setIsTransitioning(true);
+    Animated.parallel([
+      Animated.timing(exitFadeAnim, {
+        toValue: 0,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(exitSlideAnim, {
+        toValue: 18,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onComplete({
+        major: selectedMajor,
+        year: selectedYear,
+        goals: selectedGoals,
+        skills: skillLevels,
+      });
     });
   }
 
@@ -171,7 +200,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
       setStep((prev) => prev + 1);
       return;
     }
-    handleSubmit();
+    handleSubmitWithAnimation();
   }
 
   function goBack() {
@@ -232,7 +261,6 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
     if (step === 0) {
       return (
         <>
-          <Text style={styles.sectionLabel}>your major</Text>
           <View style={styles.pillGroup}>
             {MAJORS.map((m) => (
               <Pressable
@@ -255,13 +283,12 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
     if (step === 1) {
       return (
         <>
-          <Text style={styles.sectionLabel}>your year</Text>
-          <View style={styles.pillGroup}>
+          <View style={styles.yearGroup}>
             {YEARS.map((y) => (
               <Pressable
                 key={y}
                 style={({ pressed }) => [
-                  styles.pill,
+                  styles.yearPill,
                   selectedYear === y && styles.pillSelected,
                   pressed && styles.pillPressed,
                 ]}
@@ -278,7 +305,6 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
     if (step === 2) {
       return (
         <>
-          <Text style={styles.sectionLabel}>rate your skills</Text>
           {SKILLS.map((skill) => (
             <View key={skill.id} style={styles.skillCard}>
               <View style={styles.skillHeaderRow}>
@@ -312,7 +338,6 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
 
     return (
       <>
-        <Text style={styles.sectionLabel}>what do you want to do?</Text>
         <View style={styles.pillGroup}>
           {GOALS.map((g) => (
             <Pressable
@@ -349,37 +374,45 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {started && (
-          <>
-            <Text style={styles.progressLabel}>step {step + 1} of {TOTAL_STEPS}</Text>
-            <View style={styles.progressTrack} onLayout={(event) => setProgressTrackWidth(event.nativeEvent.layout.width)}>
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: Animated.multiply(progressAnim, progressTrackWidth || 1),
-                  },
-                ]}
-              />
-            </View>
-          </>
-        )}
-        {renderTitle()}
-        {started && (
-          <Text style={styles.subtitle}>Pick a few details so we can build your personalized roadmap.</Text>
-        )}
+      <Animated.View
+        style={{
+          flex: 1,
+          opacity: exitFadeAnim,
+          transform: [{ translateY: exitSlideAnim }],
+        }}
+      >
+        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: containerBottomPadding }]} showsVerticalScrollIndicator={false}>
+          {started && (
+            <>
+              <Text style={styles.progressLabel}>step {step + 1} of {TOTAL_STEPS}</Text>
+              <View style={styles.progressTrack} onLayout={(event) => setProgressTrackWidth(event.nativeEvent.layout.width)}>
+                <Animated.View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: Animated.multiply(progressAnim, progressTrackWidth || 1),
+                    },
+                  ]}
+                />
+              </View>
+            </>
+          )}
+          {renderTitle()}
+          {started && (
+            <Text style={styles.subtitle}>Pick a few details so we can build your personalized roadmap.</Text>
+          )}
 
-        <Animated.View
-          style={{
-            opacity: contentOpacity,
-            transform: [{ translateY: contentTranslateY }],
-          }}
-        >
-          {renderIntroContent()}
-          {renderStepContent()}
-        </Animated.View>
-      </ScrollView>
+          <Animated.View
+            style={{
+              opacity: contentOpacity,
+              transform: [{ translateY: contentTranslateY }],
+            }}
+          >
+            {renderIntroContent()}
+            {renderStepContent()}
+          </Animated.View>
+        </ScrollView>
+      </Animated.View>
 
       {started && (
         <View style={styles.footer}>
@@ -389,7 +422,11 @@ export default function OnboardingScreen({ onComplete }: { onComplete: (data: an
             </Pressable>
           )}
 
-          <Pressable style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]} onPress={goNext}>
+          <Pressable
+            style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
+            onPress={goNext}
+            disabled={isTransitioning}
+          >
             <Text style={styles.ctaBtnText}>
               {step === TOTAL_STEPS - 1 ? "GENERATE MY ROADMAP" : "NEXT"}
             </Text>
@@ -433,7 +470,6 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 24,
-    paddingBottom: 180,
   },
   logo: {
     fontFamily: "monospace",
@@ -490,7 +526,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 15,
+    fontSize: 18,
     color: "#aab3c3",
     lineHeight: 22,
     marginBottom: 28,
@@ -521,6 +557,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
     fontSize: 15,
+    marginTop: 10,
     marginBottom: 24,
   },
   pill: {
@@ -530,6 +567,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#3a404d",
     backgroundColor: "#181c24",
+  },
+  yearGroup: {
+    flexDirection: "column",
+    gap: 10,
+    marginBottom: 24,
+  },
+  yearPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#3a404d",
+    backgroundColor: "#181c24",
+    width: "100%",
+    alignItems: "center",
   },
   pillPressed: {
     opacity: 0.8,
@@ -541,7 +593,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontFamily: "ClashGrotesk-Medium",
-    fontSize: 15,
+    fontSize: 20,
     color: "#b0b9c8",
   },
   pillTextSelected: {

@@ -1,246 +1,343 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Animated,
+  Dimensions,
+  Easing,
+} from "react-native";
 import OnboardingScreen from "../onboarding";
 import RevealScreen from "../reveal";
+import RoadmapLoadingScreen from "../roadmap_loading";
 import RoadmapScreen from "../roadmap";
 
-type ProfileData = {
-  major: string;
-  year: string;
-  goals: string[];
-  skills: Record<string, number>;
-};
+const { height } = Dimensions.get("window");
 
-const LOADING_PHRASES = [
-  "Developing your plan...",
-  "Mapping milestones to your goals...",
-  "Choosing projects for your level...",
-  "Finding events worth your time...",
-  "Finalizing your personalized roadmap...",
-];
-
-export default function HomeScreen() {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [stage, setStage] = useState<"onboarding" | "loading" | "reveal" | "roadmap">("onboarding");
-  const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
-  const loadingProgress = useRef(new Animated.Value(0)).current;
-  const phraseOpacity = useRef(new Animated.Value(1)).current;
-  const phraseTranslateY = useRef(new Animated.Value(0)).current;
+function AnimatedBackground() {
+  const anim1 = useRef(new Animated.Value(0)).current;
+  const anim2 = useRef(new Animated.Value(0)).current;
+  const anim3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (stage !== "loading") {
+    Animated.loop(
+      Animated.timing(anim1, {
+        toValue: 1,
+        duration: 6800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    Animated.loop(
+      Animated.timing(anim2, {
+        toValue: 1,
+        duration: 8400,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    Animated.loop(
+      Animated.timing(anim3, {
+        toValue: 1,
+        duration: 9800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [anim1, anim2, anim3]);
+
+  const blob1Y = anim1.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, -32, -10, 18, 0],
+  });
+  const blob1X = anim1.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, 28, -12, -26, 0],
+  });
+  const blob2Y = anim2.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, 22, -8, -26, 0],
+  });
+  const blob2X = anim2.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, -24, -6, 22, 0],
+  });
+  const blob3Y = anim3.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, -18, 14, -12, 0],
+  });
+  const blob3X = anim3.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, 16, -20, 10, 0],
+  });
+  const blob1Opacity = anim1.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.15, 0.25, 0.15] });
+  const blob2Opacity = anim2.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.1, 0.2, 0.1] });
+  const blob3Opacity = anim3.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.08, 0.15, 0.08] });
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Animated.View
+        style={[
+          styles.blob,
+          {
+            width: 320,
+            height: 320,
+            backgroundColor: "#4c1d95",
+            borderRadius: 160,
+            top: -60,
+            left: -80,
+            opacity: blob1Opacity,
+            transform: [{ translateY: blob1Y }, { translateX: blob1X }],
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.blob,
+          {
+            width: 280,
+            height: 280,
+            backgroundColor: "#6d28d9",
+            borderRadius: 140,
+            top: height * 0.3,
+            right: -80,
+            opacity: blob2Opacity,
+            transform: [{ translateY: blob2Y }, { translateX: blob2X }],
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.blob,
+          {
+            width: 240,
+            height: 240,
+            backgroundColor: "#a855f7",
+            borderRadius: 120,
+            bottom: 80,
+            left: 20,
+            opacity: blob3Opacity,
+            transform: [{ translateY: blob3Y }, { translateX: blob3X }],
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+export default function HomeScreen() {
+  const [screen, setScreen] = useState<"landing" | "onboarding" | "reveal" | "loading" | "roadmap">("landing");
+  const [profile, setProfile] = useState<any>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 900, delay: 300, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 900, delay: 300, useNativeDriver: true }),
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
+  function handleGetStartedPress() {
+    if (isTransitioning) {
       return;
     }
 
-    setLoadingPhraseIndex(0);
-    loadingProgress.setValue(0);
-
-    let cancelled = false;
-    Animated.sequence([
-      Animated.timing(loadingProgress, {
-        toValue: 0.1,
-        duration: 720,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.delay(1040),
-      Animated.timing(loadingProgress, {
-        toValue: 0.4,
-        duration: 1040,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.delay(1040),
-      Animated.timing(loadingProgress, {
-        toValue: 0.5,
-        duration: 480,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.delay(1040),
-      Animated.timing(loadingProgress, {
-        toValue: 0.8,
-        duration: 1040,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.delay(1040),
-      Animated.timing(loadingProgress, {
-        toValue: 1,
-        duration: 560,
+    setIsTransitioning(true);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 420,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
-    ]).start(({ finished }) => {
-      if (finished && !cancelled) {
-        setStage("reveal");
-      }
+      Animated.timing(slideAnim, {
+        toValue: 18,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setScreen("onboarding");
     });
+  }
 
-    const phraseInterval = setInterval(() => {
-      Animated.parallel([
-        Animated.timing(phraseOpacity, {
-          toValue: 0,
-          duration: 180,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(phraseTranslateY, {
-          toValue: -6,
-          duration: 180,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setLoadingPhraseIndex((prev) => (prev + 1) % LOADING_PHRASES.length);
-        phraseTranslateY.setValue(6);
-        Animated.parallel([
-          Animated.timing(phraseOpacity, {
-            toValue: 1,
-            duration: 260,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.spring(phraseTranslateY, {
-            toValue: 0,
-            friction: 7,
-            tension: 80,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    }, 1500);
-
-    return () => {
-      cancelled = true;
-      loadingProgress.stopAnimation();
-      clearInterval(phraseInterval);
-    };
-  }, [loadingProgress, phraseOpacity, phraseTranslateY, stage]);
-
-  if (stage === "onboarding" || !profile) {
+  if (screen === "onboarding") {
     return (
       <OnboardingScreen
-        onComplete={(data: ProfileData) => {
+        startAtQuestions
+        onComplete={(data) => {
           setProfile(data);
-          setStage("loading");
+          setScreen("reveal");
         }}
       />
     );
   }
 
-  if (stage === "loading") {
-    const progressWidth = loadingProgress.interpolate({
-      inputRange: [0, 1],
-      outputRange: ["0%", "100%"],
-    });
+  if (screen === "reveal") {
+    return <RevealScreen profile={profile} onContinue={() => setScreen("loading")} />;
+  }
 
-    return (
-      <View style={styles.loadingScreen}>
-        <Text style={styles.loadingTitle}>Building your personalized roadmap</Text>
-        <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
-        </View>
-        <Animated.Text
+  if (screen === "loading") {
+    return <RoadmapLoadingScreen onComplete={() => setScreen("roadmap")} />;
+  }
+
+  if (screen === "roadmap") {
+    return <RoadmapScreen profile={profile} />;
+  }
+
+  return (
+    <View style={styles.container}>
+      <AnimatedBackground />
+      <SafeAreaView style={styles.safe}>
+        <Animated.View
           style={[
-            styles.loadingPhrase,
-            {
-              opacity: phraseOpacity,
-              transform: [{ translateY: phraseTranslateY }],
-            },
+            styles.content,
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
-          {LOADING_PHRASES[loadingPhraseIndex]}
-        </Animated.Text>
-        <View style={styles.loadingSummaryCard}>
-          <Text style={styles.loadingSummaryText}>
-            You&apos;re a <Text style={styles.loadingSummaryHighlight}>{profile.year}</Text> studying <Text style={styles.loadingSummaryHighlight}>{profile.major}</Text>.
-            {profile.goals.length > 0 && (
-              <Text> Your focus is <Text style={styles.loadingSummaryHighlight}>{profile.goals[0]}</Text>.</Text>
-            )}
-            <Text> This roadmap is tailored to your current level.</Text>
-          </Text>
-        </View>
-      </View>
-    );
-  }
 
-  if (stage === "reveal") {
-    return <RevealScreen profile={profile} onContinue={() => setStage("roadmap")} />;
-  }
 
-  return <RoadmapScreen profile={profile} />;
+          <Text style={styles.headline}>Stop feeling{"\n"}lost in your{"\n"}major</Text>
+
+          
+
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNum}>2 min</Text>
+              <Text style={styles.statDesc}>to your roadmap</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNum}>100%</Text>
+              <Text style={styles.statDesc}>personalized</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNum}>free</Text>
+              <Text style={styles.statDesc}>to start</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            onPress={handleGetStartedPress}
+            disabled={isTransitioning}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.ctaBtnText}>GET STARTED</Text>
+          </TouchableOpacity>
+
+        </Animated.View>
+      </SafeAreaView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  loadingScreen: {
+  container: {
     flex: 1,
-    backgroundColor: "#0f1115",
-    paddingHorizontal: 24,
-    justifyContent: "center",
+    backgroundColor: "#050505",
   },
-  loadingLabel: {
-    fontFamily: "ClashGrotesk-Semibold",
+  safe: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 28,
+    justifyContent: "flex-end",
+    paddingBottom: 52,
+  },
+  blob: {
+    position: "absolute",
+  },
+  topLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginBottom: 20,
+  },
+  topLabelDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#7ab648",
+  },
+  topLabelText: {
+    fontFamily: "monospace",
     fontSize: 11,
-    color: "#b7adff",
+    color: "#555",
+    letterSpacing: 1.5,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 10,
   },
-  loadingTitle: {
+  headline: {
     fontFamily: "ClashGrotesk-Bold",
-    fontSize: 30,
-    color: "#f5f7fb",
+    fontSize: 48,
+    color: "#fff",
+    lineHeight: 54,
+    letterSpacing:1,
+    marginBottom: 100,
+  },
+  subtext: {
+    fontSize: 15,
+    color: "#555",
+    lineHeight: 24,
+    marginBottom: 36,
+  },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 36,
+    paddingVertical: 16,
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: "#1a1a1a",
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statNum: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#fff",
+    fontFamily: "monospace",
+    marginBottom: 2,
+  },
+  statDesc: {
+    fontSize: 15,
+    color: "#7d7d7d",
     textAlign: "center",
-    lineHeight: 31,
-    marginBottom: 18,
   },
-  progressTrack: {
-    width: "100%",
-    height: 8,
-    borderRadius: 100,
-    backgroundColor: "#2b2f38",
-    overflow: "hidden",
-    marginBottom: 12,
+  statDivider: {
+    width: 0.5,
+    height: 28,
+    backgroundColor: "#1a1a1a",
   },
-  progressFill: {
-    height: "100%",
+  ctaBtn: {
     backgroundColor: "#7c5cff",
-    borderRadius: 100,
-  },
-  loadingPhrase: {
-    fontFamily: "ClashGrotesk-Regular",
-    fontSize: 18,
-    color: "#aab3c3",
-    lineHeight: 19,
-    textAlign: "center",
-    minHeight: 20,
-    marginBottom: 8,
-  },
-  loadingHint: {
-    fontFamily: "ClashGrotesk-Regular",
-    fontSize: 16,
-    color: "#9099ad",
-    lineHeight: 20,
-    textAlign: "center",
-  },
-  loadingSummaryCard: {
+    paddingVertical: 18,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#232834",
-    backgroundColor: "#141824",
-    padding: 14,
-    marginBottom: 10,
+    alignItems: "center",
+    marginBottom: 14,
   },
-  loadingSummaryText: {
-    fontFamily: "ClashGrotesk-Regular",
-    fontSize: 18,
-    color: "#aab3c3",
-    lineHeight: 20,
+  ctaBtnText: {
+    color: "#f7f5ff",
+    fontSize: 15,
+    fontWeight: "700",
+    fontFamily: "monospace",
+    letterSpacing: 0.3,
+  },
+  finePrint: {
+    fontSize: 11,
+    color: "#333",
     textAlign: "center",
-  },
-  loadingSummaryHighlight: {
-    color: "#f5f7fb",
-    fontFamily: "ClashGrotesk-Semibold",
+    fontFamily: "monospace",
   },
 });

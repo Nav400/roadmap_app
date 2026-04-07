@@ -1,6 +1,11 @@
-import { View, Text, StyleSheet, Pressable, SafeAreaView, ScrollView } from "react-native";
+import { useRef, useState } from "react";
+import { View, Text, StyleSheet, Pressable, SafeAreaView, ScrollView, Animated, Easing } from "react-native";
 
 export default function RevealScreen({ profile, onContinue }: { profile: any; onContinue: () => void }) {
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const exitFadeAnim = useRef(new Animated.Value(1)).current;
+  const exitSlideAnim = useRef(new Animated.Value(0)).current;
+
   if (!profile) {
     return null;
   }
@@ -22,31 +27,67 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
       ? "Professors want students who show initiative. A project proves that."
       : "Every goal you picked starts here. Build the habit first.";
 
+  function handleContinueWithAnimation() {
+    if (isTransitioning) {
+      return;
+    }
+
+    setIsTransitioning(true);
+    Animated.parallel([
+      Animated.timing(exitFadeAnim, {
+        toValue: 0,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(exitSlideAnim, {
+        toValue: 18,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onContinue();
+    });
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.progressLabel}>PRIORITY REVEAL</Text>
-        <Text style={styles.title}>HERE&apos;S YOUR FIRST MOVE</Text>
-        <Text style={styles.subtitle}>Based on your answers, this is the highest-impact step to start with.</Text>
+      <Animated.View
+        style={{
+          flex: 1,
+          opacity: exitFadeAnim,
+          transform: [{ translateY: exitSlideAnim }],
+        }}
+      >
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          <Text style={styles.progressLabel}>PRIORITY REVEAL</Text>
+          <Text style={styles.title}>HERE&apos;S YOUR FIRST MOVE</Text>
+          <Text style={styles.subtitle}>Based on your answers, this is the highest-impact step to start with.</Text>
 
-        <View style={styles.levelPill}>
-          <Text style={styles.levelPillText}>{level}</Text>
-        </View>
+          <View style={styles.levelPill}>
+            <Text style={styles.levelPillText}>{level}</Text>
+          </View>
 
-        <View style={styles.priorityCard}>
-          <Text style={styles.sectionLabel}>FIRST MILESTONE</Text>
-          <Text style={styles.milestone}>{firstMilestone}</Text>
-        </View>
+          <View style={styles.priorityCard}>
+            <Text style={styles.sectionLabel}>FIRST MILESTONE</Text>
+            <Text style={styles.milestone}>{firstMilestone}</Text>
+          </View>
 
-        <View style={styles.reasonCard}>
-          <Text style={styles.sectionLabel}>WHY THIS FIRST</Text>
-          <Text style={styles.reason}>{reason}</Text>
-        </View>
+          <View style={styles.reasonCard}>
+            <Text style={styles.sectionLabel}>WHY THIS FIRST</Text>
+            <Text style={styles.reason}>{reason}</Text>
+          </View>
 
-        <Pressable style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]} onPress={onContinue}>
-          <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
-        </Pressable>
-      </ScrollView>
+          <Pressable
+            style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
+            onPress={handleContinueWithAnimation}
+            disabled={isTransitioning}
+          >
+            <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
+          </Pressable>
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 }
