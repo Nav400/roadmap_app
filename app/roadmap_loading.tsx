@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     color: "#f5f7fb",
     marginBottom: 60,
     textAlign: "center",
-    letterSpacing: 0.2,
+    letterSpacing: 0.5,
   },
   progressTrackContainer: {
     width: "100%",

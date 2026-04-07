@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderTopWidth: 0.5,
     borderBottomWidth: 0.5,
-    borderColor: "#1a1a1a",
+    borderColor: "#2a2a2a",
   },
   statItem: {
     flex: 1,
@@ -316,9 +316,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   statDivider: {
-    width: 0.5,
-    height: 28,
-    backgroundColor: "#1a1a1a",
+    width: 1.5,
+    height: 34,
+    backgroundColor: "#2a2a2a",
   },
   ctaBtn: {
     backgroundColor: "#7c5cff",
