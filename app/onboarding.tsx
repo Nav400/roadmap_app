@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     width: "100%",
-    height: 6,
+    height: 12,
     borderRadius: 100,
     backgroundColor: "#2b2f38",
     marginBottom: 20,

@@ -220,7 +220,7 @@ export default function HomeScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNum}>free</Text>
+              <Text style={styles.statNum}>Free</Text>
               <Text style={styles.statDesc}>to start</Text>
             </View>
           </View>

@@ -144,7 +144,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
           transform: [{ translateY: exitSlideAnim }],
         }}
       >
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           {!hidePreReveal && (
             <Animated.View
               style={[
@@ -195,17 +195,18 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
                 <Text style={styles.sectionLabel}>WHY THIS FIRST</Text>
                 <Text style={styles.reason}>{reason}</Text>
               </View>
-
-              <Pressable
-                style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
-                onPress={handleContinueWithAnimation}
-                disabled={isTransitioning}
-              >
-                <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
-              </Pressable>
             </Animated.View>
           )}
         </ScrollView>
+        <View style={styles.buttonContainer}>
+          <Pressable
+            style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
+            onPress={handleContinueWithAnimation}
+            disabled={isTransitioning}
+          >
+            <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
+          </Pressable>
+        </View>
       </Animated.View>
     </SafeAreaView>
   );
@@ -216,10 +217,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0f1115",
   },
-  container: {
+  scrollContainer: {
     flexGrow: 1,
     padding: 24,
-    paddingBottom: 36,
+    paddingBottom: 24,
+  },
+  buttonContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    paddingBottom: 28,
+    backgroundColor: "#0f1115",
   },
   progressLabel: {
     fontFamily: "ClashGrotesk-Semibold",

@@ -77,7 +77,6 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        <Text style={styles.title}>Generating your roadmap</Text>
 
         <View style={styles.progressTrackContainer}>
           <Animated.View
@@ -134,7 +133,7 @@ const styles = StyleSheet.create({
   },
   progressTrackContainer: {
     width: "100%",
-    height: 8,
+    height: 14,
     borderRadius: 4,
     backgroundColor: "#2b2f38",
     overflow: "hidden",
@@ -147,7 +146,7 @@ const styles = StyleSheet.create({
   },
   phrase: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 15,
+    fontSize: 18,
     color: "#b7adff",
     textAlign: "center",
     minHeight: 22,

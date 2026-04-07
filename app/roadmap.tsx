@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Animated,
+  Easing,
   View,
   Text,
   StyleSheet,
@@ -37,86 +39,514 @@ const DIFF_COLORS: Record<string, { bg: string; text: string }> = {
   hard: { bg: "#35203a", text: "#ffd1ff" },
 };
 
+const TAG_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  foundation: { bg: "#0d3a66", border: "#4a90e2", text: "#a3d5ff" },
+  projects: { bg: "#0d5a5a", border: "#2db8b8", text: "#5fd4d4" },
+  community: { bg: "#2d5a2d", border: "#5ec45e", text: "#9fef9f" },
+  interviews: { bg: "#6a1a4a", border: "#ff5a9f", text: "#ffb3d9" },
+  networking: { bg: "#6a4a1a", border: "#ffaa33", text: "#ffd699" },
+};
+
+type Milestone = (typeof FAKE_MILESTONES)[number];
+type Event = (typeof FAKE_EVENTS)[number];
+
+const MILESTONE_ORDER = new Map(FAKE_MILESTONES.map((milestone, index) => [milestone.id, index]));
+
 export default function RoadmapScreen({ profile }: { profile: any }) {
-  const [activeTab, setActiveTab] = useState<"milestones" | "projects" | "events">("milestones");
-  const [milestones, setMilestones] = useState(FAKE_MILESTONES);
+  const [activeTab, setActiveTab] = useState<"milestones" | "projects" | "events" | "completed">("milestones");
+  const [milestones, setMilestones] = useState<Milestone[]>(FAKE_MILESTONES);
+  const [completedMilestones, setCompletedMilestones] = useState<Milestone[]>([]);
+  const [events, setEvents] = useState<Event[]>(FAKE_EVENTS);
+  const [completedEvents, setCompletedEvents] = useState<Event[]>([]);
+  const [completingEventIds, setCompletingEventIds] = useState<Set<string>>(new Set());
+  const [completingMilestoneIds, setCompletingMilestoneIds] = useState<Set<string>>(new Set());
+  const [displayDone, setDisplayDone] = useState(0);
+  const [progressTrackWidth, setProgressTrackWidth] = useState(0);
+  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+  const [completionToastVisible, setCompletionToastVisible] = useState(false);
+  const [completionToastMessage, setCompletionToastMessage] = useState("");
+  const doneCountAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const statsRowAnim = useRef(new Animated.Value(1)).current;
+  const tabContentOpacity = useRef(new Animated.Value(1)).current;
+  const tabContentTranslateY = useRef(new Animated.Value(0)).current;
+  const completionToastAnim = useRef(new Animated.Value(0)).current;
+  const completionToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const milestoneFadeAnims = useRef<Record<string, Animated.Value>>({}).current;
+  const milestoneScaleAnims = useRef<Record<string, Animated.Value>>({}).current;
+  const checkScaleAnims = useRef<Record<string, Animated.Value>>({}).current;
+  const checkBurstAnims = useRef<Record<string, Animated.Value>>({}).current;
+  const eventFadeAnims = useRef<Record<string, Animated.Value>>({}).current;
+  const eventScaleAnims = useRef<Record<string, Animated.Value>>({}).current;
+
+  const done = milestones.filter((m) => m.done).length + completedMilestones.length;
+  const total = milestones.length + completedMilestones.length;
+  const pct = Math.round((done / total) * 100);
+  const displayToGo = total - displayDone;
+  const displayPct = Math.round((displayDone / total) * 100);
+
+  function getCheckScaleAnim(id: string) {
+    if (!checkScaleAnims[id]) {
+      checkScaleAnims[id] = new Animated.Value(1);
+    }
+    return checkScaleAnims[id];
+  }
+
+  function getCheckBurstAnim(id: string) {
+    if (!checkBurstAnims[id]) {
+      checkBurstAnims[id] = new Animated.Value(0);
+    }
+    return checkBurstAnims[id];
+  }
+
+  function getMilestoneFadeAnim(id: string) {
+    if (!milestoneFadeAnims[id]) {
+      milestoneFadeAnims[id] = new Animated.Value(1);
+    }
+    return milestoneFadeAnims[id];
+  }
+
+  function getMilestoneScaleAnim(id: string) {
+    if (!milestoneScaleAnims[id]) {
+      milestoneScaleAnims[id] = new Animated.Value(1);
+    }
+    return milestoneScaleAnims[id];
+  }
+
+  function runCheckCelebration(id: string) {
+    const scaleAnim = getCheckScaleAnim(id);
+    const burstAnim = getCheckBurstAnim(id);
+
+    scaleAnim.setValue(1);
+    burstAnim.setValue(0);
+
+    Animated.parallel([
+      Animated.sequence([
+        Animated.spring(scaleAnim, {
+          toValue: 1.18,
+          friction: 4,
+          tension: 170,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 5,
+          tension: 130,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(burstAnim, {
+          toValue: 1,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(burstAnim, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }
+
+  useEffect(() => {
+    const listenerId = doneCountAnim.addListener(({ value }) => {
+      setDisplayDone(Math.round(value));
+    });
+
+    return () => {
+      doneCountAnim.removeListener(listenerId);
+    };
+  }, [doneCountAnim]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(doneCountAnim, {
+        toValue: done,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(progressAnim, {
+        toValue: pct,
+        duration: 620,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.sequence([
+        Animated.timing(statsRowAnim, {
+          toValue: 0.98,
+          duration: 110,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.spring(statsRowAnim, {
+          toValue: 1,
+          friction: 6,
+          tension: 140,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, [done, doneCountAnim, pct, progressAnim, statsRowAnim]);
+
+  useEffect(() => {
+    return () => {
+      if (completionToastTimer.current) {
+        clearTimeout(completionToastTimer.current);
+      }
+    };
+  }, []);
+
+  function showCompletionToast(message: string) {
+    if (completionToastTimer.current) {
+      clearTimeout(completionToastTimer.current);
+    }
+
+    setCompletionToastMessage(message);
+    setCompletionToastVisible(true);
+    completionToastAnim.setValue(0);
+
+    Animated.timing(completionToastAnim, {
+      toValue: 1,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    completionToastTimer.current = setTimeout(() => {
+      Animated.timing(completionToastAnim, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }).start(() => {
+        setCompletionToastVisible(false);
+      });
+    }, 3000);
+  }
+
+  function completeMilestone(milestone: Milestone) {
+    if (milestone.done || completingMilestoneIds.has(milestone.id)) {
+      return;
+    }
+
+    setCompletingMilestoneIds((prev) => new Set(prev).add(milestone.id));
+    setMilestones((prev) => prev.map((item) => (item.id === milestone.id ? { ...item, done: true } : item)));
+    runCheckCelebration(milestone.id);
+
+    const fadeAnim = getMilestoneFadeAnim(milestone.id);
+    const scaleAnim = getMilestoneScaleAnim(milestone.id);
+
+    fadeAnim.setValue(1);
+    scaleAnim.setValue(1);
+
+    Animated.sequence([
+      Animated.delay(1000),
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.92,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(({ finished }) => {
+      if (!finished) {
+        return;
+      }
+
+      setMilestones((prev) => prev.filter((item) => item.id !== milestone.id));
+      setCompletedMilestones((prev) => {
+        const next = [{ ...milestone, done: true }, ...prev.filter((item) => item.id !== milestone.id)];
+        return next.sort((left, right) => (MILESTONE_ORDER.get(left.id) ?? 0) - (MILESTONE_ORDER.get(right.id) ?? 0));
+      });
+      setCompletingMilestoneIds((prev) => {
+        const next = new Set(prev);
+        next.delete(milestone.id);
+        return next;
+      });
+      fadeAnim.setValue(1);
+      scaleAnim.setValue(1);
+      showCompletionToast("Added to Completed Tasks");
+    });
+  }
+
+  function restoreMilestone(milestone: Milestone) {
+    setCompletedMilestones((prev) => prev.filter((item) => item.id !== milestone.id));
+    setMilestones((prev) => {
+      const restored = { ...milestone, done: false };
+      const next = [...prev.filter((item) => item.id !== milestone.id), restored];
+      return next.sort((left, right) => (MILESTONE_ORDER.get(left.id) ?? 0) - (MILESTONE_ORDER.get(right.id) ?? 0));
+    });
+    getMilestoneFadeAnim(milestone.id).setValue(1);
+    getMilestoneScaleAnim(milestone.id).setValue(1);
+  }
+
+  function animateTabChange(nextTab: "milestones" | "projects" | "events" | "completed") {
+    if (nextTab === activeTab || isTabTransitioning) {
+      return;
+    }
+
+    setIsTabTransitioning(true);
+    Animated.parallel([
+      Animated.timing(tabContentOpacity, {
+        toValue: 0,
+        duration: 150,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(tabContentTranslateY, {
+        toValue: -8,
+        duration: 150,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setActiveTab(nextTab);
+      tabContentTranslateY.setValue(10);
+
+      Animated.parallel([
+        Animated.timing(tabContentOpacity, {
+          toValue: 1,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(tabContentTranslateY, {
+          toValue: 0,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => setIsTabTransitioning(false));
+    });
+  }
+
+  function getTagColors(tagName: string) {
+    return TAG_COLORS[tagName] || TAG_COLORS.foundation;
+  }
+
+  function getEventFadeAnim(id: string) {
+    if (!eventFadeAnims[id]) {
+      eventFadeAnims[id] = new Animated.Value(1);
+    }
+    return eventFadeAnims[id];
+  }
+
+  function getEventScaleAnim(id: string) {
+    if (!eventScaleAnims[id]) {
+      eventScaleAnims[id] = new Animated.Value(1);
+    }
+    return eventScaleAnims[id];
+  }
+
+  function completeEvent(event: typeof FAKE_EVENTS[0]) {
+    setCompletingEventIds((prev) => new Set([...prev, event.id]));
+    setCompletedEvents((prev) => [...prev, event]);
+    
+    const fadeAnim = getEventFadeAnim(event.id);
+    const scaleAnim = getEventScaleAnim(event.id);
+
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.9,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setEvents((prev) => prev.filter((e) => e.id !== event.id));
+        setCompletingEventIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(event.id);
+          return newSet;
+        });
+        showCompletionToast("Added to Completed Tasks");
+      });
+    }, 1000);
+  }
+
+  function uncompleteEvent(event: typeof FAKE_EVENTS[0]) {
+    setCompletedEvents((prev) => prev.filter((e) => e.id !== event.id));
+    setEvents((prev) => [...prev, event]);
+    getEventFadeAnim(event.id).setValue(1);
+    getEventScaleAnim(event.id).setValue(1);
+  }
 
   if (!profile) {
     return null;
   }
 
-  const done = milestones.filter((m) => m.done).length;
-  const total = milestones.length;
-  const pct = Math.round((done / total) * 100);
-
-  function toggleMilestone(id: string) {
-    setMilestones((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, done: !m.done } : m))
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.progressLabel}>YOUR ROADMAP</Text>
         <Text style={styles.title}>{profile.major} Roadmap</Text>
         <Text style={styles.subtitle}>{profile.year} · {profile.goals[0] ?? "General track"}</Text>
 
-        <View style={styles.statsRow}>
+        <Animated.View
+          style={[
+            styles.statsRow,
+            {
+              transform: [{ scale: statsRowAnim }],
+              opacity: statsRowAnim.interpolate({
+                inputRange: [0.98, 1],
+                outputRange: [0.9, 1],
+              }),
+            },
+          ]}
+        >
           <View style={styles.statCard}>
-            <Text style={styles.statVal}>{done}</Text>
+            <Text style={styles.statVal}>{displayDone}</Text>
             <Text style={styles.statLabel}>done</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statVal}>{total - done}</Text>
+            <Text style={styles.statVal}>{displayToGo}</Text>
             <Text style={styles.statLabel}>to go</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statVal}>{pct}%</Text>
+            <Text style={styles.statVal}>{displayPct}%</Text>
             <Text style={styles.statLabel}>progress</Text>
           </View>
-        </View>
+        </Animated.View>
 
         <Text style={styles.sectionLabel}>progress</Text>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${pct}%` }]} />
+        <View style={styles.progressTrack} onLayout={(event) => setProgressTrackWidth(event.nativeEvent.layout.width)}>
+          <Animated.View
+            style={[
+              styles.progressFill,
+              {
+                width: progressAnim.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: [0, progressTrackWidth || 1],
+                }),
+              },
+            ]}
+          />
         </View>
 
-        <Text style={styles.sectionLabel}>focus area</Text>
         <View style={styles.tabs}>
-          {(["milestones", "projects", "events"] as const).map((tab) => (
+          {(["milestones", "projects", "events", "completed"] as const).map((tab) => (
             <Pressable
               key={tab}
               style={({ pressed }) => [styles.tab, activeTab === tab && styles.tabActive, pressed && styles.tabPressed]}
-              onPress={() => setActiveTab(tab)}
+              onPress={() => animateTabChange(tab)}
             >
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
             </Pressable>
           ))}
         </View>
 
-        {activeTab === "milestones" && (
-          <View>
-            {milestones.map((m) => (
-              <Pressable
-                key={m.id}
-                style={({ pressed }) => [styles.milestoneRow, pressed && styles.milestoneRowPressed]}
-                onPress={() => toggleMilestone(m.id)}
-              >
-                <View style={[styles.check, m.done && styles.checkDone]}>
-                  {m.done && <Text style={styles.checkMark}>✓</Text>}
-                </View>
-                <View style={styles.milestoneBody}>
-                  <Text style={[styles.milestoneTitle, m.done && styles.milestoneTitleDone]}>{m.title}</Text>
-                  <Text style={styles.milestoneDesc}>{m.desc}</Text>
-                  <View style={styles.tag}>
-                    <Text style={styles.tagText}>{m.tag}</Text>
-                  </View>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        )}
+        <Animated.View
+          style={{
+            opacity: tabContentOpacity,
+            transform: [{ translateY: tabContentTranslateY }],
+          }}
+        >
+          {activeTab === "milestones" && (
+            <View>
+              {milestones.map((m) => {
+                const isMilestoneCompleting = completingMilestoneIds.has(m.id);
+                return (
+                  <Animated.View
+                    key={m.id}
+                    style={{
+                      opacity: getMilestoneFadeAnim(m.id),
+                      transform: [{ scale: getMilestoneScaleAnim(m.id) }],
+                    }}
+                  >
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.milestoneRow,
+                        (m.done || isMilestoneCompleting) && styles.milestoneRowCompleting,
+                        pressed && styles.milestoneRowPressed,
+                      ]}
+                      onPress={() => completeMilestone(m)}
+                      disabled={m.done || isMilestoneCompleting}
+                    >
+                      <Animated.View
+                        style={[
+                          styles.check,
+                          (m.done || isMilestoneCompleting) && styles.checkDone,
+                          {
+                            transform: [{ scale: getCheckScaleAnim(m.id) }],
+                          },
+                        ]}
+                      >
+                        <Animated.View
+                          pointerEvents="none"
+                          style={[
+                            styles.checkBurst,
+                            {
+                              opacity: getCheckBurstAnim(m.id),
+                              transform: [
+                                {
+                                  scale: getCheckBurstAnim(m.id).interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0.7, 1.75],
+                                  }),
+                                },
+                              ],
+                            },
+                          ]}
+                        />
+                        {(m.done || isMilestoneCompleting) && <Text style={styles.checkMark}>✓</Text>}
+                      </Animated.View>
+                      <View style={styles.milestoneBody}>
+                        <Text
+                          style={[
+                            styles.milestoneTitle,
+                            (m.done || isMilestoneCompleting) && styles.milestoneTitleDone,
+                          ]}
+                        >
+                          {m.title}
+                        </Text>
+                        <Text style={[styles.milestoneDesc, (m.done || isMilestoneCompleting) && styles.milestoneDescDone]}>
+                          {m.desc}
+                        </Text>
+                        <View
+                          style={[
+                            styles.tag,
+                            {
+                              backgroundColor: m.done || isMilestoneCompleting ? "#222833" : getTagColors(m.tag).bg,
+                              borderColor: m.done || isMilestoneCompleting ? "#394150" : getTagColors(m.tag).border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.tagText,
+                              {
+                                color: m.done || isMilestoneCompleting ? "#8a93a4" : getTagColors(m.tag).text,
+                              },
+                            ]}
+                          >
+                            {m.tag}
+                          </Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
+            </View>
+          )}
 
         {activeTab === "projects" && (
           <View>
@@ -143,26 +573,138 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
 
         {activeTab === "events" && (
           <View>
-            {FAKE_EVENTS.map((e) => (
-              <View key={e.id} style={styles.eventRow}>
-                <View style={styles.eventDate}>
-                  <Text style={styles.eventMonth}>{e.month}</Text>
-                  <Text style={styles.eventDay}>{e.day}</Text>
-                </View>
-                <View style={styles.eventBody}>
-                  <Text style={styles.eventTitle}>{e.title}</Text>
-                  <Text style={styles.eventMeta}>{e.meta}</Text>
-                  <Text style={styles.eventWhy}>{e.why}</Text>
-                </View>
-                <View style={styles.eventBadge}>
-                  <Text style={styles.eventBadgeText}>{e.badge}</Text>
-                </View>
-              </View>
-            ))}
+            {events.map((e) => {
+              const isCompleting = completingEventIds.has(e.id);
+              return (
+                <Animated.View
+                  key={e.id}
+                  style={[
+                    styles.eventRow,
+                    isCompleting && styles.eventRowCompleting,
+                    {
+                      opacity: getEventFadeAnim(e.id),
+                      transform: [{ scale: getEventScaleAnim(e.id) }],
+                    },
+                  ]}
+                >
+                  <View style={[styles.eventDate, isCompleting && styles.eventDateGray]}>
+                    <Text style={[styles.eventMonth, isCompleting && styles.eventMonthGray]}>{e.month}</Text>
+                    <Text style={[styles.eventDay, isCompleting && styles.eventDayGray]}>{e.day}</Text>
+                  </View>
+                  <View style={styles.eventBody}>
+                    <Text style={[styles.eventTitle, isCompleting && styles.eventTitleGray]}>{e.title}</Text>
+                    <Text style={[styles.eventMeta, isCompleting && styles.eventMetaGray]}>{e.meta}</Text>
+                    <Text style={[styles.eventWhy, isCompleting && styles.eventWhyGray]}>{e.why}</Text>
+                  </View>
+                  <Pressable
+                    style={({ pressed }) => [styles.eventCheckBtn, pressed && styles.eventCheckBtnPressed]}
+                    onPress={() => completeEvent(e)}
+                    disabled={isCompleting}
+                  >
+                    <View style={[styles.eventCheckbox, isCompleting && styles.eventCheckboxCompleted]} />
+                  </Pressable>
+                </Animated.View>
+              );
+            })}
           </View>
         )}
 
+          {activeTab === "completed" && (
+            <View>
+              {completedMilestones.length === 0 && completedEvents.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>No completed items yet</Text>
+                </View>
+              ) : (
+                <View>
+                  {completedMilestones.length > 0 && (
+                    <>
+                      <Text style={styles.completedSectionLabel}>Completed milestones</Text>
+                      {completedMilestones.map((m) => (
+                        <Pressable
+                          key={m.id}
+                          style={({ pressed }) => [styles.completedMilestoneRow, pressed && styles.eventRowPressed]}
+                          onPress={() => restoreMilestone(m)}
+                        >
+                          <View style={styles.checkDone}>
+                            <Text style={styles.checkMark}>✓</Text>
+                          </View>
+                          <View style={styles.milestoneBody}>
+                            <Text style={[styles.milestoneTitle, styles.completedEventTitle]}>{m.title}</Text>
+                            <Text style={styles.milestoneDescDone}>{m.desc}</Text>
+                            <View
+                              style={[
+                                styles.tag,
+                                {
+                                  backgroundColor: "#222833",
+                                  borderColor: "#394150",
+                                },
+                              ]}
+                            >
+                              <Text style={[styles.tagText, { color: "#8a93a4" }]}>{m.tag}</Text>
+                            </View>
+                          </View>
+                          <View style={[styles.eventBadge, styles.completedBadge]}>
+                            <Text style={styles.completedBadgeText}>✓</Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </>
+                  )}
+
+                  {completedEvents.length > 0 && (
+                    <>
+                      <Text style={styles.completedSectionLabel}>Completed events</Text>
+                      {completedEvents.map((e) => (
+                        <Pressable
+                          key={e.id}
+                          style={({ pressed }) => [styles.completedEventRow, pressed && styles.eventRowPressed]}
+                          onPress={() => uncompleteEvent(e)}
+                        >
+                          <View style={styles.eventDate}>
+                            <Text style={styles.eventMonth}>{e.month}</Text>
+                            <Text style={styles.eventDay}>{e.day}</Text>
+                          </View>
+                          <View style={styles.eventBody}>
+                            <Text style={[styles.eventTitle, styles.completedEventTitle]}>{e.title}</Text>
+                            <Text style={styles.eventMeta}>{e.meta}</Text>
+                            <Text style={styles.eventWhy}>{e.why}</Text>
+                          </View>
+                          <View style={[styles.eventBadge, styles.completedBadge]}>
+                            <Text style={styles.completedBadgeText}>✓</Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </>
+                  )}
+                </View>
+              )}
+            </View>
+          )}
+        </Animated.View>
+
       </ScrollView>
+      {completionToastVisible && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.completionToast,
+            {
+              opacity: completionToastAnim,
+              transform: [
+                {
+                  translateY: completionToastAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [18, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Text style={styles.completionToastText}>{completionToastMessage}</Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
@@ -178,7 +720,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 11,
+    fontSize: 12,
     color: "#b7adff",
     textTransform: "uppercase",
     letterSpacing: 0.6,
@@ -188,20 +730,22 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 28,
     color: "#f5f7fb",
+    letterSpacing: 0.5,
     marginBottom: 6,
     lineHeight: 32,
   },
   subtitle: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 15,
+    fontSize: 19,
     color: "#aab3c3",
     marginBottom: 20,
+    letterSpacing: 0.4,
   },
   sectionLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 12,
+    fontSize: 15,
     color: "#b7adff",
-    letterSpacing: 0.7,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 8,
   },
@@ -220,17 +764,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statVal: {
-    fontFamily: "ClashGrotesk-Bold",
-    fontSize: 23,
+    fontFamily: "ClashGrotesk-SemiBold",
+    fontSize: 25,
     color: "#f5f7fb",
   },
   statLabel: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 12,
+    fontSize: 15,
     color: "#aab3c3",
+    letterSpacing: 0.4,
   },
   progressTrack: {
-    height: 8,
+    height: 14,
     backgroundColor: "#2b2f38",
     borderRadius: 100,
     marginBottom: 18,
@@ -286,7 +831,12 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     transform: [{ scale: 0.995 }],
   },
+  milestoneRowCompleting: {
+    backgroundColor: "#10151d",
+    borderColor: "#2d3440",
+  },
   check: {
+    position: "relative",
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -296,6 +846,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 2,
     flexShrink: 0,
+    overflow: "visible",
+  },
+  checkBurst: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: "#a995ff",
+    backgroundColor: "rgba(124, 92, 255, 0.2)",
   },
   checkDone: {
     backgroundColor: "#7c5cff",
@@ -309,26 +869,28 @@ const styles = StyleSheet.create({
   milestoneBody: { flex: 1 },
   milestoneTitle: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 17,
+    fontSize: 18,
     color: "#f5f7fb",
     marginBottom: 4,
+    letterSpacing: 0.3,
   },
   milestoneTitleDone: {
     color: "#7f8797",
     textDecorationLine: "line-through",
   },
+  milestoneDescDone: {
+    color: "#667080",
+  },
   milestoneDesc: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 14,
+    fontSize: 15,
     color: "#aab3c3",
     lineHeight: 20,
     marginBottom: 8,
   },
   tag: {
-    backgroundColor: "#1d1835",
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: "#7c5cff",
     paddingHorizontal: 10,
     paddingVertical: 4,
     alignSelf: "flex-start",
@@ -336,7 +898,6 @@ const styles = StyleSheet.create({
   tagText: {
     fontFamily: "ClashGrotesk-Medium",
     fontSize: 12,
-    color: "#ddd6ff",
   },
   projectCard: {
     borderRadius: 14,
@@ -374,4 +935,132 @@ const styles = StyleSheet.create({
   eventWhy: { fontFamily: "ClashGrotesk-Regular", fontSize: 12, color: "#8f98ab" },
   eventBadge: { borderRadius: 100, borderWidth: 1, borderColor: "#7c5cff", backgroundColor: "#1d1835", paddingHorizontal: 9, paddingVertical: 4, alignSelf: "flex-start" },
   eventBadgeText: { fontFamily: "ClashGrotesk-Medium", fontSize: 11, color: "#ddd6ff" },
+  completedSectionLabel: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 14,
+    color: "#b7adff",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  completedMilestoneRow: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#2a3a2a",
+    backgroundColor: "#0f1810",
+    marginBottom: 10,
+    alignItems: "flex-start",
+    opacity: 0.7,
+  },
+  eventCheckBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#3a404d",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  eventCheckBtnPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.95 }],
+  },
+  eventCheckbox: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 4,
+  },
+  eventRowCompleting: {
+    backgroundColor: "#0a0f14",
+    borderColor: "#1a2028",
+  },
+  eventDateGray: {
+    opacity: 0.55,
+  },
+  eventMonthGray: {
+    color: "#6f7682",
+  },
+  eventDayGray: {
+    color: "#5a6370",
+  },
+  eventTitleGray: {
+    color: "#6f7682",
+  },
+  eventMetaGray: {
+    color: "#5a6370",
+  },
+  eventWhyGray: {
+    color: "#4a525f",
+  },
+  eventCheckboxCompleted: {
+    backgroundColor: "#4a90e2",
+    borderColor: "#4a90e2",
+  },
+  completedEventRow: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#2a3a2a",
+    backgroundColor: "#0f1810",
+    marginBottom: 10,
+    alignItems: "flex-start",
+    opacity: 0.7,
+  },
+  eventRowPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.995 }],
+  },
+  completedEventTitle: {
+    color: "#7f8797",
+    textDecorationLine: "line-through",
+  },
+  completedBadge: {
+    backgroundColor: "#1a4a1a",
+    borderColor: "#5ec45e",
+  },
+  completedBadgeText: {
+    fontFamily: "ClashGrotesk-Bold",
+    fontSize: 14,
+    color: "#5ec45e",
+  },
+  emptyState: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontFamily: "ClashGrotesk-Regular",
+    fontSize: 16,
+    color: "#7f8797",
+  },
+  completionToast: {
+    position: "absolute",
+    left: 24,
+    right: 24,
+    bottom: 24,
+    borderRadius: 16,
+    backgroundColor: "rgba(20, 24, 36, 0.96)",
+    borderWidth: 1,
+    borderColor: "#394150",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.24,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  completionToastText: {
+    fontFamily: "ClashGrotesk-Medium",
+    fontSize: 14,
+    color: "#f5f7fb",
+    textAlign: "center",
+  },
 });
