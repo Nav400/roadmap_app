@@ -4,14 +4,151 @@ import {
   Easing,
   PanResponder,
   Pressable,
+  TextInput,
   View,
   Text,
   StyleSheet,
   ScrollView,
   SafeAreaView,
 } from "react-native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
-const MAJORS = ["Computer Science", "Computer Engineering", "Data Science", "Software Eng.", "Cybersecurity", "AI / ML"];
+const MAJORS = [
+  "Accounting",
+  "Actuarial Science",
+  "Aerospace Engineering",
+  "African American Studies",
+  "Agricultural Engineering",
+  "Agricultural Science",
+  "Animal Science",
+  "Anthropology",
+  "Applied Mathematics",
+  "Architecture",
+  "Art Education",
+  "Art History",
+  "Artificial Intelligence",
+  "Asian Studies",
+  "Astronomy",
+  "Athletic Training",
+  "Biochemistry",
+  "Bioengineering",
+  "Biology",
+  "Biomedical Engineering",
+  "Biophysics",
+  "Biostatistics",
+  "Business Administration",
+  "Business Analytics",
+  "Chemical Engineering",
+  "Chemistry",
+  "Child Development",
+  "Civil Engineering",
+  "Classics",
+  "Clinical Psychology",
+  "Cognitive Science",
+  "Communication",
+  "Communication Disorders",
+  "Comparative Literature",
+  "Computer Engineering",
+  "Computer Information Systems",
+  "Computer Science",
+  "Construction Management",
+  "Criminal Justice",
+  "Cybersecurity",
+  "Dance",
+  "Data Science",
+  "Dentistry (Pre-Dental)",
+  "Digital Media",
+  "Early Childhood Education",
+  "Economics",
+  "Education",
+  "Electrical Engineering",
+  "Elementary Education",
+  "Engineering Physics",
+  "Engineering Technology",
+  "English",
+  "Environmental Engineering",
+  "Environmental Science",
+  "Ethnic Studies",
+  "Finance",
+  "Fine Arts",
+  "Food Science",
+  "Forensic Science",
+  "French",
+  "Game Design",
+  "Genetics",
+  "Geography",
+  "Geology",
+  "German",
+  "Global Studies",
+  "Graphic Design",
+  "Health Administration",
+  "Health Science",
+  "History",
+  "Hospitality Management",
+  "Human Development",
+  "Human Resources",
+  "Humanities",
+  "Industrial Design",
+  "Industrial Engineering",
+  "Information Systems",
+  "Information Technology",
+  "Interdisciplinary Studies",
+  "Interior Design",
+  "International Business",
+  "International Relations",
+  "Journalism",
+  "Kinesiology",
+  "Landscape Architecture",
+  "Latin American Studies",
+  "Law (Pre-Law)",
+  "Linguistics",
+  "Management",
+  "Management Information Systems",
+  "Marketing",
+  "Materials Science",
+  "Mathematics",
+  "Mechanical Engineering",
+  "Media Studies",
+  "Medicine (Pre-Med)",
+  "Microbiology",
+  "Middle Eastern Studies",
+  "Molecular Biology",
+  "Music",
+  "Music Education",
+  "Neuroscience",
+  "Nursing",
+  "Nutrition",
+  "Occupational Therapy",
+  "Pharmacy (Pre-Pharm)",
+  "Philosophy",
+  "Photography",
+  "Physical Education",
+  "Physical Therapy",
+  "Physics",
+  "Physiology",
+  "Political Science",
+  "Psychology",
+  "Public Administration",
+  "Public Health",
+  "Public Policy",
+  "Radiologic Science",
+  "Religious Studies",
+  "Social Work",
+  "Sociology",
+  "Software Engineering",
+  "Spanish",
+  "Special Education",
+  "Speech-Language Pathology",
+  "Sports Management",
+  "Statistics",
+  "Supply Chain Management",
+  "Theater",
+  "Urban Planning",
+  "Veterinary Medicine (Pre-Vet)",
+  "Women and Gender Studies",
+  "Undecided / Exploring",
+  "Other",
+];
 const YEARS = ["Freshman", "Sophomore", "Junior", "Senior"];
 const GOALS = ["Get a SWE internship", "Do research", "Build a startup", "Go to grad school", "Work in ML/AI"];
 const SKILLS = [
@@ -41,6 +178,8 @@ type OnboardingScreenProps = {
 export default function OnboardingScreen({ onComplete, startAtQuestions = false }: OnboardingScreenProps) {
   const TOTAL_STEPS = 4;
   const [selectedMajor, setSelectedMajor] = useState("Computer Science");
+  const [majorQuery, setMajorQuery] = useState("");
+  const [isMajorSearchFocused, setIsMajorSearchFocused] = useState(false);
   const [selectedYear, setSelectedYear] = useState("Freshman");
   const [selectedGoals, setSelectedGoals] = useState<string[]>(["Get a SWE internship"]);
   const [step, setStep] = useState(0);
@@ -57,9 +196,13 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const contentTranslateY = useRef(new Animated.Value(0)).current;
   const exitFadeAnim = useRef(new Animated.Value(1)).current;
   const exitSlideAnim = useRef(new Animated.Value(0)).current;
+  const majorSearchFocusAnim = useRef(new Animated.Value(0)).current;
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
   const activeSkillRef = useRef<string | null>(null);
   const prevStepRef = useRef(0);
+  const filteredMajors = MAJORS.filter((major) =>
+    major.toLowerCase().includes(majorQuery.trim().toLowerCase())
+  );
 
   useEffect(() => {
     activeSkillRef.current = activeSkillId;
@@ -138,6 +281,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       setActiveSkillId(null);
     }
   }, [step]);
+
+  useEffect(() => {
+    Animated.spring(majorSearchFocusAnim, {
+      toValue: isMajorSearchFocused ? 1 : 0,
+      friction: 8,
+      tension: 90,
+      useNativeDriver: true,
+    }).start();
+  }, [isMajorSearchFocused, majorSearchFocusAnim]);
 
   function toggleGoal(goal: string) {
     setSelectedGoals((prev) =>
@@ -261,8 +413,53 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (step === 0) {
       return (
         <>
+          <Animated.View
+            style={[
+              styles.majorSearchShell,
+              {
+                transform: [
+                  {
+                    scale: majorSearchFocusAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 1.015],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.majorSearch,
+                isMajorSearchFocused && styles.majorSearchFocused,
+              ]}
+            >
+              <MaterialIcons name="search" size={20} color="#8e98b0" style={styles.majorSearchIcon} />
+              <TextInput
+                value={majorQuery}
+                onChangeText={setMajorQuery}
+                onFocus={() => setIsMajorSearchFocused(true)}
+                onBlur={() => setIsMajorSearchFocused(false)}
+                placeholder="Search majors"
+                placeholderTextColor="#6e7790"
+                style={styles.majorSearchInput}
+                autoCorrect={false}
+                autoCapitalize="words"
+                returnKeyType="search"
+              />
+              {majorQuery.length > 0 && (
+                <Pressable
+                  style={({ pressed }) => [styles.majorSearchClearBtn, pressed && styles.majorSearchClearBtnPressed]}
+                  onPress={() => setMajorQuery("")}
+                >
+                  <Text style={styles.majorSearchClearText}>Clear</Text>
+                </Pressable>
+              )}
+            </View>
+          </Animated.View>
+
           <View style={styles.pillGroup}>
-            {MAJORS.map((m) => (
+            {filteredMajors.map((m) => (
               <Pressable
                 key={m}
                 style={({ pressed }) => [
@@ -276,6 +473,13 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               </Pressable>
             ))}
           </View>
+
+          {filteredMajors.length === 0 && (
+            <View style={styles.noMajorResultsCard}>
+              <Text style={styles.noMajorResultsTitle}>No majors found</Text>
+              <Text style={styles.noMajorResultsBody}>Try a different keyword or clear search to browse all options.</Text>
+            </View>
+          )}
         </>
       );
     }
@@ -552,6 +756,53 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 8,
   },
+  majorSearchShell: {
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  majorSearch: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#343b49",
+    backgroundColor: "#141a24",
+    paddingHorizontal: 12,
+    minHeight: 52,
+  },
+  majorSearchFocused: {
+    borderColor: "#7c5cff",
+    backgroundColor: "#171d29",
+  },
+  majorSearchIcon: {
+    marginRight: 10,
+  },
+  majorSearchInput: {
+    flex: 1,
+    fontFamily: "ClashGrotesk-Medium",
+    fontSize: 18,
+    color: "#edf2ff",
+    paddingVertical: 10,
+    letterSpacing: 0.5,
+  },
+  majorSearchClearBtn: {
+    marginLeft: 8,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: "#3a4254",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  majorSearchClearBtnPressed: {
+    opacity: 0.7,
+  },
+  majorSearchClearText: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    color: "#b7c1d7",
+  },
   pillGroup: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -598,6 +849,28 @@ const styles = StyleSheet.create({
   },
   pillTextSelected: {
     color: "#ddd6ff",
+  },
+  noMajorResultsCard: {
+    marginTop: -6,
+    marginBottom: 24,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#2c3548",
+    backgroundColor: "#121723",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  noMajorResultsTitle: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 16,
+    color: "#d4ddf0",
+    marginBottom: 4,
+  },
+  noMajorResultsBody: {
+    fontFamily: "ClashGrotesk-Regular",
+    fontSize: 14,
+    color: "#95a2bb",
+    lineHeight: 18,
   },
   skillCard: {
     paddingVertical: 16,
