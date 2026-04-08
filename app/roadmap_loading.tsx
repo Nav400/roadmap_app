@@ -17,6 +17,8 @@ const PHRASES = [
 
 export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () => void }) {
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const exitOpacityAnim = useRef(new Animated.Value(1)).current;
+  const exitTranslateYAnim = useRef(new Animated.Value(0)).current;
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [percentage, setPercentage] = useState(0);
 
@@ -48,7 +50,22 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
 
     const playNextStep = () => {
       if (currentIndex >= sequence.length) {
-        onComplete();
+        Animated.parallel([
+          Animated.timing(exitOpacityAnim, {
+            toValue: 0,
+            duration: 420,
+            easing: Easing.bezier(0.22, 1, 0.36, 1),
+            useNativeDriver: true,
+          }),
+          Animated.timing(exitTranslateYAnim, {
+            toValue: -12,
+            duration: 420,
+            easing: Easing.bezier(0.22, 1, 0.36, 1),
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          onComplete();
+        });
         return;
       }
 
@@ -72,11 +89,19 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
     };
 
     playNextStep();
-  }, [progressAnim, onComplete]);
+  }, [exitOpacityAnim, exitTranslateYAnim, onComplete, progressAnim]);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            opacity: exitOpacityAnim,
+            transform: [{ translateY: exitTranslateYAnim }],
+          },
+        ]}
+      >
 
         <View style={styles.progressTrackContainer}>
           <Animated.View
@@ -107,7 +132,7 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
         </Animated.Text>
 
         <Text style={styles.percentage}>{percentage}%</Text>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }

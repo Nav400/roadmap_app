@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
+  LayoutAnimation,
   PanResponder,
+  Platform,
   Pressable,
   TextInput,
   View,
@@ -10,6 +12,7 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
+  UIManager,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
@@ -177,7 +180,7 @@ type OnboardingScreenProps = {
 
 export default function OnboardingScreen({ onComplete, startAtQuestions = false }: OnboardingScreenProps) {
   const TOTAL_STEPS = 4;
-  const [selectedMajor, setSelectedMajor] = useState("Computer Science");
+  const [selectedMajor, setSelectedMajor] = useState("");
   const [majorQuery, setMajorQuery] = useState("");
   const [isMajorSearchFocused, setIsMajorSearchFocused] = useState(false);
   const [selectedYear, setSelectedYear] = useState("Freshman");
@@ -197,12 +200,21 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const exitFadeAnim = useRef(new Animated.Value(1)).current;
   const exitSlideAnim = useRef(new Animated.Value(0)).current;
   const majorSearchFocusAnim = useRef(new Animated.Value(0)).current;
+  const selectedMajorAppearAnim = useRef(new Animated.Value(0)).current;
+  const selectedMajorTapAnim = useRef(new Animated.Value(0)).current;
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
   const activeSkillRef = useRef<string | null>(null);
   const prevStepRef = useRef(0);
+  const prevSelectedMajorRef = useRef("");
   const filteredMajors = MAJORS.filter((major) =>
     major.toLowerCase().includes(majorQuery.trim().toLowerCase())
   );
+
+  useEffect(() => {
+    if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
 
   useEffect(() => {
     activeSkillRef.current = activeSkillId;
@@ -283,6 +295,25 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [step]);
 
   useEffect(() => {
+    if (selectedMajor.length > 0 && selectedMajor !== prevSelectedMajorRef.current) {
+      selectedMajorAppearAnim.setValue(0);
+      Animated.timing(selectedMajorAppearAnim, {
+        toValue: 1,
+        duration: 620,
+        easing: Easing.bezier(0.2, 0.9, 0.22, 1),
+        useNativeDriver: true,
+      }).start();
+    }
+
+    if (selectedMajor.length === 0) {
+      selectedMajorAppearAnim.setValue(0);
+      selectedMajorTapAnim.setValue(0);
+    }
+
+    prevSelectedMajorRef.current = selectedMajor;
+  }, [selectedMajor, selectedMajorAppearAnim, selectedMajorTapAnim]);
+
+  useEffect(() => {
     Animated.spring(majorSearchFocusAnim, {
       toValue: isMajorSearchFocused ? 1 : 0,
       friction: 8,
@@ -290,6 +321,24 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       useNativeDriver: true,
     }).start();
   }, [isMajorSearchFocused, majorSearchFocusAnim]);
+
+  function animateSelectedMajorTap() {
+    selectedMajorTapAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(selectedMajorTapAnim, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.bezier(0.22, 0.8, 0.25, 1),
+        useNativeDriver: true,
+      }),
+      Animated.timing(selectedMajorTapAnim, {
+        toValue: 0,
+        duration: 320,
+        easing: Easing.bezier(0.32, 0, 0.18, 1),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }
 
   function toggleGoal(goal: string) {
     setSelectedGoals((prev) =>
@@ -413,6 +462,45 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (step === 0) {
       return (
         <>
+          {selectedMajor.length > 0 && (
+            <Animated.View
+              style={[
+                styles.selectedMajorRow,
+                {
+                  opacity: selectedMajorAppearAnim,
+                  transform: [
+                    {
+                      translateY: selectedMajorAppearAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-14, 0],
+                      }),
+                    },
+                    {
+                      scale: selectedMajorAppearAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.96, 1],
+                      }),
+                    },
+                    {
+                      scale: selectedMajorTapAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 1.022],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Text style={styles.selectedMajorLabel}>Selected:</Text>
+              <Pressable
+                style={({ pressed }) => [styles.selectedMajorPill, pressed && styles.selectedMajorPillPressed]}
+                onPress={animateSelectedMajorTap}
+              >
+                <Text style={styles.selectedMajorPillText}>{selectedMajor}</Text>
+              </Pressable>
+            </Animated.View>
+          )}
+
           <Animated.View
             style={[
               styles.majorSearchShell,
@@ -467,7 +555,23 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   selectedMajor === m && styles.pillSelected,
                   pressed && styles.pillPressed,
                 ]}
-                onPress={() => setSelectedMajor(m)}
+                onPress={() => {
+                  LayoutAnimation.configureNext({
+                    duration: 420,
+                    create: {
+                      type: LayoutAnimation.Types.easeInEaseOut,
+                      property: LayoutAnimation.Properties.opacity,
+                    },
+                    update: {
+                      type: LayoutAnimation.Types.easeInEaseOut,
+                    },
+                    delete: {
+                      type: LayoutAnimation.Types.easeInEaseOut,
+                      property: LayoutAnimation.Properties.opacity,
+                    },
+                  });
+                  setSelectedMajor(m);
+                }}
               >
                 <Text style={[styles.pillText, selectedMajor === m && styles.pillTextSelected]}>{m}</Text>
               </Pressable>
@@ -756,6 +860,38 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 8,
   },
+  selectedMajorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  selectedMajorLabel: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 13,
+    color: "#98a4bc",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  selectedMajorPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#7c5cff",
+    backgroundColor: "#1d1835",
+  },
+  selectedMajorPillPressed: {
+    opacity: 0.92,
+  },
+  selectedMajorPillText: {
+    fontFamily: "ClashGrotesk-Medium",
+    fontSize: 17,
+    letterSpacing: 1,
+    color: "#ddd6ff",
+  },
   majorSearchShell: {
     marginTop: 8,
     marginBottom: 10,
@@ -836,7 +972,7 @@ const styles = StyleSheet.create({
   },
   pillPressed: {
     opacity: 0.8,
-    transform: [{ scale: 0.98 }],
+    transform: [{ scale: 0.992 }],
   },
   pillSelected: {
     backgroundColor: "#1d1835",
