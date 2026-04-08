@@ -117,6 +117,8 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
           />
         </View>
 
+        <Text style={styles.percentage}>{percentage}%</Text>
+
         <Animated.Text
           style={[
             styles.phrase,
@@ -130,8 +132,6 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
         >
           {PHRASES[phraseIndex]}
         </Animated.Text>
-
-        <Text style={styles.percentage}>{percentage}%</Text>
       </Animated.View>
     </SafeAreaView>
   );
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: "#2b2f38",
     overflow: "hidden",
-    marginBottom: 40,
+    marginBottom: 7,
   },
   progressFill: {
     height: "100%",
@@ -181,6 +181,9 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 18,
     color: "#aab3c3",
-    marginTop: 12,
+    width: "100%",
+    textAlign: "right",
+    marginTop: 6,
+    marginBottom: 15,
   },
 });

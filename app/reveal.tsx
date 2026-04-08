@@ -33,12 +33,12 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
 
   useEffect(() => {
     const sequence = [
-      { toValue: 20, duration: 600 },
-      { toValue: 20, duration: 400 },
-      { toValue: 50, duration: 800 },
-      { toValue: 50, duration: 400 },
-      { toValue: 80, duration: 800 },
-      { toValue: 80, duration: 400 },
+      { toValue: 10, duration: 520 },
+      { toValue: 10, duration: 380 },
+      { toValue: 40, duration: 760 },
+      { toValue: 40, duration: 420 },
+      { toValue: 80, duration: 860 },
+      { toValue: 80, duration: 420 },
       { toValue: 100, duration: 600 },
     ];
 
@@ -198,15 +198,17 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
             </Animated.View>
           )}
         </ScrollView>
-        <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
-            onPress={handleContinueWithAnimation}
-            disabled={isTransitioning}
-          >
-            <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
-          </Pressable>
-        </View>
+        {showMilestoneContent && (
+          <View style={styles.buttonContainer}>
+            <Pressable
+              style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
+              onPress={handleContinueWithAnimation}
+              disabled={isTransitioning}
+            >
+              <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
+            </Pressable>
+          </View>
+        )}
       </Animated.View>
     </SafeAreaView>
   );
@@ -290,15 +292,16 @@ const styles = StyleSheet.create({
   },
   preRevealText: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 19,
+    fontSize: 20,
     color: "#cfd7e6",
     lineHeight: 22,
     marginTop: 14,
+    letterSpacing: 0.5,
     textAlign: "center",
   },
   preRevealTrack: {
     width: "84%",
-    height: 5,
+    height: 12,
     borderRadius: 100,
     backgroundColor: "#2b2f38",
     overflow: "hidden",

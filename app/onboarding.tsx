@@ -184,7 +184,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [majorQuery, setMajorQuery] = useState("");
   const [isMajorSearchFocused, setIsMajorSearchFocused] = useState(false);
   const [selectedYear, setSelectedYear] = useState("Freshman");
-  const [selectedGoals, setSelectedGoals] = useState<string[]>(["Get a SWE internship"]);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(startAtQuestions);
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
@@ -202,7 +202,44 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const majorSearchFocusAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorAppearAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorTapAnim = useRef(new Animated.Value(0)).current;
+  const nextBtnEnableAnim = useRef(new Animated.Value(0)).current;
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
+  const pillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const yearPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const goalPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const skillDotTapAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const skillLabelAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const getPillScaleAnim = (major: string) => {
+    if (!pillScaleAnimsRef.current[major]) {
+      pillScaleAnimsRef.current[major] = new Animated.Value(1);
+    }
+    return pillScaleAnimsRef.current[major];
+  };
+  const getYearPillScaleAnim = (year: string) => {
+    if (!yearPillScaleAnimsRef.current[year]) {
+      yearPillScaleAnimsRef.current[year] = new Animated.Value(1);
+    }
+    return yearPillScaleAnimsRef.current[year];
+  };
+  const getGoalPillScaleAnim = (goal: string) => {
+    if (!goalPillScaleAnimsRef.current[goal]) {
+      goalPillScaleAnimsRef.current[goal] = new Animated.Value(1);
+    }
+    return goalPillScaleAnimsRef.current[goal];
+  };
+  const getSkillDotTapAnim = (skillId: string, dot: number) => {
+    const key = `${skillId}-${dot}`;
+    if (!skillDotTapAnimsRef.current[key]) {
+      skillDotTapAnimsRef.current[key] = new Animated.Value(0);
+    }
+    return skillDotTapAnimsRef.current[key];
+  };
+  const getSkillLabelAnim = (skillId: string) => {
+    if (!skillLabelAnimsRef.current[skillId]) {
+      skillLabelAnimsRef.current[skillId] = new Animated.Value(0);
+    }
+    return skillLabelAnimsRef.current[skillId];
+  };
   const activeSkillRef = useRef<string | null>(null);
   const prevStepRef = useRef(0);
   const prevSelectedMajorRef = useRef("");
@@ -322,6 +359,19 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     }).start();
   }, [isMajorSearchFocused, majorSearchFocusAnim]);
 
+  useEffect(() => {
+    const hasMajorSelection = selectedMajor.trim().length > 0;
+    const hasGoalSelection = selectedGoals.length > 0;
+    const shouldEnableNext =
+      step === 0 ? hasMajorSelection : step === TOTAL_STEPS - 1 ? hasGoalSelection : true;
+    Animated.timing(nextBtnEnableAnim, {
+      toValue: shouldEnableNext ? 1 : 0,
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [TOTAL_STEPS, nextBtnEnableAnim, selectedGoals.length, selectedMajor, step]);
+
   function animateSelectedMajorTap() {
     selectedMajorTapAnim.setValue(0);
     Animated.sequence([
@@ -346,11 +396,66 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     );
   }
 
-  function setSkill(id: string, level: number) {
+  function setSkillLevel(id: string, level: number) {
     setSkillLevels((prev) => ({
       ...prev,
-      [id]: prev[id] === level ? 0 : level,
+      [id]: level,
     }));
+  }
+
+  function createSkillDotTapAnimation(skillId: string, dot: number) {
+    const tapAnim = getSkillDotTapAnim(skillId, dot);
+    tapAnim.stopAnimation();
+    tapAnim.setValue(0);
+    return Animated.sequence([
+      Animated.timing(tapAnim, {
+        toValue: 1,
+        duration: 110,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.spring(tapAnim, {
+        toValue: 0,
+        tension: 75,
+        friction: 9,
+        useNativeDriver: true,
+      }),
+    ]);
+  }
+
+  function animateSkillDotFill(skillId: string, fromLevel: number, toLevel: number) {
+    if (toLevel > fromLevel) {
+      const fillAnims = [];
+      for (let dot = fromLevel + 1; dot <= toLevel; dot += 1) {
+        fillAnims.push(createSkillDotTapAnimation(skillId, dot));
+      }
+      Animated.stagger(55, fillAnims).start();
+      return;
+    }
+
+    if (toLevel > 0) {
+      createSkillDotTapAnimation(skillId, toLevel).start();
+    }
+  }
+
+  function animateSkillLabelChange(skillId: string) {
+    const labelAnim = getSkillLabelAnim(skillId);
+    labelAnim.stopAnimation();
+    labelAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(labelAnim, {
+        toValue: 1,
+        duration: 120,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.spring(labelAnim, {
+        toValue: 0,
+        tension: 70,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }
 
   function toggleSkillSheet(skillId: string) {
@@ -394,6 +499,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (!started) {
       setStarted(true);
       setStep(0);
+      return;
+    }
+
+    if (step === 0 && selectedMajor.trim().length === 0) {
+      return;
+    }
+
+    if (step === TOTAL_STEPS - 1 && selectedGoals.length === 0) {
       return;
     }
 
@@ -453,6 +566,19 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     return <Text style={styles.title}>{getStepTitle()}</Text>;
   }
+
+  const isNextDisabled =
+    isTransitioning ||
+    (step === 0 && selectedMajor.trim().length === 0) ||
+    (step === TOTAL_STEPS - 1 && selectedGoals.length === 0);
+  const nextBtnBackgroundColor = nextBtnEnableAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#4b505a", "#7c5cff"],
+  });
+  const nextBtnTextColor = nextBtnEnableAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#cfd3da", "#f7f5ff"],
+  });
 
   function renderStepContent() {
     if (!started) {
@@ -547,35 +673,58 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           </Animated.View>
 
           <View style={styles.pillGroup}>
-            {filteredMajors.map((m) => (
-              <Pressable
-                key={m}
-                style={({ pressed }) => [
-                  styles.pill,
-                  selectedMajor === m && styles.pillSelected,
-                  pressed && styles.pillPressed,
-                ]}
-                onPress={() => {
-                  LayoutAnimation.configureNext({
-                    duration: 420,
-                    create: {
-                      type: LayoutAnimation.Types.easeInEaseOut,
-                      property: LayoutAnimation.Properties.opacity,
-                    },
-                    update: {
-                      type: LayoutAnimation.Types.easeInEaseOut,
-                    },
-                    delete: {
-                      type: LayoutAnimation.Types.easeInEaseOut,
-                      property: LayoutAnimation.Properties.opacity,
-                    },
-                  });
-                  setSelectedMajor(m);
-                }}
-              >
-                <Text style={[styles.pillText, selectedMajor === m && styles.pillTextSelected]}>{m}</Text>
-              </Pressable>
-            ))}
+            {filteredMajors.map((m) => {
+              const scaleAnim = getPillScaleAnim(m);
+              return (
+                <Animated.View
+                  key={m}
+                  style={{ transform: [{ scale: scaleAnim }] }}
+                >
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.pill,
+                      selectedMajor === m && styles.pillSelected,
+                      pressed && styles.pillPressed,
+                    ]}
+                    onPressIn={() => {
+                      Animated.spring(scaleAnim, {
+                        toValue: 0.95,
+                        friction: 6,
+                        tension: 100,
+                        useNativeDriver: true,
+                      }).start();
+                    }}
+                    onPressOut={() => {
+                      Animated.spring(scaleAnim, {
+                        toValue: 1,
+                        friction: 6,
+                        tension: 100,
+                        useNativeDriver: true,
+                      }).start();
+                    }}
+                    onPress={() => {
+                      LayoutAnimation.configureNext({
+                        duration: 420,
+                        create: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                          property: LayoutAnimation.Properties.opacity,
+                        },
+                        update: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                        },
+                        delete: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                          property: LayoutAnimation.Properties.opacity,
+                        },
+                      });
+                      setSelectedMajor(m);
+                    }}
+                  >
+                    <Text style={[styles.pillText, selectedMajor === m && styles.pillTextSelected]}>{m}</Text>
+                  </Pressable>
+                </Animated.View>
+              );
+            })}
           </View>
 
           {filteredMajors.length === 0 && (
@@ -592,19 +741,47 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return (
         <>
           <View style={styles.yearGroup}>
-            {YEARS.map((y) => (
-              <Pressable
-                key={y}
-                style={({ pressed }) => [
-                  styles.yearPill,
-                  selectedYear === y && styles.pillSelected,
-                  pressed && styles.pillPressed,
-                ]}
-                onPress={() => setSelectedYear(y)}
-              >
-                <Text style={[styles.pillText, selectedYear === y && styles.pillTextSelected]}>{y}</Text>
-              </Pressable>
-            ))}
+            {YEARS.map((y) => {
+              const scaleAnim = getYearPillScaleAnim(y);
+              return (
+                <Animated.View
+                  key={y}
+                  style={[
+                    styles.yearPillWrap,
+                    {
+                      transform: [{ scale: scaleAnim }],
+                    },
+                  ]}
+                >
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.yearPill,
+                      selectedYear === y && styles.pillSelected,
+                      pressed && styles.yearPillPressed,
+                    ]}
+                    onPressIn={() => {
+                      Animated.spring(scaleAnim, {
+                        toValue: 0.965,
+                        friction: 6,
+                        tension: 95,
+                        useNativeDriver: true,
+                      }).start();
+                    }}
+                    onPressOut={() => {
+                      Animated.spring(scaleAnim, {
+                        toValue: 1,
+                        friction: 7,
+                        tension: 90,
+                        useNativeDriver: true,
+                      }).start();
+                    }}
+                    onPress={() => setSelectedYear(y)}
+                  >
+                    <Text style={[styles.pillText, selectedYear === y && styles.pillTextSelected]}>{y}</Text>
+                  </Pressable>
+                </Animated.View>
+              );
+            })}
           </View>
         </>
       );
@@ -623,20 +800,79 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   <Text style={styles.skillName}>{skill.label}</Text>
                   <Text style={styles.skillHint}>tap for description</Text>
                 </Pressable>
-                <Text style={styles.skillLevelLabel}>{LEVEL_LABELS[skillLevels[skill.id]]}</Text>
+                <Animated.Text
+                  style={[
+                    styles.skillLevelLabel,
+                    {
+                      opacity: getSkillLabelAnim(skill.id).interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 0.85],
+                      }),
+                      transform: [
+                        {
+                          translateY: getSkillLabelAnim(skill.id).interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, -2],
+                          }),
+                        },
+                        {
+                          scale: getSkillLabelAnim(skill.id).interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [1, 1.05],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  {LEVEL_LABELS[skillLevels[skill.id]]}
+                </Animated.Text>
               </View>
               <View style={styles.skillDots}>
-                {[1, 2, 3, 4].map((dot) => (
-                  <Pressable
-                    key={dot}
-                    style={({ pressed }) => [
-                      styles.dot,
-                      skillLevels[skill.id] >= dot && styles.dotFilled,
-                      pressed && styles.dotPressed,
-                    ]}
-                    onPress={() => setSkill(skill.id, dot)}
-                  />
-                ))}
+                {[1, 2, 3, 4].map((dot) => {
+                  const tapAnim = getSkillDotTapAnim(skill.id, dot);
+                  return (
+                    <Animated.View
+                      key={dot}
+                      style={[
+                        styles.dotWrap,
+                        {
+                          transform: [
+                            {
+                              translateY: tapAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, -1],
+                              }),
+                            },
+                            {
+                              scale: tapAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [1, 1.045],
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    >
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.dot,
+                          skillLevels[skill.id] >= dot && styles.dotFilled,
+                          pressed && styles.dotPressed,
+                        ]}
+                        onPress={() => {
+                          const currentLevel = skillLevels[skill.id];
+                          const nextLevel = currentLevel === dot ? 0 : dot;
+                          if (nextLevel !== currentLevel) {
+                            animateSkillLabelChange(skill.id);
+                          }
+                          animateSkillDotFill(skill.id, currentLevel, nextLevel);
+                          setSkillLevel(skill.id, nextLevel);
+                        }}
+                      />
+                    </Animated.View>
+                  );
+                })}
               </View>
             </View>
           ))}
@@ -647,19 +883,39 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     return (
       <>
         <View style={styles.pillGroup}>
-          {GOALS.map((g) => (
-            <Pressable
-              key={g}
-              style={({ pressed }) => [
-                styles.pill,
-                selectedGoals.includes(g) && styles.pillSelected,
-                pressed && styles.pillPressed,
-              ]}
-              onPress={() => toggleGoal(g)}
-            >
-              <Text style={[styles.pillText, selectedGoals.includes(g) && styles.pillTextSelected]}>{g}</Text>
-            </Pressable>
-          ))}
+          {GOALS.map((g) => {
+            const scaleAnim = getGoalPillScaleAnim(g);
+            return (
+              <Animated.View key={g} style={{ transform: [{ scale: scaleAnim }] }}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.pill,
+                    selectedGoals.includes(g) && styles.pillSelected,
+                    pressed && styles.pillPressed,
+                  ]}
+                  onPressIn={() => {
+                    Animated.spring(scaleAnim, {
+                      toValue: 0.95,
+                      friction: 6,
+                      tension: 100,
+                      useNativeDriver: true,
+                    }).start();
+                  }}
+                  onPressOut={() => {
+                    Animated.spring(scaleAnim, {
+                      toValue: 1,
+                      friction: 6,
+                      tension: 100,
+                      useNativeDriver: true,
+                    }).start();
+                  }}
+                  onPress={() => toggleGoal(g)}
+                >
+                  <Text style={[styles.pillText, selectedGoals.includes(g) && styles.pillTextSelected]}>{g}</Text>
+                </Pressable>
+              </Animated.View>
+            );
+          })}
         </View>
       </>
     );
@@ -730,15 +986,17 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             </Pressable>
           )}
 
-          <Pressable
-            style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
-            onPress={goNext}
-            disabled={isTransitioning}
-          >
-            <Text style={styles.ctaBtnText}>
-              {step === TOTAL_STEPS - 1 ? "GENERATE MY ROADMAP" : "NEXT"}
-            </Text>
-          </Pressable>
+          <Animated.View style={[styles.ctaBtnShell, { backgroundColor: nextBtnBackgroundColor }]}>
+            <Pressable
+              style={({ pressed }) => [styles.ctaBtn, pressed && !isNextDisabled && styles.ctaBtnPressed]}
+              onPress={goNext}
+              disabled={isNextDisabled}
+            >
+              <Animated.Text style={[styles.ctaBtnText, { color: nextBtnTextColor }]}>
+                {step === TOTAL_STEPS - 1 ? "GENERATE MY ROADMAP" : "NEXT"}
+              </Animated.Text>
+            </Pressable>
+          </Animated.View>
         </View>
       )}
 
@@ -829,7 +1087,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     textAlign: "center",
     color: "#f5f7fb",
-    letterSpacing: 0.2,
+    letterSpacing: 0.5,
     lineHeight: 30,
   },
   subtitle: {
@@ -870,7 +1128,7 @@ const styles = StyleSheet.create({
   },
   selectedMajorLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 13,
+    fontSize: 15,
     color: "#98a4bc",
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -970,6 +1228,12 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
+  yearPillWrap: {
+    width: "100%",
+  },
+  yearPillPressed: {
+    opacity: 0.85,
+  },
   pillPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.992 }],
@@ -980,7 +1244,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontFamily: "ClashGrotesk-Medium",
-    fontSize: 20,
+    fontSize: 18,
     color: "#b0b9c8",
   },
   pillTextSelected: {
@@ -998,13 +1262,14 @@ const styles = StyleSheet.create({
   },
   noMajorResultsTitle: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 16,
+    fontSize: 18,
     color: "#d4ddf0",
-    marginBottom: 4,
+    marginBottom: 10,
+    letterSpacing: 0.4,
   },
   noMajorResultsBody: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 14,
+    fontSize: 15,
     color: "#95a2bb",
     lineHeight: 18,
   },
@@ -1048,8 +1313,11 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
   },
-  dot: {
+  dotWrap: {
     flex: 1,
+  },
+  dot: {
+    width: "100%",
     minHeight: 52,
     borderRadius: 14,
     backgroundColor: "#2d3340",
@@ -1059,7 +1327,6 @@ const styles = StyleSheet.create({
   },
   dotPressed: {
     opacity: 0.8,
-    transform: [{ scale: 0.98 }],
   },
   skillLevelLabel: {
     fontFamily: "ClashGrotesk-Semibold",
@@ -1068,8 +1335,11 @@ const styles = StyleSheet.create({
     width: 74,
     textAlign: "right",
   },
+  ctaBtnShell: {
+    borderRadius: 10,
+    width: "100%",
+  },
   ctaBtn: {
-    backgroundColor: "#7c5cff",
     padding: 16,
     borderRadius: 10,
     alignItems: "center",
@@ -1081,7 +1351,6 @@ const styles = StyleSheet.create({
   },
   ctaBtnText: {
     fontFamily: "ClashGrotesk-Bold",
-    color: "#f7f5ff",
     fontSize: 15,
     letterSpacing: 2,
   },
