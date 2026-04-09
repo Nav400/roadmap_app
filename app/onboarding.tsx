@@ -14,6 +14,9 @@ import {
   SafeAreaView,
   UIManager,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+
+import { GradientBackground } from "@/components/gradient-background";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 const MAJORS = [
@@ -35,17 +38,12 @@ const MAJORS = [
   "Athletic Training",
   "Biochemistry",
   "Bioengineering",
-  "Biology",
   "Biomedical Engineering",
   "Biophysics",
   "Biostatistics",
   "Business Administration",
   "Business Analytics",
   "Chemical Engineering",
-  "Chemistry",
-  "Child Development",
-  "Civil Engineering",
-  "Classics",
   "Clinical Psychology",
   "Cognitive Science",
   "Communication",
@@ -150,7 +148,6 @@ const MAJORS = [
   "Veterinary Medicine (Pre-Vet)",
   "Women and Gender Studies",
   "Undecided / Exploring",
-  "Other",
 ];
 const YEARS = ["Freshman", "Sophomore", "Junior", "Senior"];
 const GOALS = ["Get a SWE internship", "Do research", "Build a startup", "Go to grad school", "Work in ML/AI"];
@@ -188,6 +185,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(startAtQuestions);
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
+  const [isSkillSheetVisible, setIsSkillSheetVisible] = useState(false);
   const [progressTrackWidth, setProgressTrackWidth] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [skillLevels, setSkillLevels] = useState<Record<string, number>>({
@@ -200,6 +198,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const exitFadeAnim = useRef(new Animated.Value(1)).current;
   const exitSlideAnim = useRef(new Animated.Value(0)).current;
   const majorSearchFocusAnim = useRef(new Animated.Value(0)).current;
+  const selectedMajorRowAnim = useRef(new Animated.Value(0)).current;
+  const selectedMajorLabelAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorAppearAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorTapAnim = useRef(new Animated.Value(0)).current;
   const nextBtnEnableAnim = useRef(new Animated.Value(0)).current;
@@ -243,6 +243,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const activeSkillRef = useRef<string | null>(null);
   const prevStepRef = useRef(0);
   const prevSelectedMajorRef = useRef("");
+  const hasPlayedSelectedMajorLabelIntroRef = useRef(false);
   const filteredMajors = MAJORS.filter((major) =>
     major.toLowerCase().includes(majorQuery.trim().toLowerCase())
   );
@@ -317,12 +318,26 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [TOTAL_STEPS, contentOpacity, contentTranslateY, progressAnim, started, step]);
 
   useEffect(() => {
-    Animated.spring(skillSheetTranslateY, {
-      toValue: activeSkillId ? 0 : SKILL_SHEET_HEIGHT + 40,
-      friction: 8,
-      tension: 90,
+    if (activeSkillId) {
+      setIsSkillSheetVisible(true);
+      skillSheetTranslateY.setValue(SKILL_SHEET_HEIGHT + 56);
+      Animated.spring(skillSheetTranslateY, {
+        toValue: 0,
+        friction: 8,
+        tension: 90,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+
+    Animated.timing(skillSheetTranslateY, {
+      toValue: SKILL_SHEET_HEIGHT + 56,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      setIsSkillSheetVisible(false);
+    });
   }, [activeSkillId, skillSheetTranslateY]);
 
   useEffect(() => {
@@ -332,23 +347,52 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [step]);
 
   useEffect(() => {
-    if (selectedMajor.length > 0 && selectedMajor !== prevSelectedMajorRef.current) {
+    const hasSelectedMajor = selectedMajor.length > 0;
+
+    Animated.timing(selectedMajorRowAnim, {
+      toValue: hasSelectedMajor ? 1 : 0,
+      duration: hasSelectedMajor ? 360 : 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+
+    if (hasSelectedMajor && selectedMajor !== prevSelectedMajorRef.current) {
+      if (!hasPlayedSelectedMajorLabelIntroRef.current) {
+        selectedMajorLabelAnim.setValue(0);
+        Animated.timing(selectedMajorLabelAnim, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.bezier(0.2, 0.9, 0.22, 1),
+          useNativeDriver: true,
+        }).start(() => {
+          hasPlayedSelectedMajorLabelIntroRef.current = true;
+        });
+      } else {
+        selectedMajorLabelAnim.setValue(1);
+      }
+
       selectedMajorAppearAnim.setValue(0);
       Animated.timing(selectedMajorAppearAnim, {
         toValue: 1,
-        duration: 620,
+        duration: 520,
         easing: Easing.bezier(0.2, 0.9, 0.22, 1),
         useNativeDriver: true,
       }).start();
     }
 
-    if (selectedMajor.length === 0) {
+    if (!hasSelectedMajor) {
       selectedMajorAppearAnim.setValue(0);
       selectedMajorTapAnim.setValue(0);
     }
 
     prevSelectedMajorRef.current = selectedMajor;
-  }, [selectedMajor, selectedMajorAppearAnim, selectedMajorTapAnim]);
+  }, [
+    selectedMajor,
+    selectedMajorAppearAnim,
+    selectedMajorLabelAnim,
+    selectedMajorRowAnim,
+    selectedMajorTapAnim,
+  ]);
 
   useEffect(() => {
     Animated.spring(majorSearchFocusAnim, {
@@ -571,10 +615,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     isTransitioning ||
     (step === 0 && selectedMajor.trim().length === 0) ||
     (step === TOTAL_STEPS - 1 && selectedGoals.length === 0);
-  const nextBtnBackgroundColor = nextBtnEnableAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["#4b505a", "#7c5cff"],
-  });
   const nextBtnTextColor = nextBtnEnableAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["#cfd3da", "#f7f5ff"],
@@ -586,46 +626,89 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     }
 
     if (step === 0) {
+      const hasSelectedMajor = selectedMajor.length > 0;
       return (
         <>
-          {selectedMajor.length > 0 && (
-            <Animated.View
-              style={[
-                styles.selectedMajorRow,
-                {
-                  opacity: selectedMajorAppearAnim,
-                  transform: [
+          <Animated.View
+            pointerEvents={hasSelectedMajor ? "auto" : "none"}
+            style={[
+              styles.selectedMajorShell,
+              {
+                opacity: selectedMajorRowAnim,
+                marginTop: selectedMajorRowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 8],
+                }),
+                marginBottom: selectedMajorRowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 8],
+                }),
+                transform: [
+                  {
+                    translateY: selectedMajorRowAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-6, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            {hasSelectedMajor && (
+              <View style={styles.selectedMajorRow}>
+                <Animated.Text
+                  style={[
+                    styles.selectedMajorLabel,
                     {
-                      translateY: selectedMajorAppearAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-14, 0],
-                      }),
+                      opacity: selectedMajorLabelAnim,
+                      transform: [
+                        {
+                          translateY: selectedMajorLabelAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-6, 0],
+                          }),
+                        },
+                      ],
                     },
-                    {
-                      scale: selectedMajorAppearAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.96, 1],
-                      }),
-                    },
-                    {
-                      scale: selectedMajorTapAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [1, 1.022],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <Text style={styles.selectedMajorLabel}>Selected:</Text>
-              <Pressable
-                style={({ pressed }) => [styles.selectedMajorPill, pressed && styles.selectedMajorPillPressed]}
-                onPress={animateSelectedMajorTap}
-              >
-                <Text style={styles.selectedMajorPillText}>{selectedMajor}</Text>
-              </Pressable>
-            </Animated.View>
-          )}
+                  ]}
+                >
+                  Selected:
+                </Animated.Text>
+                <Animated.View
+                  style={{
+                    opacity: selectedMajorAppearAnim,
+                    transform: [
+                      {
+                        translateY: selectedMajorAppearAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-10, 0],
+                        }),
+                      },
+                      {
+                        scale: selectedMajorAppearAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.96, 1],
+                        }),
+                      },
+                      {
+                        scale: selectedMajorTapAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 1.022],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <Pressable
+                    style={({ pressed }) => [styles.selectedMajorPill, pressed && styles.selectedMajorPillPressed]}
+                    onPress={animateSelectedMajorTap}
+                  >
+                    <Text style={styles.selectedMajorPillText}>{selectedMajor}</Text>
+                  </Pressable>
+                </Animated.View>
+              </View>
+            )}
+          </Animated.View>
 
           <Animated.View
             style={[
@@ -938,6 +1021,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
   return (
     <SafeAreaView style={styles.safe}>
+      <GradientBackground variant="soft" />
       <Animated.View
         style={{
           flex: 1,
@@ -957,7 +1041,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       width: Animated.multiply(progressAnim, progressTrackWidth || 1),
                     },
                   ]}
-                />
+                >
+                  <LinearGradient
+                        colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                </Animated.View>
               </View>
             </>
           )}
@@ -986,11 +1077,43 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             </Pressable>
           )}
 
-          <Animated.View style={[styles.ctaBtnShell, { backgroundColor: nextBtnBackgroundColor }]}>
+          <Animated.View style={styles.ctaBtnShell}>
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.ctaGradientLayer, { opacity: nextBtnEnableAnim }]}
+            >
+              <LinearGradient
+                colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.ctaGradient}
+              />
+            </Animated.View>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.ctaGradientLayer,
+                {
+                  opacity: nextBtnEnableAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 0],
+                  }),
+                },
+              ]}
+            >
+              <LinearGradient
+                colors={["#4b505a", "#4b505a", "#4b505a"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.ctaGradient}
+              />
+            </Animated.View>
             <Pressable
-              style={({ pressed }) => [styles.ctaBtn, pressed && !isNextDisabled && styles.ctaBtnPressed]}
+              style={({ pressed }) => [
+                styles.ctaBtn,
+                pressed && !isNextDisabled && styles.ctaBtnPressed,
+              ]}
               onPress={goNext}
-              disabled={isNextDisabled}
             >
               <Animated.Text style={[styles.ctaBtnText, { color: nextBtnTextColor }]}>
                 {step === TOTAL_STEPS - 1 ? "GENERATE MY ROADMAP" : "NEXT"}
@@ -1000,30 +1123,32 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
         </View>
       )}
 
-      {activeSkillId && <Pressable style={styles.skillSheetBackdrop} onPress={closeSkillSheet} />}
+      {isSkillSheetVisible && <Pressable style={styles.skillSheetBackdrop} onPress={closeSkillSheet} />}
 
-      <Animated.View
-        style={[
-          styles.skillSheet,
-          {
-            transform: [{ translateY: skillSheetTranslateY }],
-          },
-        ]}
-        pointerEvents={activeSkillId ? "auto" : "none"}
-      >
-        <View style={styles.skillSheetHandleArea} {...skillSheetPanResponder.panHandlers}>
-          <View style={styles.skillSheetHandle} />
-        </View>
-        <View style={styles.skillSheetHeader}>
-          <Text style={styles.skillSheetTitle}>{SKILLS.find((s) => s.id === activeSkillId)?.label}</Text>
-          <Pressable style={({ pressed }) => [styles.skillSheetCloseBtn, pressed && styles.skillSheetCloseBtnPressed]} onPress={closeSkillSheet}>
-            <Text style={styles.skillSheetCloseText}>close</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.skillSheetBody}>
-          {activeSkillId ? SKILL_DESCRIPTIONS[activeSkillId] : ""}
-        </Text>
-      </Animated.View>
+      {isSkillSheetVisible && (
+        <Animated.View
+          style={[
+            styles.skillSheet,
+            {
+              transform: [{ translateY: skillSheetTranslateY }],
+            },
+          ]}
+          pointerEvents={activeSkillId ? "auto" : "none"}
+        >
+          <View style={styles.skillSheetHandleArea} {...skillSheetPanResponder.panHandlers}>
+            <View style={styles.skillSheetHandle} />
+          </View>
+          <View style={styles.skillSheetHeader}>
+            <Text style={styles.skillSheetTitle}>{SKILLS.find((s) => s.id === activeSkillId)?.label}</Text>
+            <Pressable style={({ pressed }) => [styles.skillSheetCloseBtn, pressed && styles.skillSheetCloseBtnPressed]} onPress={closeSkillSheet}>
+              <Text style={styles.skillSheetCloseText}>close</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.skillSheetBody}>
+            {activeSkillId ? SKILL_DESCRIPTIONS[activeSkillId] : ""}
+          </Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
@@ -1031,7 +1156,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#0f1115",
+    backgroundColor: "transparent",
   },
   container: {
     flexGrow: 1,
@@ -1055,13 +1180,13 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 12,
     borderRadius: 100,
-    backgroundColor: "#2b2f38",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     marginBottom: 20,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#7c5cff",
+    backgroundColor: "transparent",
   },
   title: {
     fontFamily: "ClashGrotesk-Bold",
@@ -1123,8 +1248,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 8,
-    marginBottom: 8,
+  },
+  selectedMajorShell: {
+    overflow: "visible",
   },
   selectedMajorLabel: {
     fontFamily: "ClashGrotesk-Semibold",
@@ -1323,7 +1449,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2d3340",
   },
   dotFilled: {
-    backgroundColor: "#7c5cff",
+    backgroundColor: "#886cf8",
   },
   dotPressed: {
     opacity: 0.8,
@@ -1336,14 +1462,27 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   ctaBtnShell: {
-    borderRadius: 10,
+    borderRadius: 14,
     width: "100%",
+    overflow: "hidden",
+    position: "relative",
+  },
+  ctaGradientLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  ctaGradient: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 14,
   },
   ctaBtn: {
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 14,
     alignItems: "center",
     width: "100%",
+  },
+  ctaBtnDisabled: {
+    opacity: 0.72,
   },
   ctaBtnPressed: {
     opacity: 0.9,
@@ -1360,12 +1499,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 24,
+    paddingTop: 15,
+    paddingBottom: 50,
     backgroundColor: "#0f1115",
     borderTopWidth: 1,
     borderTopColor: "#222836",
     gap: 10,
+    zIndex: 40,
+    elevation: 40,
   },
   secondaryBtn: {
     paddingHorizontal: 10,
@@ -1391,7 +1532,7 @@ const styles = StyleSheet.create({
   skillSheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0, 0, 0, 0.3)",
-    zIndex: 20,
+    zIndex: 55,
   },
   skillSheet: {
     position: "absolute",
@@ -1405,7 +1546,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#141b29",
     paddingHorizontal: 16,
     paddingBottom: 18,
-    zIndex: 30,
+    zIndex: 60,
+    elevation: 60,
   },
   skillSheetHandleArea: {
     alignItems: "center",

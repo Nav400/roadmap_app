@@ -7,6 +7,9 @@ import {
   Animated,
   Easing,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+
+import { GradientBackground } from "@/components/gradient-background";
 
 const PHRASES = [
   "Analyzing your profile...",
@@ -93,6 +96,7 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
 
   return (
     <SafeAreaView style={styles.safe}>
+      <GradientBackground variant="soft" />
       <Animated.View
         style={[
           styles.container,
@@ -114,7 +118,14 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
                 }),
               },
             ]}
-          />
+          >
+            <LinearGradient
+              colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+          </Animated.View>
         </View>
 
         <Text style={styles.percentage}>{percentage}%</Text>
@@ -140,7 +151,7 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#0f1115",
+    backgroundColor: "transparent",
   },
   container: {
     flex: 1,
@@ -160,13 +171,13 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 14,
     borderRadius: 4,
-    backgroundColor: "#2b2f38",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     overflow: "hidden",
     marginBottom: 7,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#7c5cff",
+    backgroundColor: "transparent",
     borderRadius: 4,
   },
   phrase: {

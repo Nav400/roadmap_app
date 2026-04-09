@@ -9,6 +9,9 @@ import {
   Dimensions,
   Easing,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+
+import { GradientBackground } from "@/components/gradient-background";
 import OnboardingScreen from "../onboarding";
 import RevealScreen from "../reveal";
 import RoadmapLoadingScreen from "../roadmap_loading";
@@ -194,6 +197,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <GradientBackground />
       <AnimatedBackground />
       <SafeAreaView style={styles.safe}>
         <Animated.View
@@ -231,7 +235,14 @@ export default function HomeScreen() {
             disabled={isTransitioning}
             activeOpacity={0.85}
           >
-            <Text style={styles.ctaBtnText}>GET STARTED</Text>
+            <LinearGradient
+              colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.ctaGradient}
+            >
+              <Text style={styles.ctaBtnText}>GET STARTED</Text>
+            </LinearGradient>
           </TouchableOpacity>
 
         </Animated.View>
@@ -243,7 +254,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#050505",
+    backgroundColor: "transparent",
   },
   safe: {
     flex: 1,
@@ -312,7 +323,7 @@ const styles = StyleSheet.create({
   },
   statDesc: {
     fontSize: 15,
-    color: "#7d7d7d",
+    color: "#818181",
     textAlign: "center",
   },
   statDivider: {
@@ -321,18 +332,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#2a2a2a",
   },
   ctaBtn: {
-    backgroundColor: "#7c5cff",
-    paddingVertical: 18,
     borderRadius: 14,
     alignItems: "center",
     marginBottom: 14,
+    overflow: "hidden",
+  },
+  ctaGradient: {
+    width: "100%",
+    paddingVertical: 18,
+    alignItems: "center",
+    borderRadius: 14,
   },
   ctaBtnText: {
     color: "#f7f5ff",
     fontSize: 15,
-    fontWeight: "700",
-    fontFamily: "monospace",
-    letterSpacing: 0.3,
+    fontWeight: "900",
+    fontFamily: "ClashGrotesk-Bold",
+    letterSpacing: 1,
   },
   finePrint: {
     fontSize: 11,

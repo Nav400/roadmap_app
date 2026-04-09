@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, SafeAreaView, ScrollView, Animated, Easing } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+
+import { GradientBackground } from "@/components/gradient-background";
 
 export default function RevealScreen({ profile, onContinue }: { profile: any; onContinue: () => void }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -137,6 +140,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
 
   return (
     <SafeAreaView style={styles.safe}>
+      <GradientBackground variant="soft" />
       <Animated.View
         style={{
           flex: 1,
@@ -166,7 +170,14 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
                       }),
                     },
                   ]}
-                />
+                  >
+                    <LinearGradient
+                      colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                      start={{ x: 0, y: 0.5 }}
+                      end={{ x: 1, y: 0.5 }}
+                      style={StyleSheet.absoluteFillObject}
+                    />
+                  </Animated.View>
               </View>
               <Text style={styles.preRevealText}>Pinpointing your biggest milestone...</Text>
             </Animated.View>
@@ -205,7 +216,14 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
               onPress={handleContinueWithAnimation}
               disabled={isTransitioning}
             >
-              <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
+              <LinearGradient
+                colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.ctaGradient}
+              >
+                <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
+              </LinearGradient>
             </Pressable>
           </View>
         )}
@@ -217,7 +235,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#0f1115",
+    backgroundColor: "transparent",
   },
   scrollContainer: {
     flexGrow: 1,
@@ -228,7 +246,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     paddingBottom: 28,
-    backgroundColor: "#0f1115",
+    backgroundColor: "transparent",
   },
   progressLabel: {
     fontFamily: "ClashGrotesk-Semibold",
@@ -303,12 +321,12 @@ const styles = StyleSheet.create({
     width: "84%",
     height: 12,
     borderRadius: 100,
-    backgroundColor: "#2b2f38",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     overflow: "hidden",
   },
   preRevealFill: {
     height: "100%",
-    backgroundColor: "#7c5cff",
+    backgroundColor: "transparent",
   },
   milestone: {
     fontFamily: "ClashGrotesk-Bold",
@@ -332,10 +350,15 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   ctaBtn: {
-    backgroundColor: "#7c5cff",
-    padding: 16,
     borderRadius: 10,
     alignItems: "center",
+    overflow: "hidden",
+  },
+  ctaGradient: {
+    width: "100%",
+    padding: 16,
+    alignItems: "center",
+    borderRadius: 10,
   },
   ctaBtnPressed: {
     opacity: 0.9,
@@ -343,9 +366,10 @@ const styles = StyleSheet.create({
   },
   ctaBtnText: {
     color: "#f5f7fb",
-    fontFamily: "ClashGrotesk-Semibold",
+    fontFamily: "ClashGrotesk-Bold",
     fontSize: 15,
-    letterSpacing: 0.4,
+    fontWeight: "900",
+    letterSpacing: 1.2,
     textTransform: "uppercase",
   },
 });
