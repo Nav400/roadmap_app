@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, SafeAreaView, ScrollView, Animated, Easing } from "react-native";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { GradientBackground } from "@/components/gradient-background";
@@ -10,6 +11,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
   const [showMilestoneContent, setShowMilestoneContent] = useState(false);
   const [hidePreReveal, setHidePreReveal] = useState(false);
   const milestoneProgressAnim = useRef(new Animated.Value(0)).current;
+  const logoPulseAnim = useRef(new Animated.Value(0)).current;
   const preRevealOpacity = useRef(new Animated.Value(1)).current;
   const preRevealTranslateY = useRef(new Animated.Value(0)).current;
   const milestoneContentOpacity = useRef(new Animated.Value(0)).current;
@@ -37,6 +39,31 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
       : profile.goals.includes("Do research")
       ? "Professors want students who show initiative. A project proves that."
       : "Every goal you picked starts here. Build the habit first.";
+
+  useEffect(() => {
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoPulseAnim, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoPulseAnim, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulseLoop.start();
+
+    return () => {
+      pulseLoop.stop();
+    };
+  }, [logoPulseAnim]);
 
   useEffect(() => {
     const sequence = [
@@ -273,26 +300,47 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
               },
             ]}
           >
-            <View style={styles.preRevealTrack}>
+            <Animated.View
+              style={[
+                styles.loadingLogoWrap,
+                {
+                  transform: [
+                    {
+                      scale: logoPulseAnim.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0.96, 1.05, 0.96],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
               <Animated.View
+                pointerEvents="none"
                 style={[
-                  styles.preRevealFill,
+                  styles.loadingGlow,
                   {
-                    width: milestoneProgressAnim.interpolate({
-                      inputRange: [0, 100],
-                      outputRange: ["0%", "100%"],
+                    opacity: logoPulseAnim.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0, 0.7, 0],
                     }),
+                    transform: [
+                      {
+                        scale: logoPulseAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.9, 1.22],
+                        }),
+                      },
+                    ],
                   },
                 ]}
-              >
-                <LinearGradient
-                  colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-              </Animated.View>
-            </View>
+              />
+              <Image
+                source={require("../app_icon.png")}
+                style={styles.loadingLogo}
+                contentFit="contain"
+              />
+            </Animated.View>
             <Text style={styles.preRevealText}>Pinpointing your biggest milestone...</Text>
           </Animated.View>
         )}
@@ -502,6 +550,31 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  loadingLogoWrap: {
+    width: 160,
+    height: 160,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 18,
+  },
+  loadingGlow: {
+    position: "absolute",
+    width: 160,
+    height: 160,
+    borderRadius: 46,
+    backgroundColor: "rgba(124, 92, 255, 0.2)",
+    shadowColor: "#7c5cff",
+    shadowOpacity: 0.58,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 20,
+  },
+  loadingLogo: {
+    width: 114,
+    height: 114,
+    borderRadius: 28,
+    overflow: "hidden",
+  },
   popupBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(8, 11, 17, 0.62)",
@@ -591,19 +664,8 @@ const styles = StyleSheet.create({
     color: "#cfd7e6",
     lineHeight: 22,
     marginTop: 14,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     textAlign: "center",
-  },
-  preRevealTrack: {
-    width: "84%",
-    height: 12,
-    borderRadius: 100,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    overflow: "hidden",
-  },
-  preRevealFill: {
-    height: "100%",
-    backgroundColor: "transparent",
   },
   milestone: {
     fontFamily: "ClashGrotesk-Bold",

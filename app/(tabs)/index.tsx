@@ -188,7 +188,7 @@ export default function HomeScreen() {
   }
 
   if (screen === "loading") {
-    return <RoadmapLoadingScreen onComplete={() => setScreen("roadmap")} />;
+    return <RoadmapLoadingScreen profile={profile} onComplete={() => setScreen("roadmap")} />;
   }
 
   if (screen === "roadmap") {
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderTopWidth: 0.5,
     borderBottomWidth: 0.5,
-    borderColor: "#2a2a2a",
+    borderColor: "#575757",
   },
   statItem: {
     flex: 1,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1.5,
     height: 34,
-    backgroundColor: "#2a2a2a",
+    backgroundColor: "#575757",
   },
   ctaBtn: {
     borderRadius: 14,

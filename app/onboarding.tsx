@@ -239,6 +239,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [skillLevels, setSkillLevels] = useState<Record<string, number>>({
     coding: 0, dsa: 0, git: 0, web: 0, math: 0, systems: 0,
   });
+  const [isSkillPopupVisible, setIsSkillPopupVisible] = useState(false);
+  const hasShownSkillPopupRef = useRef(false);
   const containerBottomPadding = started ? (step <= 1 ? 120 : 180) : 48;
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
@@ -246,6 +248,9 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const exitFadeAnim = useRef(new Animated.Value(1)).current;
   const exitSlideAnim = useRef(new Animated.Value(0)).current;
   const majorSearchFocusAnim = useRef(new Animated.Value(0)).current;
+  const skillPopupBackdropAnim = useRef(new Animated.Value(0)).current;
+  const skillPopupOpacityAnim = useRef(new Animated.Value(0)).current;
+  const skillPopupScaleAnim = useRef(new Animated.Value(0.85)).current;
   const selectedMajorRowAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorLabelAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorAppearAnim = useRef(new Animated.Value(0)).current;
@@ -304,10 +309,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const filteredSchools = UNIVERSITIES.filter((school) =>
     school.toLowerCase().includes(normalizedSchoolQuery.toLowerCase())
   );
-  const hasExactSchoolMatch = UNIVERSITIES.some(
-    (school) => school.toLowerCase() === normalizedSchoolQuery.toLowerCase()
-  );
-  const canUseCustomSchool = normalizedSchoolQuery.length > 1 && !hasExactSchoolMatch;
+  const canUseCustomSchool = normalizedSchoolQuery.length > 1 && filteredSchools.length === 0;
 
   useEffect(() => {
     if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -404,8 +406,62 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   useEffect(() => {
     if (step !== 2) {
       setActiveSkillId(null);
+      setIsSkillPopupVisible(false);
+      skillPopupBackdropAnim.setValue(0);
     }
-  }, [step]);
+  }, [skillPopupBackdropAnim, step]);
+
+  useEffect(() => {
+    if (step === 2 && !hasShownSkillPopupRef.current) {
+      Animated.parallel([
+        Animated.timing(skillPopupBackdropAnim, {
+          toValue: 1,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(skillPopupScaleAnim, {
+          toValue: 1,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(skillPopupOpacityAnim, {
+          toValue: 1,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+      hasShownSkillPopupRef.current = true;
+      setIsSkillPopupVisible(true);
+    }
+  }, [skillPopupBackdropAnim, step, skillPopupOpacityAnim, skillPopupScaleAnim]);
+
+  function hideSkillPopup() {
+    Animated.parallel([
+      Animated.timing(skillPopupBackdropAnim, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(skillPopupScaleAnim, {
+        toValue: 0.88,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(skillPopupOpacityAnim, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsSkillPopupVisible(false);
+    });
+  }
 
   useEffect(() => {
     const hasSelectedMajor = selectedMajor.length > 0;
@@ -1113,13 +1169,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   </Pressable>
                 ))}
               </View>
-
-              {filteredSchools.length === 0 && (
-                <View style={styles.noMajorResultsCard}>
-                  <Text style={styles.noMajorResultsTitle}>No schools found</Text>
-                  <Text style={styles.noMajorResultsBody}>Try a different keyword or clear search to browse all options.</Text>
-                </View>
-              )}
             </>
           )}
 
@@ -1465,6 +1514,41 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           </Text>
         </Animated.View>
       )}
+
+      {isSkillPopupVisible && step === 2 && (
+        <Pressable style={styles.skillPopupBackdrop} onPress={hideSkillPopup}>
+          <Animated.View
+            style={[
+              styles.skillPopupBackdropFill,
+              {
+                opacity: skillPopupBackdropAnim,
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.skillPopupContainer,
+              {
+                opacity: skillPopupOpacityAnim,
+                transform: [{ scale: skillPopupScaleAnim }],
+              },
+            ]}
+            pointerEvents="box-none"
+          >
+            <View style={styles.skillPopup}>
+              <View style={styles.skillPopupHeader}>
+                <Text style={styles.skillPopupTitle}>Tap a level to rate yourself</Text>
+                <Pressable
+                  style={({ pressed }) => [styles.skillPopupCloseBtn, pressed && styles.skillPopupCloseBtnPressed]}
+                  onPress={hideSkillPopup}
+                >
+                  <Text style={styles.skillPopupCloseText}>CLOSE</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Animated.View>
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }
@@ -1747,7 +1831,7 @@ const styles = StyleSheet.create({
   },
   noMajorResultsTitle: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 18,
+    fontSize: 20,
     color: "#d4ddf0",
     marginBottom: 10,
     letterSpacing: 0.4,
@@ -1756,6 +1840,7 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 15,
     color: "#95a2bb",
+    letterSpacing: 0.5,
     lineHeight: 18,
   },
   skillCard: {
@@ -1782,16 +1867,16 @@ const styles = StyleSheet.create({
   },
   skillName: {
     fontFamily: "ClashGrotesk-Medium",
-    fontSize: 17,
+    fontSize: 18,
     color: "#e6ebf3",
   },
   skillHint: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 10,
-    color: "#8c96aa",
+    fontSize: 13,
+    color: "#7c5cff",
     marginTop: 2,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   skillDots: {
     flexDirection: "row",
@@ -1955,4 +2040,59 @@ const styles = StyleSheet.create({
     color: "#c8d0e0",
     lineHeight: 21,
   },
+  skillPopupBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+  },
+  skillPopupBackdropFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  skillPopupContainer: {
+    width: "100%",
+    paddingHorizontal: 24,
+  },
+  skillPopup: {
+    backgroundColor: "#141b29",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#7c5cff",
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    elevation: 100,
+  },
+  skillPopupHeader: {
+    flexDirection: "column",
+    alignItems: "center",
+    width: "100%",
+    gap: 12,
+  },
+  skillPopupTitle: {
+    fontFamily: "ClashGrotesk-SemiBold",
+    fontSize: 22,
+    color: "#f1f5ff",
+    letterSpacing: 0.3,
+    textAlign: "center",
+  },
+  skillPopupCloseBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: "#3a445b",
+  },
+  skillPopupCloseBtnPressed: {
+    opacity: 0.75,
+  },
+  skillPopupCloseText: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 13,
+    color: "#aeb8ce",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
 });
+

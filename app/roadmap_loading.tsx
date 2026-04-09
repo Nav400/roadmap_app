@@ -1,50 +1,89 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
   StyleSheet,
   SafeAreaView,
   Animated,
   Easing,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
 
 import { GradientBackground } from "@/components/gradient-background";
 
-const PHRASES = [
-  "Analyzing your profile...",
-  "Building your personalized path...",
-  "Gathering resources...",
-  "One more moment...",
-];
+function buildPhrases(profile: { year?: string; school?: string } | null) {
+  const year = profile?.year?.trim();
+  const school = profile?.school?.trim();
 
-export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () => void }) {
+  const yearLabel = year ? `${year}s` : "students";
+  const schoolLabel = school || "your school";
+
+  return [
+    "Matching your goals to real opportunities...",
+    `Checking what ${yearLabel} at ${schoolLabel} are doing...`,
+    "Building your personalized path...",
+    "Gathering resources...",
+  ];
+}
+
+export default function RoadmapLoadingScreen({
+  onComplete,
+  profile,
+}: {
+  onComplete: () => void;
+  profile: { year?: string; school?: string } | null;
+}) {
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const logoPulseAnim = useRef(new Animated.Value(0)).current;
   const exitOpacityAnim = useRef(new Animated.Value(1)).current;
   const exitTranslateYAnim = useRef(new Animated.Value(0)).current;
+  const phraseAnim = useRef(new Animated.Value(0)).current;
   const [phraseIndex, setPhraseIndex] = useState(0);
-  const [percentage, setPercentage] = useState(0);
+  const phrases = buildPhrases(profile);
 
   useEffect(() => {
-    const listener = progressAnim.addListener(({ value }) => {
-      setPercentage(Math.round(value));
-    });
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoPulseAnim, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoPulseAnim, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulseLoop.start();
 
     return () => {
-      progressAnim.removeListener(listener);
+      pulseLoop.stop();
     };
-  }, [progressAnim]);
+  }, [logoPulseAnim]);
+
+  useEffect(() => {
+    phraseAnim.setValue(0);
+    Animated.timing(phraseAnim, {
+      toValue: 1,
+      duration: 520,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [phraseAnim, phraseIndex]);
 
   useEffect(() => {
     const sequence = [
-      { toValue: 10, duration: 800 },
-      { toValue: 10, duration: 600 }, // pause
-      { toValue: 30, duration: 800 },
-      { toValue: 30, duration: 600 }, // pause
-      { toValue: 40, duration: 800 },
-      { toValue: 40, duration: 600 }, // pause
-      { toValue: 70, duration: 900 },
-      { toValue: 70, duration: 600 }, // pause
+      { toValue: 10, duration: 1000 },
+      { toValue: 10, duration: 1000 }, // pause
+      { toValue: 30, duration: 1000 },
+      { toValue: 30, duration: 1000 }, // pause
+      { toValue: 40, duration: 1000 },
+      { toValue: 40, duration: 1000 }, // pause
+      { toValue: 70, duration: 1100 },
+      { toValue: 70, duration: 1000 }, // pause
       { toValue: 100, duration: 1200 },
     ];
 
@@ -74,9 +113,11 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
 
       const step = sequence[currentIndex];
 
-      // Change phrase every 2 steps (roughly every 3 seconds)
-      if (currentIndex > 0 && currentIndex % 2 === 0 && phraseCounter < PHRASES.length - 1) {
+      // Change phrase every 2 steps (roughly every 2-3 seconds)
+      if (currentIndex > 0 && currentIndex % 2 === 0 && phraseCounter < phrases.length - 1) {
         phraseCounter++;
+        phraseAnim.stopAnimation();
+        phraseAnim.setValue(0);
         setPhraseIndex(phraseCounter);
       }
 
@@ -92,7 +133,7 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
     };
 
     playNextStep();
-  }, [exitOpacityAnim, exitTranslateYAnim, onComplete, progressAnim]);
+  }, [exitOpacityAnim, exitTranslateYAnim, onComplete, phraseAnim, phrases.length, progressAnim]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -106,42 +147,74 @@ export default function RoadmapLoadingScreen({ onComplete }: { onComplete: () =>
           },
         ]}
       >
-
-        <View style={styles.progressTrackContainer}>
+        <Animated.View
+          style={[
+            styles.loadingLogoWrap,
+            {
+              transform: [
+                {
+                  scale: logoPulseAnim.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0.96, 1.05, 0.96],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
           <Animated.View
+            pointerEvents="none"
             style={[
-              styles.progressFill,
+              styles.loadingGlow,
               {
-                width: progressAnim.interpolate({
-                  inputRange: [0, 100],
-                  outputRange: ["0%", "100%"],
+                opacity: logoPulseAnim.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [0, 0.7, 0],
                 }),
+                transform: [
+                  {
+                    scale: logoPulseAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1.22],
+                    }),
+                  },
+                ],
               },
             ]}
-          >
-            <LinearGradient
-              colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-          </Animated.View>
-        </View>
-
-        <Text style={styles.percentage}>{percentage}%</Text>
+          />
+          <Image
+            source={require("../app_icon.png")}
+            style={styles.loadingLogo}
+            contentFit="contain"
+          />
+        </Animated.View>
 
         <Animated.Text
           style={[
             styles.phrase,
             {
-              opacity: progressAnim.interpolate({
-                inputRange: [0, 15, 25, 35, 50, 65, 80, 100],
-                outputRange: [1, 0.7, 1, 0.7, 1, 0.7, 1, 0.9],
+              transform: [
+                {
+                  translateY: phraseAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [14, 0],
+                  }),
+                },
+                {
+                  scale: phraseAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.975, 1],
+                  }),
+                },
+              ],
+              opacity: phraseAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 1],
               }),
             },
           ]}
         >
-          {PHRASES[phraseIndex]}
+          {phrases[phraseIndex]}
         </Animated.Text>
       </Animated.View>
     </SafeAreaView>
@@ -159,6 +232,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 28,
   },
+  loadingLogoWrap: {
+    width: 154,
+    height: 154,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 18,
+  },
+  loadingGlow: {
+    position: "absolute",
+    width: 154,
+    height: 154,
+    borderRadius: 44,
+    backgroundColor: "rgba(124, 92, 255, 0.2)",
+    shadowColor: "#7c5cff",
+    shadowOpacity: 0.58,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 20,
+  },
   title: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 28,
@@ -167,34 +259,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 0.5,
   },
-  progressTrackContainer: {
-    width: "100%",
-    height: 14,
-    borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  loadingLogo: {
+    width: 110,
+    height: 110,
+    borderRadius: 28,
     overflow: "hidden",
-    marginBottom: 7,
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "transparent",
-    borderRadius: 4,
   },
   phrase: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 18,
+    fontSize: 20,
     color: "#b7adff",
     textAlign: "center",
-    minHeight: 22,
+    minHeight: 24,
+    letterSpacing: 0.6,
     marginBottom: 24,
-  },
-  percentage: {
-    fontFamily: "ClashGrotesk-Bold",
-    fontSize: 18,
-    color: "#aab3c3",
-    width: "100%",
-    textAlign: "right",
-    marginTop: 6,
-    marginBottom: 15,
   },
 });
