@@ -9,13 +9,17 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
   const [milestoneReady, setMilestoneReady] = useState(false);
   const [showMilestoneContent, setShowMilestoneContent] = useState(false);
   const [hidePreReveal, setHidePreReveal] = useState(false);
-  const exitFadeAnim = useRef(new Animated.Value(1)).current;
-  const exitSlideAnim = useRef(new Animated.Value(0)).current;
   const milestoneProgressAnim = useRef(new Animated.Value(0)).current;
   const preRevealOpacity = useRef(new Animated.Value(1)).current;
   const preRevealTranslateY = useRef(new Animated.Value(0)).current;
   const milestoneContentOpacity = useRef(new Animated.Value(0)).current;
   const milestoneContentTranslateY = useRef(new Animated.Value(10)).current;
+  const milestonePopupScale = useRef(new Animated.Value(0.96)).current;
+  const milestonePopupRotate = useRef(new Animated.Value(0)).current;
+  const ripplePrimaryOpacity = useRef(new Animated.Value(0)).current;
+  const ripplePrimaryScale = useRef(new Animated.Value(0.24)).current;
+  const celebrationSparkleAnim = useRef(new Animated.Value(0)).current;
+  const milestoneTitlePulse = useRef(new Animated.Value(0.96)).current;
 
   const avgSkill = Object.values(profile.skills as Record<string, number>).reduce((a, b) => a + b, 0) / 6;
   const level = avgSkill < 1.5 ? "Beginner" : avgSkill < 2.8 ? "Intermediate" : "Advanced";
@@ -74,6 +78,15 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
     }
 
     setShowMilestoneContent(true);
+    milestoneContentOpacity.setValue(0);
+    milestoneContentTranslateY.setValue(28);
+    milestonePopupScale.setValue(0.86);
+    milestonePopupRotate.setValue(-1.8);
+    ripplePrimaryOpacity.setValue(0);
+    ripplePrimaryScale.setValue(0.24);
+    celebrationSparkleAnim.setValue(0);
+    milestoneTitlePulse.setValue(0.96);
+
     Animated.parallel([
       Animated.timing(preRevealOpacity, {
         toValue: 0,
@@ -89,21 +102,105 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
       }),
       Animated.timing(milestoneContentOpacity, {
         toValue: 1,
-        duration: 360,
+        duration: 260,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.sequence([
+        Animated.timing(milestoneContentTranslateY, {
+          toValue: -8,
+          duration: 300,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(milestoneContentTranslateY, {
+          toValue: 0,
+          friction: 7,
+          tension: 95,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(milestonePopupScale, {
+          toValue: 1.06,
+          duration: 300,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(milestonePopupScale, {
+          toValue: 1,
+          friction: 7,
+          tension: 95,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(milestonePopupRotate, {
+          toValue: 0.5,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(milestonePopupRotate, {
+          toValue: 0,
+          duration: 220,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(ripplePrimaryOpacity, {
+            toValue: 0.82,
+            duration: 620,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(ripplePrimaryOpacity, {
+            toValue: 0,
+            duration: 5000,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(ripplePrimaryScale, {
+          toValue: 2.7,
+          duration: 5600,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(celebrationSparkleAnim, {
+        toValue: 1,
+        duration: 760,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(milestoneContentTranslateY, {
-        toValue: 0,
-        duration: 360,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
+      Animated.sequence([
+        Animated.timing(milestoneTitlePulse, {
+          toValue: 1.08,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(milestoneTitlePulse, {
+          toValue: 1,
+          friction: 6,
+          tension: 95,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start(() => {
       setHidePreReveal(true);
     });
   }, [
+    celebrationSparkleAnim,
+    milestoneTitlePulse,
     milestoneReady,
+    milestonePopupScale,
+    milestonePopupRotate,
+    ripplePrimaryOpacity,
+    ripplePrimaryScale,
     preRevealOpacity,
     preRevealTranslateY,
     milestoneContentOpacity,
@@ -121,15 +218,39 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
 
     setIsTransitioning(true);
     Animated.parallel([
-      Animated.timing(exitFadeAnim, {
+      Animated.timing(milestoneContentOpacity, {
         toValue: 0,
-        duration: 420,
+        duration: 300,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(exitSlideAnim, {
-        toValue: 18,
-        duration: 420,
+      Animated.timing(milestoneContentTranslateY, {
+        toValue: 16,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(milestonePopupScale, {
+        toValue: 0.97,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(milestonePopupRotate, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(ripplePrimaryOpacity, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(celebrationSparkleAnim, {
+        toValue: 0,
+        duration: 180,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
@@ -141,93 +262,190 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
   return (
     <SafeAreaView style={styles.safe}>
       <GradientBackground variant="soft" />
-      <Animated.View
-        style={{
-          flex: 1,
-          opacity: exitFadeAnim,
-          transform: [{ translateY: exitSlideAnim }],
-        }}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          {!hidePreReveal && (
-            <Animated.View
-              style={[
-                styles.preRevealStage,
-                {
+      <View style={styles.screenContent}>
+        {!hidePreReveal && (
+          <Animated.View
+            style={[
+              styles.preRevealStage,
+              {
                 opacity: preRevealOpacity,
                 transform: [{ translateY: preRevealTranslateY }],
+              },
+            ]}
+          >
+            <View style={styles.preRevealTrack}>
+              <Animated.View
+                style={[
+                  styles.preRevealFill,
+                  {
+                    width: milestoneProgressAnim.interpolate({
+                      inputRange: [0, 100],
+                      outputRange: ["0%", "100%"],
+                    }),
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+              </Animated.View>
+            </View>
+            <Text style={styles.preRevealText}>Pinpointing your biggest milestone...</Text>
+          </Animated.View>
+        )}
+
+        {showMilestoneContent && (
+          <Animated.View style={[styles.popupBackdrop, { opacity: milestoneContentOpacity }]}>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.rippleLayer,
+                {
+                  opacity: ripplePrimaryOpacity,
+                  transform: [{ scale: ripplePrimaryScale }],
+                },
+              ]}
+            />
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.sparkleDot,
+                styles.sparkleDotOne,
+                {
+                  opacity: celebrationSparkleAnim.interpolate({
+                    inputRange: [0, 0.2, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    {
+                      translateY: celebrationSparkleAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -38],
+                      }),
+                    },
+                    {
+                      scale: celebrationSparkleAnim.interpolate({
+                        inputRange: [0, 0.4, 1],
+                        outputRange: [0.6, 1.05, 0.86],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.sparkleDot,
+                styles.sparkleDotTwo,
+                {
+                  opacity: celebrationSparkleAnim.interpolate({
+                    inputRange: [0, 0.25, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    {
+                      translateY: celebrationSparkleAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -52],
+                      }),
+                    },
+                    {
+                      scale: celebrationSparkleAnim.interpolate({
+                        inputRange: [0, 0.45, 1],
+                        outputRange: [0.55, 1, 0.8],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.sparkleDot,
+                styles.sparkleDotThree,
+                {
+                  opacity: celebrationSparkleAnim.interpolate({
+                    inputRange: [0, 0.3, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    {
+                      translateY: celebrationSparkleAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -44],
+                      }),
+                    },
+                    {
+                      scale: celebrationSparkleAnim.interpolate({
+                        inputRange: [0, 0.4, 1],
+                        outputRange: [0.5, 0.95, 0.75],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.popupCard,
+                {
+                  transform: [
+                    { translateY: milestoneContentTranslateY },
+                    { scale: milestonePopupScale },
+                    {
+                      rotate: milestonePopupRotate.interpolate({
+                        inputRange: [-2, 2],
+                        outputRange: ["-2deg", "2deg"],
+                      }),
+                    },
+                  ],
                 },
               ]}
             >
-              <View style={styles.preRevealTrack}>
-                <Animated.View
-                  style={[
-                    styles.preRevealFill,
-                    {
-                      width: milestoneProgressAnim.interpolate({
-                        inputRange: [0, 100],
-                        outputRange: ["0%", "100%"],
-                      }),
-                    },
-                  ]}
+              <ScrollView style={styles.popupScroll} contentContainerStyle={styles.popupScrollContent} showsVerticalScrollIndicator={false}>
+                <Animated.Text style={[styles.title, { transform: [{ scale: milestoneTitlePulse }] }]}>HERE&apos;S YOUR FIRST MOVE</Animated.Text>
+                <Text style={styles.subtitle}>Based on your answers, this is the highest-impact step to start with.</Text>
+
+                <View style={styles.levelPill}>
+                  <Text style={styles.levelPillText}>{level}</Text>
+                </View>
+
+                <View style={styles.priorityCard}>
+                  <Text style={styles.sectionLabel}>BIGGEST MILESTONE</Text>
+                  <Text style={styles.milestone}>{firstMilestone}</Text>
+                </View>
+
+                <View style={styles.reasonCard}>
+                  <Text style={styles.sectionLabel}>WHY THIS FIRST</Text>
+                  <Text style={styles.reason}>{reason}</Text>
+                </View>
+              </ScrollView>
+
+              <View style={styles.popupFooter}>
+                <Pressable
+                  style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
+                  onPress={handleContinueWithAnimation}
+                  disabled={isTransitioning}
+                >
+                  <LinearGradient
+                    colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={styles.ctaGradient}
                   >
-                    <LinearGradient
-                      colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
-                      start={{ x: 0, y: 0.5 }}
-                      end={{ x: 1, y: 0.5 }}
-                      style={StyleSheet.absoluteFillObject}
-                    />
-                  </Animated.View>
-              </View>
-              <Text style={styles.preRevealText}>Pinpointing your biggest milestone...</Text>
-            </Animated.View>
-          )}
-
-          {showMilestoneContent && (
-            <Animated.View
-              style={{
-                opacity: milestoneContentOpacity,
-                transform: [{ translateY: milestoneContentTranslateY }],
-              }}
-            >
-              <Text style={styles.title}>HERE&apos;S YOUR FIRST MOVE</Text>
-              <Text style={styles.subtitle}>Based on your answers, this is the highest-impact step to start with.</Text>
-
-              <View style={styles.levelPill}>
-                <Text style={styles.levelPillText}>{level}</Text>
-              </View>
-
-              <View style={styles.priorityCard}>
-                <Text style={styles.sectionLabel}>BIGGEST MILESTONE</Text>
-                <Text style={styles.milestone}>{firstMilestone}</Text>
-              </View>
-
-              <View style={styles.reasonCard}>
-                <Text style={styles.sectionLabel}>WHY THIS FIRST</Text>
-                <Text style={styles.reason}>{reason}</Text>
+                    <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
+                  </LinearGradient>
+                </Pressable>
               </View>
             </Animated.View>
-          )}
-        </ScrollView>
-        {showMilestoneContent && (
-          <View style={styles.buttonContainer}>
-            <Pressable
-              style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
-              onPress={handleContinueWithAnimation}
-              disabled={isTransitioning}
-            >
-              <LinearGradient
-                colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.ctaGradient}
-              >
-                <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
-              </LinearGradient>
-            </Pressable>
-          </View>
+          </Animated.View>
         )}
-      </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -237,16 +455,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "transparent",
   },
-  scrollContainer: {
-    flexGrow: 1,
+  screenContent: {
+    flex: 1,
     padding: 24,
-    paddingBottom: 24,
-  },
-  buttonContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    paddingBottom: 28,
-    backgroundColor: "transparent",
   },
   progressLabel: {
     fontFamily: "ClashGrotesk-Semibold",
@@ -287,18 +498,84 @@ const styles = StyleSheet.create({
     color: "#ddd6ff",
   },
   preRevealStage: {
-    flexGrow: 1,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    minHeight: 420,
+  },
+  popupBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(8, 11, 17, 0.62)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+  },
+  popupCard: {
+    width: "100%",
+    maxHeight: "86%",
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#2c3343",
+    backgroundColor: "#111724",
+    overflow: "hidden",
+  },
+  rippleLayer: {
+    position: "absolute",
+    width: 980,
+    height: 980,
+    borderRadius: 490,
+    backgroundColor: "rgba(165, 138, 255, 0.22)",
+    top: "50%",
+    left: "50%",
+    marginLeft: -490,
+    marginTop: -490,
+  },
+  sparkleDot: {
+    position: "absolute",
+    borderRadius: 999,
+    backgroundColor: "#d5c8ff",
+  },
+  sparkleDotOne: {
+    width: 10,
+    height: 10,
+    left: "22%",
+    top: "28%",
+  },
+  sparkleDotTwo: {
+    width: 14,
+    height: 14,
+    right: "22%",
+    top: "26%",
+    backgroundColor: "#bfa6ff",
+  },
+  sparkleDotThree: {
+    width: 8,
+    height: 8,
+    right: "33%",
+    top: "32%",
+    backgroundColor: "#f0e8ff",
+  },
+  popupScroll: {
+    flexGrow: 0,
+  },
+  popupScrollContent: {
+    padding: 18,
+    paddingBottom: 12,
+  },
+  popupFooter: {
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 18,
+    borderTopWidth: 1,
+    borderTopColor: "#242b3a",
+    backgroundColor: "#111724",
   },
   sectionLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 17,
+    fontSize: 20,
     color: "#b7adff",
-    letterSpacing: 0.7,
+    letterSpacing: 1,
     textTransform: "uppercase",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   priorityCard: {
     borderRadius: 18,

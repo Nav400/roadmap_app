@@ -150,6 +150,51 @@ const MAJORS = [
   "Undecided / Exploring",
 ];
 const YEARS = ["Freshman", "Sophomore", "Junior", "Senior"];
+const UNIVERSITIES = [
+  "Arizona State University",
+  "Boston University",
+  "Brown University",
+  "California Institute of Technology",
+  "Carnegie Mellon University",
+  "Columbia University",
+  "Cornell University",
+  "Duke University",
+  "Emory University",
+  "Florida State University",
+  "Georgia Institute of Technology",
+  "Harvard University",
+  "Indiana University Bloomington",
+  "Johns Hopkins University",
+  "Massachusetts Institute of Technology",
+  "New York University",
+  "North Carolina State University",
+  "Northwestern University",
+  "Ohio State University",
+  "Pennsylvania State University",
+  "Princeton University",
+  "Purdue University",
+  "Stanford University",
+  "Texas A&M University",
+  "University of California, Berkeley",
+  "University of California, Davis",
+  "University of California, Irvine",
+  "University of California, Los Angeles",
+  "University of California, San Diego",
+  "University of Chicago",
+  "University of Florida",
+  "University of Illinois Urbana-Champaign",
+  "University of Maryland, College Park",
+  "University of Michigan",
+  "University of North Carolina at Chapel Hill",
+  "University of Pennsylvania",
+  "University of Southern California",
+  "University of Texas at Austin",
+  "University of Washington",
+  "University of Wisconsin-Madison",
+  "Vanderbilt University",
+  "Virginia Tech",
+  "Yale University",
+];
 const GOALS = ["Get a SWE internship", "Do research", "Build a startup", "Go to grad school", "Work in ML/AI"];
 const SKILLS = [
   { id: "coding", label: "Coding Languages" },
@@ -180,7 +225,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [selectedMajor, setSelectedMajor] = useState("");
   const [majorQuery, setMajorQuery] = useState("");
   const [isMajorSearchFocused, setIsMajorSearchFocused] = useState(false);
-  const [selectedYear, setSelectedYear] = useState("Freshman");
+  const [selectedSchool, setSelectedSchool] = useState("");
+  const [schoolQuery, setSchoolQuery] = useState("");
+  const [isSchoolSearchFocused, setIsSchoolSearchFocused] = useState(false);
+  const [selectedYear, setSelectedYear] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(startAtQuestions);
@@ -202,6 +250,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const selectedMajorLabelAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorAppearAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorTapAnim = useRef(new Animated.Value(0)).current;
+  const selectedSchoolRowAnim = useRef(new Animated.Value(0)).current;
+  const selectedSchoolAppearAnim = useRef(new Animated.Value(0)).current;
+  const schoolSearchFocusAnim = useRef(new Animated.Value(0)).current;
+  const yearRevealAnim = useRef(new Animated.Value(0)).current;
   const nextBtnEnableAnim = useRef(new Animated.Value(0)).current;
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
   const pillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
@@ -243,10 +295,19 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const activeSkillRef = useRef<string | null>(null);
   const prevStepRef = useRef(0);
   const prevSelectedMajorRef = useRef("");
+  const prevSelectedSchoolRef = useRef("");
   const hasPlayedSelectedMajorLabelIntroRef = useRef(false);
   const filteredMajors = MAJORS.filter((major) =>
     major.toLowerCase().includes(majorQuery.trim().toLowerCase())
   );
+  const normalizedSchoolQuery = schoolQuery.trim();
+  const filteredSchools = UNIVERSITIES.filter((school) =>
+    school.toLowerCase().includes(normalizedSchoolQuery.toLowerCase())
+  );
+  const hasExactSchoolMatch = UNIVERSITIES.some(
+    (school) => school.toLowerCase() === normalizedSchoolQuery.toLowerCase()
+  );
+  const canUseCustomSchool = normalizedSchoolQuery.length > 1 && !hasExactSchoolMatch;
 
   useEffect(() => {
     if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -395,6 +456,33 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   ]);
 
   useEffect(() => {
+    const hasSelectedSchool = selectedSchool.length > 0;
+
+    Animated.timing(selectedSchoolRowAnim, {
+      toValue: hasSelectedSchool ? 1 : 0,
+      duration: hasSelectedSchool ? 320 : 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+
+    if (hasSelectedSchool && selectedSchool !== prevSelectedSchoolRef.current) {
+      selectedSchoolAppearAnim.setValue(0);
+      Animated.spring(selectedSchoolAppearAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 85,
+        useNativeDriver: true,
+      }).start();
+    }
+
+    if (!hasSelectedSchool) {
+      selectedSchoolAppearAnim.setValue(0);
+    }
+
+    prevSelectedSchoolRef.current = selectedSchool;
+  }, [selectedSchool, selectedSchoolAppearAnim, selectedSchoolRowAnim]);
+
+  useEffect(() => {
     Animated.spring(majorSearchFocusAnim, {
       toValue: isMajorSearchFocused ? 1 : 0,
       friction: 8,
@@ -404,17 +492,43 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [isMajorSearchFocused, majorSearchFocusAnim]);
 
   useEffect(() => {
+    Animated.spring(schoolSearchFocusAnim, {
+      toValue: isSchoolSearchFocused ? 1 : 0,
+      friction: 8,
+      tension: 90,
+      useNativeDriver: true,
+    }).start();
+  }, [isSchoolSearchFocused, schoolSearchFocusAnim]);
+
+  useEffect(() => {
+    Animated.timing(yearRevealAnim, {
+      toValue: selectedSchool.trim().length > 0 ? 1 : 0,
+      duration: selectedSchool.trim().length > 0 ? 380 : 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [selectedSchool, yearRevealAnim]);
+
+  useEffect(() => {
     const hasMajorSelection = selectedMajor.trim().length > 0;
+    const hasSchoolSelection = selectedSchool.trim().length > 0;
+    const hasYearSelection = selectedYear.trim().length > 0;
     const hasGoalSelection = selectedGoals.length > 0;
     const shouldEnableNext =
-      step === 0 ? hasMajorSelection : step === TOTAL_STEPS - 1 ? hasGoalSelection : true;
+      step === 0
+        ? hasMajorSelection
+        : step === 1
+        ? hasSchoolSelection && hasYearSelection
+        : step === TOTAL_STEPS - 1
+        ? hasGoalSelection
+        : true;
     Animated.timing(nextBtnEnableAnim, {
       toValue: shouldEnableNext ? 1 : 0,
       duration: 360,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-  }, [TOTAL_STEPS, nextBtnEnableAnim, selectedGoals.length, selectedMajor, step]);
+  }, [TOTAL_STEPS, nextBtnEnableAnim, selectedGoals.length, selectedMajor, selectedSchool, selectedYear, step]);
 
   function animateSelectedMajorTap() {
     selectedMajorTapAnim.setValue(0);
@@ -532,6 +646,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     ]).start(() => {
       onComplete({
         major: selectedMajor,
+        school: selectedSchool,
         year: selectedYear,
         goals: selectedGoals,
         skills: skillLevels,
@@ -547,6 +662,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     }
 
     if (step === 0 && selectedMajor.trim().length === 0) {
+      return;
+    }
+
+    if (step === 1 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) {
       return;
     }
 
@@ -576,7 +695,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
   function getStepTitle() {
     if (step === 0) return "What's your major?";
-    if (step === 1) return "What year are you in?";
+    if (step === 1) return "Where do you study?";
     if (step === 2) return "Rate your current skills";
     return "WHAT ARE YOUR GOALS?";
   }
@@ -596,7 +715,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (step === 1) {
       return (
         <View style={styles.titleContainer}>
-          <Text style={styles.titleSmallRest}>WHAT YEAR ARE YOU IN?</Text>
+          <Text style={styles.titleSmallRest}>WHERE DO YOU STUDY?</Text>
         </View>
       );
     }
@@ -614,6 +733,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const isNextDisabled =
     isTransitioning ||
     (step === 0 && selectedMajor.trim().length === 0) ||
+    (step === 1 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) ||
     (step === TOTAL_STEPS - 1 && selectedGoals.length === 0);
   const nextBtnTextColor = nextBtnEnableAnim.interpolate({
     inputRange: [0, 1],
@@ -823,7 +943,203 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (step === 1) {
       return (
         <>
-          <View style={styles.yearGroup}>
+          <Animated.View
+            pointerEvents={selectedSchool.length > 0 ? "auto" : "none"}
+            style={[
+              styles.selectedMajorShell,
+              {
+                opacity: selectedSchoolRowAnim,
+                marginTop: selectedSchoolRowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 8],
+                }),
+                marginBottom: selectedSchoolRowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 8],
+                }),
+                transform: [
+                  {
+                    translateY: selectedSchoolRowAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-6, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            {selectedSchool.length > 0 && (
+              <View style={styles.selectedMajorRow}>
+                <Text style={styles.selectedMajorLabel}>Selected school:</Text>
+                <Animated.View
+                  style={{
+                    opacity: selectedSchoolAppearAnim,
+                    transform: [
+                      {
+                        translateY: selectedSchoolAppearAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-8, 0],
+                        }),
+                      },
+                      {
+                        scale: selectedSchoolAppearAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.97, 1],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <Pressable
+                    style={({ pressed }) => [styles.selectedMajorPill, pressed && styles.selectedMajorPillPressed]}
+                    onPress={() => {
+                      setSelectedSchool("");
+                      setSelectedYear("");
+                      setSchoolQuery("");
+                    }}
+                  >
+                    <Text style={styles.selectedMajorPillText}>{selectedSchool}</Text>
+                  </Pressable>
+                </Animated.View>
+              </View>
+            )}
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.majorSearchShell,
+              {
+                transform: [
+                  {
+                    scale: schoolSearchFocusAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 1.015],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.majorSearch,
+                isSchoolSearchFocused && styles.majorSearchFocused,
+              ]}
+            >
+              <MaterialIcons name="search" size={20} color="#8e98b0" style={styles.majorSearchIcon} />
+              <TextInput
+                value={schoolQuery}
+                onChangeText={setSchoolQuery}
+                onFocus={() => setIsSchoolSearchFocused(true)}
+                onBlur={() => setIsSchoolSearchFocused(false)}
+                placeholder="Search college or university"
+                placeholderTextColor="#6e7790"
+                style={styles.majorSearchInput}
+                autoCorrect={false}
+                autoCapitalize="words"
+                returnKeyType="search"
+              />
+              {schoolQuery.length > 0 && (
+                <Pressable
+                  style={({ pressed }) => [styles.majorSearchClearBtn, pressed && styles.majorSearchClearBtnPressed]}
+                  onPress={() => setSchoolQuery("")}
+                >
+                  <Text style={styles.majorSearchClearText}>Clear</Text>
+                </Pressable>
+              )}
+            </View>
+          </Animated.View>
+
+          {schoolQuery.trim().length > 0 && (
+            <>
+              <View style={styles.schoolGroup}>
+                {canUseCustomSchool && (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.schoolOption,
+                      styles.schoolCustomOption,
+                      pressed && styles.yearPillPressed,
+                    ]}
+                    onPress={() => {
+                      LayoutAnimation.configureNext({
+                        duration: 360,
+                        create: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                          property: LayoutAnimation.Properties.opacity,
+                        },
+                        update: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                        },
+                        delete: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                          property: LayoutAnimation.Properties.opacity,
+                        },
+                      });
+                      setSelectedSchool(normalizedSchoolQuery);
+                      setSchoolQuery("");
+                    }}
+                  >
+                    <Text style={styles.schoolCustomLabel}>Use &quot;{normalizedSchoolQuery}&quot;</Text>
+                  </Pressable>
+                )}
+                {filteredSchools.map((school) => (
+                  <Pressable
+                    key={school}
+                    style={({ pressed }) => [
+                      styles.schoolOption,
+                      selectedSchool === school && styles.pillSelected,
+                      pressed && styles.yearPillPressed,
+                    ]}
+                    onPress={() => {
+                      LayoutAnimation.configureNext({
+                        duration: 360,
+                        create: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                          property: LayoutAnimation.Properties.opacity,
+                        },
+                        update: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                        },
+                        delete: {
+                          type: LayoutAnimation.Types.easeInEaseOut,
+                          property: LayoutAnimation.Properties.opacity,
+                        },
+                      });
+                      setSelectedSchool(school);
+                      setSchoolQuery("");
+                    }}
+                  >
+                    <Text style={[styles.schoolOptionText, selectedSchool === school && styles.pillTextSelected]}>{school}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {filteredSchools.length === 0 && (
+                <View style={styles.noMajorResultsCard}>
+                  <Text style={styles.noMajorResultsTitle}>No schools found</Text>
+                  <Text style={styles.noMajorResultsBody}>Try a different keyword or clear search to browse all options.</Text>
+                </View>
+              )}
+            </>
+          )}
+
+          <Animated.View
+            pointerEvents={selectedSchool.length > 0 ? "auto" : "none"}
+            style={[
+              styles.yearGroup,
+              {
+                opacity: yearRevealAnim,
+                transform: [
+                  {
+                    translateY: yearRevealAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [16, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             {YEARS.map((y) => {
               const scaleAnim = getYearPillScaleAnim(y);
               return (
@@ -860,12 +1176,12 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                     }}
                     onPress={() => setSelectedYear(y)}
                   >
-                    <Text style={[styles.pillText, selectedYear === y && styles.pillTextSelected]}>{y}</Text>
+                    <Text style={[styles.yearPillText, selectedYear === y && styles.pillTextSelected]}>{y}</Text>
                   </Pressable>
                 </Animated.View>
               );
             })}
-          </View>
+          </Animated.View>
         </>
       );
     }
@@ -1342,11 +1658,49 @@ const styles = StyleSheet.create({
   yearGroup: {
     flexDirection: "column",
     gap: 10,
+    marginTop: 30,
     marginBottom: 24,
+  },
+  schoolGroup: {
+    gap: 10,
+    marginBottom: 16,
+  },
+  schoolOption: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#3a404d",
+    backgroundColor: "#181c24",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  schoolOptionText: {
+    fontFamily: "ClashGrotesk-Medium",
+    fontSize: 16,
+    color: "#b0b9c8",
+  },
+  schoolCustomOption: {
+    borderColor: "#506087",
+    backgroundColor: "#182034",
+  },
+  schoolCustomLabel: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 16,
+    letterSpacing: 0.8,
+    color: "#d6deff",
+  },
+  yearPromptCard: {
+    marginTop: 2,
+    marginBottom: 18,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#2c3548",
+    backgroundColor: "#121723",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   yearPill: {
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#3a404d",
@@ -1359,6 +1713,11 @@ const styles = StyleSheet.create({
   },
   yearPillPressed: {
     opacity: 0.85,
+  },
+  yearPillText: {
+    fontFamily: "ClashGrotesk-Medium",
+    fontSize: 20,
+    color: "#b0b9c8",
   },
   pillPressed: {
     opacity: 0.8,
@@ -1512,6 +1871,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
+    paddingBottom: 5,
     textTransform: "uppercase",
     alignItems: "flex-start",
     justifyContent: "center",
