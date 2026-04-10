@@ -1706,7 +1706,7 @@ const styles = StyleSheet.create({
   yearGroup: {
     flexDirection: "column",
     gap: 10,
-    marginTop: 30,
+    marginTop: 50,
     marginBottom: 24,
   },
   schoolGroup: {
