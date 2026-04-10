@@ -212,6 +212,7 @@ const SKILL_DESCRIPTIONS: Record<string, string> = {
   math: "Discrete math topics like logic, sets, combinatorics, and proofs used in CS courses.",
   systems: "Operating systems and systems concepts including processes, memory, concurrency, and performance.",
 };
+
 const LEVEL_LABELS = ["None", "Heard of it", "Beginner", "Comfortable", "Strong"];
 const SKILL_SHEET_HEIGHT = 220;
 
@@ -230,6 +231,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [isSchoolSearchFocused, setIsSchoolSearchFocused] = useState(false);
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [customGoalInput, setCustomGoalInput] = useState("");
+  const [customGoals, setCustomGoals] = useState<string[]>([]);
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(startAtQuestions);
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
@@ -264,6 +267,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const pillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const yearPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const goalPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const customGoalAppearAnimsRef = useRef<Record<string, Animated.Value>>({});
   const skillDotTapAnimsRef = useRef<Record<string, Animated.Value>>({});
   const skillLabelAnimsRef = useRef<Record<string, Animated.Value>>({});
   const getPillScaleAnim = (major: string) => {
@@ -283,6 +287,12 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       goalPillScaleAnimsRef.current[goal] = new Animated.Value(1);
     }
     return goalPillScaleAnimsRef.current[goal];
+  };
+  const getCustomGoalAppearAnim = (goal: string) => {
+    if (!customGoalAppearAnimsRef.current[goal]) {
+      customGoalAppearAnimsRef.current[goal] = new Animated.Value(1);
+    }
+    return customGoalAppearAnimsRef.current[goal];
   };
   const getSkillDotTapAnim = (skillId: string, dot: number) => {
     const key = `${skillId}-${dot}`;
@@ -386,8 +396,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       skillSheetTranslateY.setValue(SKILL_SHEET_HEIGHT + 56);
       Animated.spring(skillSheetTranslateY, {
         toValue: 0,
-        friction: 8,
-        tension: 90,
+        friction: 12,
+        tension: 68,
         useNativeDriver: true,
       }).start();
       return;
@@ -395,7 +405,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     Animated.timing(skillSheetTranslateY, {
       toValue: SKILL_SHEET_HEIGHT + 56,
-      duration: 220,
+      duration: 400,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start(() => {
@@ -608,6 +618,41 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     setSelectedGoals((prev) =>
       prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
     );
+  }
+
+  function addCustomGoal() {
+    const rawGoal = customGoalInput.trim();
+    if (!rawGoal) {
+      return;
+    }
+
+    const allGoals = [...GOALS, ...customGoals];
+    const existingGoal = allGoals.find((goal) => goal.toLowerCase() === rawGoal.toLowerCase());
+    const goalToSelect = existingGoal ?? rawGoal;
+
+    if (!existingGoal) {
+      customGoalAppearAnimsRef.current[rawGoal] = new Animated.Value(0);
+      setCustomGoals((prev) => [...prev, rawGoal]);
+
+      requestAnimationFrame(() => {
+        const appearAnim = customGoalAppearAnimsRef.current[rawGoal];
+        if (!appearAnim) {
+          return;
+        }
+
+        Animated.parallel([
+          Animated.timing(appearAnim, {
+            toValue: 1,
+            duration: 420,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    }
+
+    setSelectedGoals((prev) => (prev.includes(goalToSelect) ? prev : [...prev, goalToSelect]));
+    setCustomGoalInput("");
   }
 
   function setSkillLevel(id: string, level: number) {
@@ -1238,92 +1283,95 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (step === 2) {
       return (
         <>
-          {SKILLS.map((skill) => (
-            <View key={skill.id} style={styles.skillCard}>
-              <View style={styles.skillHeaderRow}>
-                <Pressable
-                  style={({ pressed }) => [styles.skillNameBtn, pressed && styles.skillNameBtnPressed]}
-                  onPress={() => toggleSkillSheet(skill.id)}
-                >
-                  <Text style={styles.skillName}>{skill.label}</Text>
-                  <Text style={styles.skillHint}>tap for description</Text>
-                </Pressable>
-                <Animated.Text
-                  style={[
-                    styles.skillLevelLabel,
-                    {
-                      opacity: getSkillLabelAnim(skill.id).interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [1, 0.85],
-                      }),
-                      transform: [
-                        {
-                          translateY: getSkillLabelAnim(skill.id).interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0, -2],
-                          }),
-                        },
-                        {
-                          scale: getSkillLabelAnim(skill.id).interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [1, 1.05],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  {LEVEL_LABELS[skillLevels[skill.id]]}
-                </Animated.Text>
-              </View>
-              <View style={styles.skillDots}>
-                {[1, 2, 3, 4].map((dot) => {
-                  const tapAnim = getSkillDotTapAnim(skill.id, dot);
-                  return (
-                    <Animated.View
-                      key={dot}
-                      style={[
-                        styles.dotWrap,
-                        {
-                          transform: [
-                            {
-                              translateY: tapAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0, -1],
-                              }),
-                            },
-                            {
-                              scale: tapAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [1, 1.045],
-                              }),
-                            },
-                          ],
-                        },
-                      ]}
-                    >
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.dot,
-                          skillLevels[skill.id] >= dot && styles.dotFilled,
-                          pressed && styles.dotPressed,
+          {SKILLS.map((skill) => {
+            const currentLevel = skillLevels[skill.id] ?? 0;
+
+            return (
+              <View key={skill.id} style={styles.skillCard}>
+                <View style={styles.skillHeaderRow}>
+                  <Pressable
+                    style={({ pressed }) => [styles.skillNameBtn, pressed && styles.skillNameBtnPressed]}
+                    onPress={() => toggleSkillSheet(skill.id)}
+                  >
+                    <Text style={styles.skillName}>{skill.label}</Text>
+                    <Text style={styles.skillHint}>tap for description</Text>
+                  </Pressable>
+                  <Animated.Text
+                    style={[
+                      styles.skillLevelLabel,
+                      {
+                        opacity: getSkillLabelAnim(skill.id).interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 0.85],
+                        }),
+                        transform: [
+                          {
+                            translateY: getSkillLabelAnim(skill.id).interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, -2],
+                            }),
+                          },
+                          {
+                            scale: getSkillLabelAnim(skill.id).interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [1, 1.05],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    {LEVEL_LABELS[currentLevel]}
+                  </Animated.Text>
+                </View>
+                <View style={styles.skillDots}>
+                  {[1, 2, 3, 4].map((dot) => {
+                    const tapAnim = getSkillDotTapAnim(skill.id, dot);
+                    return (
+                      <Animated.View
+                        key={dot}
+                        style={[
+                          styles.dotWrap,
+                          {
+                            transform: [
+                              {
+                                translateY: tapAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, -1],
+                                }),
+                              },
+                              {
+                                scale: tapAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [1, 1.045],
+                                }),
+                              },
+                            ],
+                          },
                         ]}
-                        onPress={() => {
-                          const currentLevel = skillLevels[skill.id];
-                          const nextLevel = currentLevel === dot ? 0 : dot;
-                          if (nextLevel !== currentLevel) {
-                            animateSkillLabelChange(skill.id);
-                          }
-                          animateSkillDotFill(skill.id, currentLevel, nextLevel);
-                          setSkillLevel(skill.id, nextLevel);
-                        }}
-                      />
-                    </Animated.View>
-                  );
-                })}
+                      >
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.dot,
+                            currentLevel >= dot && styles.dotFilled,
+                            pressed && styles.dotPressed,
+                          ]}
+                          onPress={() => {
+                            const nextLevel = currentLevel === dot ? 0 : dot;
+                            if (nextLevel !== currentLevel) {
+                              animateSkillLabelChange(skill.id);
+                            }
+                            animateSkillDotFill(skill.id, currentLevel, nextLevel);
+                            setSkillLevel(skill.id, nextLevel);
+                          }}
+                        />
+                      </Animated.View>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </>
       );
     }
@@ -1331,10 +1379,35 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     return (
       <>
         <View style={styles.pillGroup}>
-          {GOALS.map((g) => {
+          {[...GOALS, ...customGoals].map((g) => {
             const scaleAnim = getGoalPillScaleAnim(g);
+            const isCustomGoal = customGoals.includes(g);
+            const appearAnim = isCustomGoal ? getCustomGoalAppearAnim(g) : null;
             return (
-              <Animated.View key={g} style={{ transform: [{ scale: scaleAnim }] }}>
+              <Animated.View
+                key={g}
+                style={{
+                  opacity: appearAnim ?? 1,
+                  transform: [
+                    {
+                      translateY: appearAnim
+                        ? appearAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [10, 0],
+                          })
+                        : 0,
+                    },
+                    {
+                      scale: appearAnim
+                        ? Animated.multiply(scaleAnim, appearAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.95, 1],
+                          }))
+                        : scaleAnim,
+                    },
+                  ],
+                }}
+              >
                 <Pressable
                   style={({ pressed }) => [
                     styles.pill,
@@ -1365,6 +1438,24 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             );
           })}
         </View>
+
+        <View style={styles.customGoalRow}>
+          <TextInput
+            value={customGoalInput}
+            onChangeText={setCustomGoalInput}
+            placeholder="Add your own goal"
+            placeholderTextColor="#6e7790"
+            style={styles.customGoalInput}
+            returnKeyType="done"
+            onSubmitEditing={addCustomGoal}
+          />
+          <Pressable
+            style={({ pressed }) => [styles.customGoalAddBtn, pressed && styles.customGoalAddBtnPressed]}
+            onPress={addCustomGoal}
+          >
+            <Text style={styles.customGoalAddText}>Add</Text>
+          </Pressable>
+        </View>
       </>
     );
   }
@@ -1389,7 +1480,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       <GradientBackground variant="soft" />
       <Animated.View
         style={{
-          flex: 1,
           opacity: exitFadeAnim,
           transform: [{ translateY: exitSlideAnim }],
         }}
@@ -1818,6 +1908,46 @@ const styles = StyleSheet.create({
   },
   pillTextSelected: {
     color: "#ddd6ff",
+  },
+  customGoalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: -8,
+    marginBottom: 24,
+  },
+  customGoalInput: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#343b49",
+    backgroundColor: "#141a24",
+    paddingHorizontal: 12,
+    fontFamily: "ClashGrotesk-Medium",
+    fontSize: 18,
+    color: "#edf2ff",
+    letterSpacing: 0.3,
+  },
+  customGoalAddBtn: {
+    minHeight: 48,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#7c5cff",
+    backgroundColor: "#1d1835",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  customGoalAddBtnPressed: {
+    opacity: 0.82,
+  },
+  customGoalAddText: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 16,
+    color: "#ddd6ff",
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
   },
   noMajorResultsCard: {
     marginTop: -6,

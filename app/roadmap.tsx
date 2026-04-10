@@ -37,12 +37,6 @@ const FAKE_EVENTS = [
   { id: "4", month: "MAY", day: "2", title: "Google Info Session", meta: "Hosted via Handshake · Virtual", why: "Hear from engineers, ask about internships", badge: "recruiting" },
 ];
 
-const DIFF_COLORS: Record<string, { bg: string; text: string }> = {
-  easy: { bg: "#1d1835", text: "#ddd6ff" },
-  medium: { bg: "#2a2545", text: "#c9bcff" },
-  hard: { bg: "#35203a", text: "#ffd1ff" },
-};
-
 const TAG_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   foundation: { bg: "#0d3a66", border: "#4a90e2", text: "#a3d5ff" },
   projects: { bg: "#0d5a5a", border: "#2db8b8", text: "#5fd4d4" },
@@ -119,6 +113,8 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
   const goalsSummary = Array.isArray(profile.goals) && profile.goals.length > 0
     ? profile.goals.join(" • ")
     : "General track";
+  const topPriorityMilestoneId = milestones.find((item) => !item.done && !completingMilestoneIds.has(item.id))?.id;
+  const topPriorityProjectId = projects.find((item) => !completingProjectIds.has(item.id))?.id;
 
   useEffect(() => {
     Animated.parallel([
@@ -637,6 +633,7 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
             <View>
               {milestones.map((m) => {
                 const isMilestoneCompleting = completingMilestoneIds.has(m.id);
+                const isTopPriorityMilestone = m.id === topPriorityMilestoneId;
                 return (
                   <Reanimated.View key={m.id} layout={LIST_ITEM_LAYOUT}>
                     <Pressable
@@ -677,14 +674,21 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                         {(m.done || isMilestoneCompleting) && <Text style={styles.checkMark}>✓</Text>}
                       </Animated.View>
                       <View style={styles.milestoneBody}>
-                        <Text
-                          style={[
-                            styles.milestoneTitle,
-                            (m.done || isMilestoneCompleting) && styles.milestoneTitleDone,
-                          ]}
-                        >
-                          {m.title}
-                        </Text>
+                        <View style={styles.milestoneHeader}>
+                          <Text
+                            style={[
+                              styles.milestoneTitle,
+                              (m.done || isMilestoneCompleting) && styles.milestoneTitleDone,
+                            ]}
+                          >
+                            {m.title}
+                          </Text>
+                          {isTopPriorityMilestone && !(m.done || isMilestoneCompleting) && (
+                            <View style={styles.priorityPill}>
+                              <Text style={styles.priorityPillText}>Top Priority</Text>
+                            </View>
+                          )}
+                        </View>
                         <Text style={[styles.milestoneDesc, (m.done || isMilestoneCompleting) && styles.milestoneDescDone]}>
                           {m.desc}
                         </Text>
@@ -721,6 +725,7 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
             {projects.map((p) => {
               const isCompleting = completingProjectIds.has(p.id);
               const projectCheckAnimId = `project-${p.id}`;
+              const isTopPriorityProject = p.id === topPriorityProjectId;
               return (
               <Reanimated.View key={p.id} layout={LIST_ITEM_LAYOUT}>
               <Animated.View
@@ -766,10 +771,12 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                 </Pressable>
                 <View style={styles.projectBody}>
                 <View style={styles.projectHeader}>
-                  <Text style={[styles.projectTitle, isCompleting && styles.projectTitleGray]}>{p.title}</Text>
-                  <View style={[styles.diffBadge, { backgroundColor: isCompleting ? "#222833" : DIFF_COLORS[p.diff].bg }]}>
-                    <Text style={[styles.diffText, { color: isCompleting ? "#8a93a4" : DIFF_COLORS[p.diff].text }]}>{p.diff}</Text>
-                  </View>
+                  <Text style={[styles.projectTitle, isCompleting && styles.projectTitleGray]} numberOfLines={2}>{p.title}</Text>
+                  {isTopPriorityProject && !isCompleting && (
+                    <View style={styles.priorityPill}>
+                      <Text style={styles.priorityPillText}>Top Priority</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={[styles.projectDesc, isCompleting && styles.projectDescGray]}>{p.desc}</Text>
                 <View style={styles.skillTags}>
@@ -1252,12 +1259,19 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Semibold",
   },
   milestoneBody: { flex: 1 },
+  milestoneHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 4,
+  },
   milestoneTitle: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 18,
     color: "#f5f7fb",
-    marginBottom: 4,
     letterSpacing: 0.3,
+    flex: 1,
   },
   milestoneTitleDone: {
     color: "#7f8797",
@@ -1298,12 +1312,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#0a0f14",
     borderColor: "#1a2028",
   },
+  priorityPill: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "#2a213f",
+    borderWidth: 1,
+    borderColor: "#9b86ff",
+  },
+  priorityPillText: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 10,
+    letterSpacing: 0.35,
+    color: "#ddd6ff",
+    textTransform: "uppercase",
+  },
   projectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
   projectBody: { flex: 1 },
   projectTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 17, color: "#f5f7fb", flex: 1, marginRight: 8 },
   projectTitleGray: { color: "#7f8797" },
-  diffBadge: { borderRadius: 100, paddingHorizontal: 8, paddingVertical: 3 },
-  diffText: { fontFamily: "ClashGrotesk-Medium", fontSize: 11 },
   projectDesc: { fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: "#aab3c3", lineHeight: 20, marginBottom: 10 },
   projectDescGray: { color: "#667080" },
   skillTags: { flexDirection: "row", flexWrap: "wrap", gap: 5 },

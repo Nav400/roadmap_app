@@ -13,7 +13,13 @@ function buildPhrases(profile: { year?: string; school?: string } | null) {
   const year = profile?.year?.trim();
   const school = profile?.school?.trim();
 
-  const yearLabel = year ? `${year}s` : "students";
+  const yearLabelMap: Record<string, string> = {
+    Freshman: "Freshmen",
+    Sophomore: "Sophomores",
+    Junior: "Juniors",
+    Senior: "Seniors",
+  };
+  const yearLabel = year ? yearLabelMap[year] ?? `${year}s` : "students";
   const schoolLabel = school || "your school";
 
   return [

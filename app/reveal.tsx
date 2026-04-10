@@ -23,7 +23,8 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
   const celebrationSparkleAnim = useRef(new Animated.Value(0)).current;
   const milestoneTitlePulse = useRef(new Animated.Value(0.96)).current;
 
-  const avgSkill = Object.values(profile.skills as Record<string, number>).reduce((a, b) => a + b, 0) / 6;
+  const skillValues = Object.values(profile.skills as Record<string, number>);
+  const avgSkill = skillValues.reduce((a, b) => a + b, 0) / Math.max(skillValues.length, 1);
   const level = avgSkill < 1.5 ? "Beginner" : avgSkill < 2.8 ? "Intermediate" : "Advanced";
 
   const firstMilestone =
