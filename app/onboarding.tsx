@@ -212,6 +212,15 @@ const SKILL_DESCRIPTIONS: Record<string, string> = {
   math: "Discrete math topics like logic, sets, combinatorics, and proofs used in CS courses.",
   systems: "Operating systems and systems concepts including processes, memory, concurrency, and performance.",
 };
+const SKILL_INTRO_SHEET_ID = "__skills_intro__";
+const SKILL_INTRO_TITLE = "HOW TO RATE YOURSELF";
+const SKILL_INTRO_LEAD = "Use 1 - 4 for each skill so your roadmap matches your current level.";
+const SKILL_INTRO_LEVELS = [
+  { level: "1", label: "Beginner", note: "Just getting started" },
+  { level: "2", label: "Basic Familiarity", note: "Can follow examples" },
+  { level: "3", label: "Comfortable", note: "Can build independently" },
+  { level: "4", label: "Confident", note: "Can explain and troubleshoot" },
+];
 
 const SKILL_SHEET_HEIGHT = 220;
 
@@ -302,6 +311,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     return skillLabelAnimsRef.current[skillId];
   };
   const activeSkillRef = useRef<string | null>(null);
+  const hasSeenSkillsIntroRef = useRef(false);
   const prevStepRef = useRef(0);
   const prevSelectedMajorRef = useRef("");
   const prevSelectedSchoolRef = useRef("");
@@ -408,6 +418,12 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [activeSkillId, skillSheetTranslateY]);
 
   useEffect(() => {
+    if (step === 2 && !hasSeenSkillsIntroRef.current) {
+      hasSeenSkillsIntroRef.current = true;
+      setActiveSkillId(SKILL_INTRO_SHEET_ID);
+      return;
+    }
+
     if (step !== 2) {
       setActiveSkillId(null);
     }
@@ -1252,7 +1268,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       },
                     ]}
                   >
-                    {currentLevel === 0 ? "0 - 4" : `Level: ${currentLevel}`}
+                    {currentLevel === 0 ? "1 - 4" : `Level: ${currentLevel}`}
                   </Animated.Text>
                 </View>
                 <View style={styles.skillDots}>
@@ -1509,7 +1525,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
         </View>
       )}
 
-      {isSkillSheetVisible && <Pressable style={styles.skillSheetBackdrop} onPress={closeSkillSheet} />}
+      {activeSkillId && <Pressable style={styles.skillSheetBackdrop} onPress={closeSkillSheet} />}
 
       {isSkillSheetVisible && (
         <Animated.View
@@ -1525,14 +1541,39 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             <View style={styles.skillSheetHandle} />
           </View>
           <View style={styles.skillSheetHeader}>
-            <Text style={styles.skillSheetTitle}>{SKILLS.find((s) => s.id === activeSkillId)?.label}</Text>
-            <Pressable style={({ pressed }) => [styles.skillSheetCloseBtn, pressed && styles.skillSheetCloseBtnPressed]} onPress={closeSkillSheet}>
-              <Text style={styles.skillSheetCloseText}>close</Text>
-            </Pressable>
+            <Text style={styles.skillSheetTitle}>
+              {activeSkillId === SKILL_INTRO_SHEET_ID
+                ? SKILL_INTRO_TITLE
+                : SKILLS.find((s) => s.id === activeSkillId)?.label}
+            </Text>
+            {activeSkillId !== SKILL_INTRO_SHEET_ID && (
+              <Pressable style={({ pressed }) => [styles.skillSheetCloseBtn, pressed && styles.skillSheetCloseBtnPressed]} onPress={closeSkillSheet}>
+                <Text style={styles.skillSheetCloseText}>close</Text>
+              </Pressable>
+            )}
           </View>
-          <Text style={styles.skillSheetBody}>
-            {activeSkillId ? SKILL_DESCRIPTIONS[activeSkillId] : ""}
-          </Text>
+          {activeSkillId === SKILL_INTRO_SHEET_ID ? (
+            <View style={styles.skillIntroBodyWrap}>
+              <Text style={styles.skillIntroLead}>{SKILL_INTRO_LEAD}</Text>
+              <View style={styles.skillIntroLevelsWrap}>
+                {SKILL_INTRO_LEVELS.map((item) => (
+                  <View key={item.level} style={styles.skillIntroLevelRow}>
+                    <View style={styles.skillIntroLevelBadge}>
+                      <Text style={styles.skillIntroLevelBadgeText}>{item.level}</Text>
+                    </View>
+                    <View style={styles.skillIntroLevelTextWrap}>
+                      <Text style={styles.skillIntroLevelLabel}>{item.label}</Text>
+                      <Text style={styles.skillIntroLevelNote}>{item.note}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.skillSheetBody}>
+              {activeSkillId ? SKILL_DESCRIPTIONS[activeSkillId] : ""}
+            </Text>
+          )}
         </Animated.View>
       )}
 
@@ -2019,8 +2060,8 @@ const styles = StyleSheet.create({
   },
   skillSheetTitle: {
     fontFamily: "ClashGrotesk-Bold",
-    fontSize: 22,
-    letterSpacing: 0.4,
+    fontSize: 25,
+    letterSpacing: 0.8,
     color: "#f1f5ff",
   },
   skillSheetCloseBtn: {
@@ -2042,9 +2083,66 @@ const styles = StyleSheet.create({
   },
   skillSheetBody: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 18,
+    fontSize: 19,
+    letterSpacing: 0.6,
     color: "#c8d0e0",
     lineHeight: 21,
+  },
+  skillIntroBodyWrap: {
+    gap: 12,
+  },
+  skillIntroLead: {
+    fontFamily: "ClashGrotesk-Regular",
+    fontSize: 18,
+    color: "#d9def0",
+    lineHeight: 20,
+    letterSpacing: 0.2,
+  },
+  skillIntroLevelsWrap: {
+    gap: 8,
+  },
+  skillIntroLevelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2f3a52",
+    backgroundColor: "#1a2233",
+    borderRadius: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    gap: 10,
+  },
+  skillIntroLevelBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#2a3550",
+    borderWidth: 1,
+    borderColor: "#7b89ad",
+  },
+  skillIntroLevelBadgeText: {
+    fontFamily: "ClashGrotesk-Bold",
+    fontSize: 17,
+    color: "#e8edff",
+  },
+  skillIntroLevelTextWrap: {
+    flex: 1,
+    gap: 1,
+  },
+  skillIntroLevelLabel: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 19,
+    color: "#eef3ff",
+    letterSpacing: 0.4,
+  },
+  skillIntroLevelNote: {
+    fontFamily: "ClashGrotesk-Regular",
+    fontSize: 15,
+    color: "#aeb8ce",
+    lineHeight: 18,
+    letterSpacing: 0.4,
   },
 });
 
