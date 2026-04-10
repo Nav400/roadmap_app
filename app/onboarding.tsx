@@ -213,7 +213,6 @@ const SKILL_DESCRIPTIONS: Record<string, string> = {
   systems: "Operating systems and systems concepts including processes, memory, concurrency, and performance.",
 };
 
-const LEVEL_LABELS = ["None", "Heard of it", "Beginner", "Comfortable", "Strong"];
 const SKILL_SHEET_HEIGHT = 220;
 
 type OnboardingScreenProps = {
@@ -242,8 +241,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [skillLevels, setSkillLevels] = useState<Record<string, number>>({
     coding: 0, dsa: 0, git: 0, web: 0, math: 0, systems: 0,
   });
-  const [isSkillPopupVisible, setIsSkillPopupVisible] = useState(false);
-  const hasShownSkillPopupRef = useRef(false);
   const containerBottomPadding = started ? (step <= 1 ? 120 : 180) : 48;
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
@@ -251,9 +248,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const exitFadeAnim = useRef(new Animated.Value(1)).current;
   const exitSlideAnim = useRef(new Animated.Value(0)).current;
   const majorSearchFocusAnim = useRef(new Animated.Value(0)).current;
-  const skillPopupBackdropAnim = useRef(new Animated.Value(0)).current;
-  const skillPopupOpacityAnim = useRef(new Animated.Value(0)).current;
-  const skillPopupScaleAnim = useRef(new Animated.Value(0.85)).current;
   const selectedMajorRowAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorLabelAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorAppearAnim = useRef(new Animated.Value(0)).current;
@@ -416,62 +410,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   useEffect(() => {
     if (step !== 2) {
       setActiveSkillId(null);
-      setIsSkillPopupVisible(false);
-      skillPopupBackdropAnim.setValue(0);
     }
-  }, [skillPopupBackdropAnim, step]);
-
-  useEffect(() => {
-    if (step === 2 && !hasShownSkillPopupRef.current) {
-      Animated.parallel([
-        Animated.timing(skillPopupBackdropAnim, {
-          toValue: 1,
-          duration: 260,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(skillPopupScaleAnim, {
-          toValue: 1,
-          duration: 320,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(skillPopupOpacityAnim, {
-          toValue: 1,
-          duration: 260,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
-      hasShownSkillPopupRef.current = true;
-      setIsSkillPopupVisible(true);
-    }
-  }, [skillPopupBackdropAnim, step, skillPopupOpacityAnim, skillPopupScaleAnim]);
-
-  function hideSkillPopup() {
-    Animated.parallel([
-      Animated.timing(skillPopupBackdropAnim, {
-        toValue: 0,
-        duration: 220,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(skillPopupScaleAnim, {
-        toValue: 0.88,
-        duration: 220,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(skillPopupOpacityAnim, {
-        toValue: 0,
-        duration: 220,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setIsSkillPopupVisible(false);
-    });
-  }
+  }, [step]);
 
   useEffect(() => {
     const hasSelectedMajor = selectedMajor.length > 0;
@@ -704,14 +644,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     Animated.sequence([
       Animated.timing(labelAnim, {
         toValue: 1,
-        duration: 120,
+        duration: 130,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.spring(labelAnim, {
         toValue: 0,
-        tension: 70,
-        friction: 8,
+        tension: 72,
+        friction: 9,
         useNativeDriver: true,
       }),
     ]).start();
@@ -1285,6 +1225,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
         <>
           {SKILLS.map((skill) => {
             const currentLevel = skillLevels[skill.id] ?? 0;
+            const labelAnim = getSkillLabelAnim(skill.id);
 
             return (
               <View key={skill.id} style={styles.skillCard}>
@@ -1300,28 +1241,18 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                     style={[
                       styles.skillLevelLabel,
                       {
-                        opacity: getSkillLabelAnim(skill.id).interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [1, 0.85],
-                        }),
                         transform: [
                           {
-                            translateY: getSkillLabelAnim(skill.id).interpolate({
+                            scale: labelAnim.interpolate({
                               inputRange: [0, 1],
-                              outputRange: [0, -2],
-                            }),
-                          },
-                          {
-                            scale: getSkillLabelAnim(skill.id).interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [1, 1.05],
+                              outputRange: [1, 1.08],
                             }),
                           },
                         ],
                       },
                     ]}
                   >
-                    {LEVEL_LABELS[currentLevel]}
+                    {currentLevel === 0 ? "0 - 4" : `Level: ${currentLevel}`}
                   </Animated.Text>
                 </View>
                 <View style={styles.skillDots}>
@@ -1605,40 +1536,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
         </Animated.View>
       )}
 
-      {isSkillPopupVisible && step === 2 && (
-        <Pressable style={styles.skillPopupBackdrop} onPress={hideSkillPopup}>
-          <Animated.View
-            style={[
-              styles.skillPopupBackdropFill,
-              {
-                opacity: skillPopupBackdropAnim,
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.skillPopupContainer,
-              {
-                opacity: skillPopupOpacityAnim,
-                transform: [{ scale: skillPopupScaleAnim }],
-              },
-            ]}
-            pointerEvents="box-none"
-          >
-            <View style={styles.skillPopup}>
-              <View style={styles.skillPopupHeader}>
-                <Text style={styles.skillPopupTitle}>Tap a level to rate yourself</Text>
-                <Pressable
-                  style={({ pressed }) => [styles.skillPopupCloseBtn, pressed && styles.skillPopupCloseBtnPressed]}
-                  onPress={hideSkillPopup}
-                >
-                  <Text style={styles.skillPopupCloseText}>CLOSE</Text>
-                </Pressable>
-              </View>
-            </View>
-          </Animated.View>
-        </Pressable>
-      )}
     </SafeAreaView>
   );
 }
@@ -1652,57 +1549,43 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 24,
   },
-  logo: {
-    fontFamily: "monospace",
-    fontSize: 13,
-    color: "#8d7dff",
-    marginBottom: 12,
-  },
   progressLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 11,
+    fontSize: 12,
     color: "#b7adff",
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 8,
   },
   progressTrack: {
-    width: "100%",
-    height: 12,
-    borderRadius: 100,
+    height: 14,
     backgroundColor: "rgba(255, 255, 255, 0.08)",
-    marginBottom: 20,
+    borderRadius: 100,
+    marginBottom: 18,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
     backgroundColor: "transparent",
+    borderRadius: 100,
   },
   title: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 28,
     color: "#f5f7fb",
-    marginBottom: 8,
-    letterSpacing: 0.2,
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    lineHeight: 32,
   },
   titleContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    marginBottom: 8,
-  },
-  titleLargeW: {
-    fontFamily: "ClashGrotesk-Bold",
-    fontSize: 56,
-    color: "#f5f7fb",
-    letterSpacing: 0.2,
-    lineHeight: 56,
+    gap: 8,
   },
   titleSmallRest: {
     fontFamily: "ClashGrotesk-Bold",
-    fontSize: 28,
-    textAlign: "center",
+    fontSize: 26,
     color: "#f5f7fb",
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
     lineHeight: 30,
   },
   subtitle: {
@@ -1724,23 +1607,14 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     marginTop: 18,
   },
-  sectionLabel: {
-    fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 20,
-    color: "#b7adff",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    marginBottom: 10,
-    marginTop: 8,
+  selectedMajorShell: {
+    overflow: "visible",
   },
   selectedMajorRow: {
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
     gap: 8,
-  },
-  selectedMajorShell: {
-    overflow: "visible",
   },
   selectedMajorLabel: {
     fontFamily: "ClashGrotesk-Semibold",
@@ -1996,13 +1870,14 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   skillName: {
-    fontFamily: "ClashGrotesk-Medium",
-    fontSize: 18,
+    fontFamily: "ClashGrotesk-SemiBold",
+    fontSize: 20,
+    letterSpacing: 0.4,
     color: "#e6ebf3",
   },
   skillHint: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 13,
+    fontSize: 15,
     color: "#7c5cff",
     marginTop: 2,
     textTransform: "uppercase",
@@ -2030,9 +1905,10 @@ const styles = StyleSheet.create({
   },
   skillLevelLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 13,
+    fontSize: 17,
+    letterSpacing: 0.8,
     color: "#b7adff",
-    width: 74,
+    width: 108,
     textAlign: "right",
   },
   ctaBtnShell: {
@@ -2169,60 +2045,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#c8d0e0",
     lineHeight: 21,
-  },
-  skillPopupBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 100,
-  },
-  skillPopupBackdropFill: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  skillPopupContainer: {
-    width: "100%",
-    paddingHorizontal: 24,
-  },
-  skillPopup: {
-    backgroundColor: "#141b29",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#7c5cff",
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    elevation: 100,
-  },
-  skillPopupHeader: {
-    flexDirection: "column",
-    alignItems: "center",
-    width: "100%",
-    gap: 12,
-  },
-  skillPopupTitle: {
-    fontFamily: "ClashGrotesk-SemiBold",
-    fontSize: 22,
-    color: "#f1f5ff",
-    letterSpacing: 0.3,
-    textAlign: "center",
-  },
-  skillPopupCloseBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 100,
-    borderWidth: 1,
-    borderColor: "#3a445b",
-  },
-  skillPopupCloseBtnPressed: {
-    opacity: 0.75,
-  },
-  skillPopupCloseText: {
-    fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 13,
-    color: "#aeb8ce",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
 });
 

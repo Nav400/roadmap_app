@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   },
   statDesc: {
     fontSize: 15,
-    color: "#818181",
+    color: "#999999",
     textAlign: "center",
   },
   statDivider: {

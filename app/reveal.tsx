@@ -685,9 +685,10 @@ const styles = StyleSheet.create({
   },
   reason: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 17.5,
+    fontSize: 18,
     color: "#cfd7e6",
     lineHeight: 24,
+    letterSpacing: 0.5,
   },
   ctaBtn: {
     borderRadius: 10,
