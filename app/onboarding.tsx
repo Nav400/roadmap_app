@@ -212,14 +212,13 @@ const SKILL_DESCRIPTIONS: Record<string, string> = {
   math: "Discrete math topics like logic, sets, combinatorics, and proofs used in CS courses.",
   systems: "Operating systems and systems concepts including processes, memory, concurrency, and performance.",
 };
-const SKILL_INTRO_SHEET_ID = "__skills_intro__";
 const SKILL_INTRO_TITLE = "HOW TO RATE YOURSELF";
 const SKILL_INTRO_LEAD = "Use 1 - 4 for each skill so your roadmap matches your current level.";
-const SKILL_INTRO_LEVELS = [
-  { level: "1", label: "Beginner", note: "Just getting started" },
-  { level: "2", label: "Basic Familiarity", note: "Can follow examples" },
-  { level: "3", label: "Comfortable", note: "Can build independently" },
-  { level: "4", label: "Confident", note: "Can explain and troubleshoot" },
+const SKILL_LEVEL_OPTIONS = [
+  { value: 1, label: "Beginner" },
+  { value: 2, label: "Basic Familiarity" },
+  { value: 3, label: "Comfortable" },
+  { value: 4, label: "Confident" },
 ];
 
 const SKILL_SHEET_HEIGHT = 220;
@@ -243,6 +242,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [customGoals, setCustomGoals] = useState<string[]>([]);
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(startAtQuestions);
+  const [isSkillsIntroPopupVisible, setIsSkillsIntroPopupVisible] = useState(false);
+  const [isSkillsIntroPopupMounted, setIsSkillsIntroPopupMounted] = useState(false);
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
   const [isSkillSheetVisible, setIsSkillSheetVisible] = useState(false);
   const [progressTrackWidth, setProgressTrackWidth] = useState(0);
@@ -266,6 +267,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const schoolSearchFocusAnim = useRef(new Animated.Value(0)).current;
   const yearRevealAnim = useRef(new Animated.Value(0)).current;
   const nextBtnEnableAnim = useRef(new Animated.Value(0)).current;
+  const skillIntroBackdropOpacity = useRef(new Animated.Value(0)).current;
+  const skillIntroCardOpacity = useRef(new Animated.Value(0)).current;
+  const skillIntroCardScale = useRef(new Animated.Value(0.96)).current;
+  const skillIntroCardTranslateY = useRef(new Animated.Value(18)).current;
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
   const pillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const yearPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
@@ -420,14 +425,94 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   useEffect(() => {
     if (step === 2 && !hasSeenSkillsIntroRef.current) {
       hasSeenSkillsIntroRef.current = true;
-      setActiveSkillId(SKILL_INTRO_SHEET_ID);
+      setIsSkillsIntroPopupVisible(true);
       return;
     }
 
     if (step !== 2) {
+      setIsSkillsIntroPopupVisible(false);
       setActiveSkillId(null);
     }
   }, [step]);
+
+  useEffect(() => {
+    if (isSkillsIntroPopupVisible) {
+      setIsSkillsIntroPopupMounted(true);
+      skillIntroBackdropOpacity.setValue(0);
+      skillIntroCardOpacity.setValue(0);
+      skillIntroCardScale.setValue(0.96);
+      skillIntroCardTranslateY.setValue(18);
+
+      Animated.parallel([
+        Animated.timing(skillIntroBackdropOpacity, {
+          toValue: 1,
+          duration: 200,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(skillIntroCardOpacity, {
+          toValue: 1,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(skillIntroCardScale, {
+          toValue: 1,
+          friction: 9,
+          tension: 95,
+          useNativeDriver: true,
+        }),
+        Animated.spring(skillIntroCardTranslateY, {
+          toValue: 0,
+          friction: 10,
+          tension: 90,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      return;
+    }
+
+    if (!isSkillsIntroPopupMounted) {
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(skillIntroBackdropOpacity, {
+        toValue: 0,
+        duration: 170,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(skillIntroCardOpacity, {
+        toValue: 0,
+        duration: 170,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(skillIntroCardScale, {
+        toValue: 0.96,
+        duration: 170,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(skillIntroCardTranslateY, {
+        toValue: 14,
+        duration: 170,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsSkillsIntroPopupMounted(false);
+    });
+  }, [
+    isSkillsIntroPopupMounted,
+    isSkillsIntroPopupVisible,
+    skillIntroBackdropOpacity,
+    skillIntroCardOpacity,
+    skillIntroCardScale,
+    skillIntroCardTranslateY,
+  ]);
 
   useEffect(() => {
     const hasSelectedMajor = selectedMajor.length > 0;
@@ -536,11 +621,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     const hasSchoolSelection = selectedSchool.trim().length > 0;
     const hasYearSelection = selectedYear.trim().length > 0;
     const hasGoalSelection = selectedGoals.length > 0;
+    const hasAllSkillsRated = SKILLS.every((skill) => (skillLevels[skill.id] ?? 0) > 0);
     const shouldEnableNext =
       step === 0
         ? hasMajorSelection
         : step === 1
         ? hasSchoolSelection && hasYearSelection
+        : step === 2
+        ? hasAllSkillsRated
         : step === TOTAL_STEPS - 1
         ? hasGoalSelection
         : true;
@@ -550,7 +638,16 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-  }, [TOTAL_STEPS, nextBtnEnableAnim, selectedGoals.length, selectedMajor, selectedSchool, selectedYear, step]);
+  }, [
+    TOTAL_STEPS,
+    nextBtnEnableAnim,
+    selectedGoals.length,
+    selectedMajor,
+    selectedSchool,
+    selectedYear,
+    skillLevels,
+    step,
+  ]);
 
   function animateSelectedMajorTap() {
     selectedMajorTapAnim.setValue(0);
@@ -681,6 +778,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     setActiveSkillId(null);
   }
 
+  function closeSkillsIntroPopup() {
+    setIsSkillsIntroPopupVisible(false);
+  }
+
   function handleSubmitWithAnimation() {
     if (isTransitioning) {
       return;
@@ -723,6 +824,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     }
 
     if (step === 1 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) {
+      return;
+    }
+
+    if (step === 2 && !SKILLS.every((skill) => (skillLevels[skill.id] ?? 0) > 0)) {
       return;
     }
 
@@ -787,10 +892,31 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     return <Text style={styles.title}>{getStepTitle()}</Text>;
   }
 
+  function getStepSubtitle() {
+    if (!started) {
+      return "";
+    }
+
+    if (step === 0) {
+      return "Pick your major or the closest match.";
+    }
+
+    if (step === 1) {
+      return "Search for your school, then choose your year.";
+    }
+
+    if (step === 2) {
+      return "Rate each skill from 1 to 4.";
+    }
+
+    return "Select all goals that apply. You can choose more than one.";
+  }
+
   const isNextDisabled =
     isTransitioning ||
     (step === 0 && selectedMajor.trim().length === 0) ||
     (step === 1 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) ||
+    (step === 2 && !SKILLS.every((skill) => (skillLevels[skill.id] ?? 0) > 0)) ||
     (step === TOTAL_STEPS - 1 && selectedGoals.length === 0);
   const nextBtnTextColor = nextBtnEnableAnim.interpolate({
     inputRange: [0, 1],
@@ -1268,17 +1394,19 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       },
                     ]}
                   >
-                    {currentLevel === 0 ? "1 - 4" : `Level: ${currentLevel}`}
+                    {currentLevel === 0 ? "Not rated" : SKILL_LEVEL_OPTIONS[currentLevel - 1].label}
                   </Animated.Text>
                 </View>
-                <View style={styles.skillDots}>
-                  {[1, 2, 3, 4].map((dot) => {
-                    const tapAnim = getSkillDotTapAnim(skill.id, dot);
+
+                <View style={styles.skillRatingRow}>
+                  {SKILL_LEVEL_OPTIONS.map((option) => {
+                    const tapAnim = getSkillDotTapAnim(skill.id, option.value);
+                    const isSelected = currentLevel === option.value;
                     return (
                       <Animated.View
-                        key={dot}
+                        key={option.value}
                         style={[
-                          styles.dotWrap,
+                          styles.skillRatingOptionWrap,
                           {
                             transform: [
                               {
@@ -1290,7 +1418,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                               {
                                 scale: tapAnim.interpolate({
                                   inputRange: [0, 1],
-                                  outputRange: [1, 1.045],
+                                  outputRange: [1, 1.03],
                                 }),
                               },
                             ],
@@ -1299,19 +1427,28 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       >
                         <Pressable
                           style={({ pressed }) => [
-                            styles.dot,
-                            currentLevel >= dot && styles.dotFilled,
-                            pressed && styles.dotPressed,
+                            styles.skillRatingOption,
+                            isSelected && styles.skillRatingOptionSelected,
+                            pressed && styles.skillRatingOptionPressed,
                           ]}
                           onPress={() => {
-                            const nextLevel = currentLevel === dot ? 0 : dot;
+                            const nextLevel = currentLevel === option.value ? 0 : option.value;
                             if (nextLevel !== currentLevel) {
                               animateSkillLabelChange(skill.id);
                             }
                             animateSkillDotFill(skill.id, currentLevel, nextLevel);
                             setSkillLevel(skill.id, nextLevel);
                           }}
-                        />
+                        >
+                          <Text
+                            style={[
+                              styles.skillRatingNumber,
+                              isSelected && styles.skillRatingTextSelected,
+                            ]}
+                          >
+                            {option.value}
+                          </Text>
+                        </Pressable>
                       </Animated.View>
                     );
                   })}
@@ -1346,10 +1483,13 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                     },
                     {
                       scale: appearAnim
-                        ? Animated.multiply(scaleAnim, appearAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0.95, 1],
-                          }))
+                        ? Animated.multiply(
+                            scaleAnim,
+                            appearAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.95, 1],
+                            })
+                          )
                         : scaleAnim,
                     },
                   ],
@@ -1456,7 +1596,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           )}
           {renderTitle()}
           {started && (
-            <Text style={styles.subtitle}>Pick a few details so we can build your personalized roadmap.</Text>
+            <Text style={styles.subtitle}>{getStepSubtitle()}</Text>
           )}
 
           <Animated.View
@@ -1527,6 +1667,47 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
       {activeSkillId && <Pressable style={styles.skillSheetBackdrop} onPress={closeSkillSheet} />}
 
+      {isSkillsIntroPopupMounted && (
+        <View style={styles.skillIntroPopupOverlay}>
+          <Animated.View style={[styles.skillIntroPopupBackdrop, { opacity: skillIntroBackdropOpacity }]}>
+            <Pressable style={styles.skillIntroPopupBackdropPressable} onPress={closeSkillsIntroPopup} />
+          </Animated.View>
+          <Animated.View
+            style={[
+              styles.skillIntroPopupCard,
+              {
+                opacity: skillIntroCardOpacity,
+                transform: [{ translateY: skillIntroCardTranslateY }, { scale: skillIntroCardScale }],
+              },
+            ]}
+          >
+            <Text style={styles.skillIntroPopupTitle}>{SKILL_INTRO_TITLE}</Text>
+            <Text style={styles.skillIntroPopupLead}>{SKILL_INTRO_LEAD}</Text>
+            <View style={styles.skillIntroLevelsWrap}>
+              {SKILL_LEVEL_OPTIONS.map((item) => (
+                <View key={item.value} style={styles.skillIntroLevelRow}>
+                  <View style={styles.skillIntroLevelBadge}>
+                    <Text style={styles.skillIntroLevelBadgeText}>{item.value}</Text>
+                  </View>
+                  <View style={styles.skillIntroLevelTextWrap}>
+                    <Text style={styles.skillIntroLevelLabel}>{item.label}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.skillIntroPopupCloseBtn,
+                pressed && styles.skillIntroPopupCloseBtnPressed,
+              ]}
+              onPress={closeSkillsIntroPopup}
+            >
+              <Text style={styles.skillIntroPopupCloseText}>start rating</Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      )}
+
       {isSkillSheetVisible && (
         <Animated.View
           style={[
@@ -1542,38 +1723,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           </View>
           <View style={styles.skillSheetHeader}>
             <Text style={styles.skillSheetTitle}>
-              {activeSkillId === SKILL_INTRO_SHEET_ID
-                ? SKILL_INTRO_TITLE
-                : SKILLS.find((s) => s.id === activeSkillId)?.label}
+              {SKILLS.find((s) => s.id === activeSkillId)?.label}
             </Text>
-            {activeSkillId !== SKILL_INTRO_SHEET_ID && (
-              <Pressable style={({ pressed }) => [styles.skillSheetCloseBtn, pressed && styles.skillSheetCloseBtnPressed]} onPress={closeSkillSheet}>
-                <Text style={styles.skillSheetCloseText}>close</Text>
-              </Pressable>
-            )}
+            <Pressable style={({ pressed }) => [styles.skillSheetCloseBtn, pressed && styles.skillSheetCloseBtnPressed]} onPress={closeSkillSheet}>
+              <Text style={styles.skillSheetCloseText}>close</Text>
+            </Pressable>
           </View>
-          {activeSkillId === SKILL_INTRO_SHEET_ID ? (
-            <View style={styles.skillIntroBodyWrap}>
-              <Text style={styles.skillIntroLead}>{SKILL_INTRO_LEAD}</Text>
-              <View style={styles.skillIntroLevelsWrap}>
-                {SKILL_INTRO_LEVELS.map((item) => (
-                  <View key={item.level} style={styles.skillIntroLevelRow}>
-                    <View style={styles.skillIntroLevelBadge}>
-                      <Text style={styles.skillIntroLevelBadgeText}>{item.level}</Text>
-                    </View>
-                    <View style={styles.skillIntroLevelTextWrap}>
-                      <Text style={styles.skillIntroLevelLabel}>{item.label}</Text>
-                      <Text style={styles.skillIntroLevelNote}>{item.note}</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : (
-            <Text style={styles.skillSheetBody}>
-              {activeSkillId ? SKILL_DESCRIPTIONS[activeSkillId] : ""}
-            </Text>
-          )}
+          <Text style={styles.skillSheetBody}>
+            {activeSkillId ? SKILL_DESCRIPTIONS[activeSkillId] : ""}
+          </Text>
         </Animated.View>
       )}
 
@@ -1621,6 +1779,7 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: "row",
     gap: 8,
+    marginBottom: 6,
   },
   titleSmallRest: {
     fontFamily: "ClashGrotesk-Bold",
@@ -1922,34 +2081,50 @@ const styles = StyleSheet.create({
     color: "#7c5cff",
     marginTop: 2,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
   },
-  skillDots: {
+  skillRatingRow: {
     flexDirection: "row",
-    gap: 10,
-    flex: 1,
-  },
-  dotWrap: {
-    flex: 1,
-  },
-  dot: {
+    gap: 8,
     width: "100%",
-    minHeight: 52,
+  },
+  skillRatingOptionWrap: {
+    flex: 1,
+  },
+  skillRatingOption: {
+    width: "100%",
+    minHeight: 54,
     borderRadius: 14,
-    backgroundColor: "#2d3340",
+    borderWidth: 1,
+    borderColor: "#465063",
+    backgroundColor: "#202633",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  dotFilled: {
-    backgroundColor: "#886cf8",
+  skillRatingOptionSelected: {
+    borderColor: "#8d78ff",
+    backgroundColor: "#372b5f",
   },
-  dotPressed: {
+  skillRatingOptionPressed: {
     opacity: 0.8,
+  },
+  skillRatingNumber: {
+    fontFamily: "ClashGrotesk-Bold",
+    fontSize: 20,
+    color: "#d2daea",
+    letterSpacing: 0.4,
+  },
+  skillRatingTextSelected: {
+    color: "#f1ecff",
   },
   skillLevelLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 17,
-    letterSpacing: 0.8,
+    fontSize: 16,
+    letterSpacing: 0.4,
     color: "#b7adff",
-    width: 108,
+    width: 142,
     textAlign: "right",
   },
   ctaBtnShell: {
@@ -2026,6 +2201,65 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.3)",
     zIndex: 55,
   },
+  skillIntroPopupOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  skillIntroPopupBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(5, 8, 14, 0.72)",
+  },
+  skillIntroPopupBackdropPressable: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  skillIntroPopupCard: {
+    width: "100%",
+    maxWidth: 520,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#32405c",
+    backgroundColor: "#111a2b",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 10,
+    elevation: 80,
+  },
+  skillIntroPopupTitle: {
+    fontFamily: "ClashGrotesk-Bold",
+    fontSize: 24,
+    color: "#f3f7ff",
+    letterSpacing: 0.7,
+  },
+  skillIntroPopupLead: {
+    fontFamily: "ClashGrotesk-Regular",
+    fontSize: 17,
+    color: "#d9def0",
+    lineHeight: 21,
+    letterSpacing: 0.3,
+  },
+  skillIntroPopupCloseBtn: {
+    marginTop: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#6a8ed0",
+    backgroundColor: "#18305b",
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  skillIntroPopupCloseBtnPressed: {
+    opacity: 0.82,
+  },
+  skillIntroPopupCloseText: {
+    fontFamily: "ClashGrotesk-Bold",
+    fontSize: 17,
+    color: "#e8f1ff",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
   skillSheet: {
     position: "absolute",
     left: 12,
@@ -2088,16 +2322,6 @@ const styles = StyleSheet.create({
     color: "#c8d0e0",
     lineHeight: 21,
   },
-  skillIntroBodyWrap: {
-    gap: 12,
-  },
-  skillIntroLead: {
-    fontFamily: "ClashGrotesk-Regular",
-    fontSize: 18,
-    color: "#d9def0",
-    lineHeight: 20,
-    letterSpacing: 0.2,
-  },
   skillIntroLevelsWrap: {
     gap: 8,
   },
@@ -2129,19 +2353,11 @@ const styles = StyleSheet.create({
   },
   skillIntroLevelTextWrap: {
     flex: 1,
-    gap: 1,
   },
   skillIntroLevelLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 19,
     color: "#eef3ff",
-    letterSpacing: 0.4,
-  },
-  skillIntroLevelNote: {
-    fontFamily: "ClashGrotesk-Regular",
-    fontSize: 15,
-    color: "#aeb8ce",
-    lineHeight: 18,
     letterSpacing: 0.4,
   },
 });

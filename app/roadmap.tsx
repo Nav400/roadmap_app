@@ -1120,7 +1120,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "ClashGrotesk-Bold",
-    fontSize: 28,
+    fontSize: 31,
     color: "#f5f7fb",
     letterSpacing: 0.5,
     marginBottom: 6,
