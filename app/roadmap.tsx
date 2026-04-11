@@ -25,7 +25,7 @@ const FAKE_MILESTONES = [
   { id: "6", title: "Attend a campus tech event", desc: "Career fair, info session, or tech talk. Talk to at least one person.", tag: "networking", done: false },
 ];
 
-const FAKE_PROJECTS = [
+export const FAKE_PROJECTS = [
   { id: "1", title: "CLI To-Do App", desc: "Build a command-line task manager. Practice file I/O, loops, and functions.", diff: "easy", skills: ["python", "CLI", "file I/O"] },
   { id: "2", title: "Personal Portfolio Site", desc: "Build a static HTML/CSS site. Deploy free on GitHub Pages.", diff: "easy", skills: ["HTML", "CSS", "GitHub Pages"] },
   { id: "3", title: "REST API with Flask", desc: "Build a simple API for a to-do list. Learn HTTP methods and JSON.", diff: "medium", skills: ["python", "Flask", "REST"] },
@@ -38,6 +38,21 @@ const FAKE_EVENTS = [
   { id: "3", month: "---", day: "~", title: "ACM Weekly Meeting", meta: "Thursdays 6pm · CSE Building Rm 101", why: "Workshops, guest speakers, project teams", badge: "club" },
   { id: "4", month: "MAY", day: "2", title: "Google Info Session", meta: "Hosted via Handshake · Virtual", why: "Hear from engineers, ask about internships", badge: "recruiting" },
 ];
+
+const MONTH_INDEX: Record<string, number> = {
+  JAN: 0,
+  FEB: 1,
+  MAR: 2,
+  APR: 3,
+  MAY: 4,
+  JUN: 5,
+  JUL: 6,
+  AUG: 7,
+  SEP: 8,
+  OCT: 9,
+  NOV: 10,
+  DEC: 11,
+};
 
 const TAG_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   foundation: { bg: "#0d3a66", border: "#4a90e2", text: "#a3d5ff" },
@@ -64,6 +79,29 @@ type Milestone = (typeof FAKE_MILESTONES)[number];
 type Project = (typeof FAKE_PROJECTS)[number];
 type Event = (typeof FAKE_EVENTS)[number];
 
+function getEventTimestamp(event: Event, fallbackYear: number): number | null {
+  const month = MONTH_INDEX[event.month?.toUpperCase() ?? ""];
+  const day = Number(event.day);
+
+  if (month === undefined || Number.isNaN(day)) {
+    return null;
+  }
+
+  const explicitYearMatch = event.title.match(/\b(20\d{2})\b/);
+  const year = explicitYearMatch ? Number(explicitYearMatch[1]) : fallbackYear;
+  const eventDate = new Date(year, month, day, 23, 59, 59, 999);
+  return Number.isNaN(eventDate.getTime()) ? null : eventDate.getTime();
+}
+
+function isPastEvent(event: Event, now: Date): boolean {
+  const timestamp = getEventTimestamp(event, now.getFullYear());
+  if (timestamp === null) {
+    return false;
+  }
+
+  return timestamp < now.getTime();
+}
+
 const MILESTONE_ORDER = new Map(FAKE_MILESTONES.map((milestone, index) => [milestone.id, index]));
 const PROJECT_ORDER = new Map(FAKE_PROJECTS.map((project, index) => [project.id, index]));
 const LIST_ITEM_LAYOUT = LinearTransition.springify().damping(35).stiffness(150);
@@ -73,15 +111,21 @@ export default function RoadmapScreen({
   onOpenGoal,
   autoCompleteGoalRequest,
   onAutoCompleteHandled,
+  viewMode = "roadmap",
+  startTab,
 }: {
   profile: any;
   onOpenGoal?: (goal: RoadmapGoalSelection) => void;
   autoCompleteGoalRequest?: { goal: RoadmapGoalSelection; requestId: number } | null;
   onAutoCompleteHandled?: (requestId: number) => void;
+  viewMode?: "roadmap" | "events";
+  startTab?: "milestones" | "projects" | "events" | "completed";
 }) {
   const entryOpacityAnim = useRef(new Animated.Value(0)).current;
   const entryTranslateYAnim = useRef(new Animated.Value(14)).current;
-  const [activeTab, setActiveTab] = useState<"milestones" | "projects" | "events" | "completed">("milestones");
+  const [activeTab, setActiveTab] = useState<"milestones" | "projects" | "events" | "completed">(
+    viewMode === "events" ? "events" : "milestones"
+  );
   const priorityMilestone = getPriorityMilestone(profile ?? {});
   const [milestones, setMilestones] = useState<Milestone[]>(() => {
     const [first, ...rest] = FAKE_MILESTONES;
@@ -140,8 +184,43 @@ export default function RoadmapScreen({
   const goalsSummary = Array.isArray(profile.goals) && profile.goals.length > 0
     ? profile.goals.join(" • ")
     : "General track";
+  const upcomingEvents = events.filter((event) => !isPastEvent(event, new Date()));
+  const visibleTabs = viewMode === "events"
+    ? (["events"] as const)
+    : (["milestones", "projects", "completed"] as const);
+  const pageTitle = viewMode === "events" ? "Events" : `${profile.major} Roadmap`;
+  const pageSubtitle = viewMode === "events"
+    ? "Upcoming campus opportunities."
+    : `${profile.year} · ${goalsSummary}`;
   const topPriorityMilestoneId = milestones.find((item) => !item.done && !completingMilestoneIds.has(item.id))?.id;
   const topPriorityProjectId = projects.find((item) => !completingProjectIds.has(item.id))?.id;
+
+  useEffect(() => {
+    if (viewMode === "events") {
+      setActiveTab("events");
+      return;
+    }
+
+    setActiveTab((prev) => (prev === "events" ? "milestones" : prev));
+  }, [viewMode]);
+
+  useEffect(() => {
+    if (!startTab) {
+      return;
+    }
+
+    if (viewMode === "events" && startTab !== "events") {
+      return;
+    }
+
+    setActiveTab((prev) => {
+      if (prev === startTab) {
+        return prev;
+      }
+
+      return startTab;
+    });
+  }, [startTab, viewMode]);
 
   useEffect(() => {
     Animated.parallel([
@@ -644,8 +723,7 @@ export default function RoadmapScreen({
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <GradientBackground variant="soft" />
+    <View style={styles.safe}>
       <Animated.View
         style={{
           flex: 1,
@@ -654,68 +732,74 @@ export default function RoadmapScreen({
         }}
       >
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{profile.major} Roadmap</Text>
-        <Text style={styles.subtitle}>{profile.year} · {goalsSummary}</Text>
+        <Text style={styles.title}>{pageTitle}</Text>
+        <Text style={styles.subtitle}>{pageSubtitle}</Text>
 
-        <Animated.View
-          style={[
-            styles.statsRow,
-            {
-              transform: [{ scale: statsRowAnim }],
-              opacity: statsRowAnim.interpolate({
-                inputRange: [0.98, 1],
-                outputRange: [0.9, 1],
-              }),
-            },
-          ]}
-        >
-          <View style={styles.statCard}>
-            <Text style={styles.statVal}>{displayDone}</Text>
-            <Text style={styles.statLabel}>done</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statVal}>{displayToGo}</Text>
-            <Text style={styles.statLabel}>to go</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statVal}>{displayPct}%</Text>
-            <Text style={styles.statLabel}>progress</Text>
-          </View>
-        </Animated.View>
-
-        <Text style={styles.sectionLabel}>progress</Text>
-        <View style={styles.progressTrack} onLayout={(event) => setProgressTrackWidth(event.nativeEvent.layout.width)}>
-          <Animated.View
-            style={[
-              styles.progressFill,
-              {
-                width: progressAnim.interpolate({
-                  inputRange: [0, 100],
-                  outputRange: [0, progressTrackWidth || 1],
-                }),
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-          </Animated.View>
-        </View>
-
-        <View style={styles.tabs}>
-          {(["milestones", "projects", "events", "completed"] as const).map((tab) => (
-            <Pressable
-              key={tab}
-              style={({ pressed }) => [styles.tab, activeTab === tab && styles.tabActive, pressed && styles.tabPressed]}
-              onPress={() => animateTabChange(tab)}
+        {viewMode === "roadmap" && (
+          <>
+            <Animated.View
+              style={[
+                styles.statsRow,
+                {
+                  transform: [{ scale: statsRowAnim }],
+                  opacity: statsRowAnim.interpolate({
+                    inputRange: [0.98, 1],
+                    outputRange: [0.9, 1],
+                  }),
+                },
+              ]}
             >
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
-            </Pressable>
-          ))}
-        </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statVal}>{displayDone}</Text>
+                <Text style={styles.statLabel}>done</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statVal}>{displayToGo}</Text>
+                <Text style={styles.statLabel}>to go</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statVal}>{displayPct}%</Text>
+                <Text style={styles.statLabel}>progress</Text>
+              </View>
+            </Animated.View>
+
+            <Text style={styles.sectionLabel}>progress</Text>
+            <View style={styles.progressTrack} onLayout={(event) => setProgressTrackWidth(event.nativeEvent.layout.width)}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 100],
+                      outputRange: [0, progressTrackWidth || 1],
+                    }),
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+              </Animated.View>
+            </View>
+          </>
+        )}
+
+        {viewMode === "roadmap" && (
+          <View style={styles.tabs}>
+            {visibleTabs.map((tab) => (
+              <Pressable
+                key={tab}
+                style={({ pressed }) => [styles.tab, activeTab === tab && styles.tabActive, pressed && styles.tabPressed]}
+                onPress={() => animateTabChange(tab)}
+              >
+                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         <Animated.View
           style={{
@@ -723,7 +807,7 @@ export default function RoadmapScreen({
             transform: [{ translateY: tabContentTranslateY }],
           }}
         >
-          {activeTab === "milestones" && (
+          {viewMode === "roadmap" && activeTab === "milestones" && (
             <View>
               {milestones.map((m) => {
                 const isMilestoneCompleting = completingMilestoneIds.has(m.id);
@@ -816,7 +900,7 @@ export default function RoadmapScreen({
             </View>
           )}
 
-        {activeTab === "projects" && (
+        {viewMode === "roadmap" && activeTab === "projects" && (
           <View>
             {projects.map((p) => {
               const isCompleting = completingProjectIds.has(p.id);
@@ -909,80 +993,41 @@ export default function RoadmapScreen({
 
         {activeTab === "events" && (
           <View>
-            {events.map((e) => {
-              const isCompleting = completingEventIds.has(e.id);
-              const eventCheckAnimId = `event-${e.id}`;
-              return (
+            {upcomingEvents.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No upcoming events right now</Text>
+              </View>
+            ) : (
+              upcomingEvents.map((e) => (
                 <Reanimated.View key={e.id} layout={LIST_ITEM_LAYOUT}>
-                <Animated.View
-                  style={[
-                    styles.eventRow,
-                    isCompleting && styles.eventRowCompleting,
-                    {
-                      opacity: getEventFadeAnim(e.id),
-                      transform: [{ scale: getEventScaleAnim(e.id) }],
-                    },
-                  ]}
-                >
-                  <Pressable
-                    style={({ pressed }) => [styles.checkButton, pressed && styles.checkButtonPressed]}
-                    onPress={() => completeEvent(e)}
-                    disabled={isCompleting}
-                  >
-                    <Animated.View
-                      style={[
-                        styles.check,
-                        isCompleting && styles.checkDone,
-                        {
-                          transform: [{ scale: getCheckScaleAnim(eventCheckAnimId) }],
-                        },
-                      ]}
-                    >
-                      <Animated.View
-                        pointerEvents="none"
-                        style={[
-                          styles.checkBurst,
-                          {
-                            opacity: getCheckBurstAnim(eventCheckAnimId),
-                            transform: [
-                              {
-                                scale: getCheckBurstAnim(eventCheckAnimId).interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [0.7, 1.75],
-                                }),
-                              },
-                            ],
-                          },
-                        ]}
-                      />
-                      {isCompleting && <Text style={styles.checkMark}>✓</Text>}
-                    </Animated.View>
-                  </Pressable>
-                  <View style={[styles.eventDate, isCompleting && styles.eventDateGray]}>
-                    <Text style={[styles.eventMonth, isCompleting && styles.eventMonthGray]}>{e.month}</Text>
-                    <Text style={[styles.eventDay, isCompleting && styles.eventDayGray]}>{e.day}</Text>
+                  <View style={styles.eventRow}>
+                    <View style={styles.eventDate}>
+                      <Text style={styles.eventMonth}>{e.month}</Text>
+                      <Text style={styles.eventDay}>{e.day}</Text>
+                    </View>
+                    <View style={styles.eventBody}>
+                      <Text style={styles.eventTitle}>{e.title}</Text>
+                      <Text style={styles.eventMeta}>{e.meta}</Text>
+                      <Text style={styles.eventWhy}>{e.why}</Text>
+                    </View>
                   </View>
-                  <View style={styles.eventBody}>
-                    <Text style={[styles.eventTitle, isCompleting && styles.eventTitleGray]}>{e.title}</Text>
-                    <Text style={[styles.eventMeta, isCompleting && styles.eventMetaGray]}>{e.meta}</Text>
-                    <Text style={[styles.eventWhy, isCompleting && styles.eventWhyGray]}>{e.why}</Text>
-                  </View>
-                </Animated.View>
                 </Reanimated.View>
-              );
-            })}
+              ))
+            )}
           </View>
         )}
 
           {activeTab === "completed" && (
             <View>
-              {completedMilestones.length === 0 && completedProjects.length === 0 && completedEvents.length === 0 ? (
+              {viewMode === "events"
+                ? completedEvents.length === 0
+                : completedMilestones.length === 0 && completedProjects.length === 0 && completedEvents.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyStateText}>No completed items yet</Text>
                 </View>
               ) : (
                 <View>
-                  {completedMilestones.length > 0 && (
+                  {viewMode === "roadmap" && completedMilestones.length > 0 && (
                     <Reanimated.View layout={LIST_ITEM_LAYOUT}>
                       <Text style={styles.completedSectionLabel}>Completed milestones</Text>
                       {completedMilestones.map((m) => {
@@ -1050,7 +1095,7 @@ export default function RoadmapScreen({
                     </Reanimated.View>
                   )}
 
-                  {completedProjects.length > 0 && (
+                  {viewMode === "roadmap" && completedProjects.length > 0 && (
                     <Reanimated.View layout={LIST_ITEM_LAYOUT}>
                       <Text style={styles.completedSectionLabel}>Completed projects</Text>
                       {completedProjects.map((p) => {
@@ -1212,7 +1257,7 @@ export default function RoadmapScreen({
         </Animated.View>
       )}
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1235,15 +1280,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "ClashGrotesk-Bold",
-    fontSize: 31,
+    fontSize: 35,
     color: "#f5f7fb",
     letterSpacing: 0.5,
     marginBottom: 6,
-    lineHeight: 32,
+    lineHeight: 36,
   },
   subtitle: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 19,
+    fontSize: 21,
     color: "#aab3c3",
     marginBottom: 20,
     letterSpacing: 0.4,
@@ -1272,12 +1317,12 @@ const styles = StyleSheet.create({
   },
   statVal: {
     fontFamily: "ClashGrotesk-SemiBold",
-    fontSize: 25,
+    fontSize: 28,
     color: "#f5f7fb",
   },
   statLabel: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 15,
+    fontSize: 16,
     color: "#aab3c3",
     letterSpacing: 0.4,
   },
@@ -1317,7 +1362,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontFamily: "ClashGrotesk-Medium",
-    fontSize: 15,
+    fontSize: 16,
     color: "#b0b9c8",
     textTransform: "capitalize",
   },
@@ -1393,7 +1438,7 @@ const styles = StyleSheet.create({
   },
   milestoneTitle: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 18,
+    fontSize: 20,
     color: "#f5f7fb",
     letterSpacing: 0.3,
     flex: 1,
@@ -1406,9 +1451,9 @@ const styles = StyleSheet.create({
   },
   milestoneDesc: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 15,
+    fontSize: 17,
     color: "#aab3c3",
-    lineHeight: 20,
+    lineHeight: 23,
     marginBottom: 8,
   },
   tag: {
@@ -1484,13 +1529,13 @@ const styles = StyleSheet.create({
   },
   projectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
   projectBody: { flex: 1 },
-  projectTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 17, color: "#f5f7fb", flex: 1, marginRight: 8 },
+  projectTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 19, color: "#f5f7fb", flex: 1, marginRight: 8 },
   projectTitleGray: { color: "#7f8797" },
-  projectDesc: { fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: "#aab3c3", lineHeight: 20, marginBottom: 10 },
+  projectDesc: { fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: "#aab3c3", lineHeight: 22, marginBottom: 10 },
   projectDescGray: { color: "#667080" },
   skillTags: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
   skillTag: { backgroundColor: "#181c24", borderRadius: 100, borderWidth: 1, borderColor: "#3a404d", paddingHorizontal: 9, paddingVertical: 4 },
-  skillTagText: { fontFamily: "ClashGrotesk-Regular", fontSize: 12, color: "#b0b9c8" },
+  skillTagText: { fontFamily: "ClashGrotesk-Regular", fontSize: 13, color: "#b0b9c8" },
   eventRow: {
     flexDirection: "row",
     gap: 12,
@@ -1503,17 +1548,17 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   eventDate: { width: 44, alignItems: "center" },
-  eventMonth: { fontFamily: "ClashGrotesk-Semibold", fontSize: 11, color: "#b7adff", textTransform: "uppercase", letterSpacing: 0.7 },
-  eventDay: { fontFamily: "ClashGrotesk-Bold", fontSize: 22, color: "#f5f7fb", lineHeight: 26 },
+  eventMonth: { fontFamily: "ClashGrotesk-Semibold", fontSize: 15, color: "#b7adff", textTransform: "uppercase", letterSpacing: 0.9 },
+  eventDay: { fontFamily: "ClashGrotesk-Bold", fontSize: 31, color: "#f5f7fb", lineHeight: 35 },
   eventBody: { flex: 1 },
-  eventTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 15, color: "#f5f7fb", marginBottom: 3 },
-  eventMeta: { fontFamily: "ClashGrotesk-Regular", fontSize: 13, color: "#aab3c3", marginBottom: 4 },
-  eventWhy: { fontFamily: "ClashGrotesk-Regular", fontSize: 12, color: "#8f98ab" },
+  eventTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 21, color: "#f5f7fb", marginBottom: 5, lineHeight: 25 },
+  eventMeta: { fontFamily: "ClashGrotesk-Regular", fontSize: 18, color: "#aab3c3", marginBottom: 6, lineHeight: 23 },
+  eventWhy: { fontFamily: "ClashGrotesk-Regular", fontSize: 17, color: "#8f98ab", lineHeight: 22 },
   eventBadge: { borderRadius: 100, borderWidth: 1, borderColor: "#7c5cff", backgroundColor: "#1d1835", paddingHorizontal: 9, paddingVertical: 4, alignSelf: "flex-start" },
   eventBadgeText: { fontFamily: "ClashGrotesk-Medium", fontSize: 11, color: "#ddd6ff" },
   completedSectionLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 14,
+    fontSize: 15,
     color: "#b7adff",
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -1619,7 +1664,7 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 16,
+    fontSize: 18,
     color: "#7f8797",
   },
   completionToast: {
@@ -1641,7 +1686,7 @@ const styles = StyleSheet.create({
   },
   completionToastText: {
     fontFamily: "ClashGrotesk-Medium",
-    fontSize: 14,
+    fontSize: 15,
     color: "#f5f7fb",
     textAlign: "center",
   },

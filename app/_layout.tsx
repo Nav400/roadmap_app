@@ -6,7 +6,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { GradientBackground } from '@/components/gradient-background';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -42,7 +41,7 @@ export default function RootLayout() {
           ...DarkTheme.colors,
           background: Colors.dark.background,
           card: '#0f1830',
-          border: 'rgba(157, 180, 255, 0.16)',
+          border: 'transparent',
           primary: Colors.dark.tint,
           text: Colors.dark.text,
         },
@@ -53,7 +52,7 @@ export default function RootLayout() {
           ...DefaultTheme.colors,
           background: Colors.light.background,
           card: '#ffffff',
-          border: 'rgba(91, 108, 255, 0.14)',
+          border: 'transparent',
           primary: Colors.light.tint,
           text: Colors.light.text,
         },
@@ -61,7 +60,6 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={navigationTheme}>
-      <GradientBackground />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

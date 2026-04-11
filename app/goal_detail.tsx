@@ -8,11 +8,16 @@ export default function GoalDetailScreen({
   goal,
   onBack,
   onCompleteGoal,
+  initialCheckedTaskIds,
+  onMiniTaskProgressChange,
 }: {
   goal: RoadmapGoalSelection;
   onBack: () => void;
   onCompleteGoal?: (goal: RoadmapGoalSelection) => void;
+  initialCheckedTaskIds?: string[];
+  onMiniTaskProgressChange?: (goal: RoadmapGoalSelection, checkedTaskIds: string[]) => void;
 }) {
+  const goalKey = `${goal.type}:${goal.id}`;
   const detail = useMemo(() => getGoalDetailContent(goal), [goal]);
   const scrollRef = useRef<ScrollView | null>(null);
   const [checkedTaskIds, setCheckedTaskIds] = useState<Set<string>>(new Set());
@@ -27,9 +32,11 @@ export default function GoalDetailScreen({
   const taskCheckScaleAnims = useRef<Record<string, Animated.Value>>({}).current;
   const taskCheckBurstAnims = useRef<Record<string, Animated.Value>>({}).current;
   const autoScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldSkipNextProgressSync = useRef(true);
 
   useEffect(() => {
-    setCheckedTaskIds(new Set());
+    shouldSkipNextProgressSync.current = true;
+    setCheckedTaskIds(new Set(initialCheckedTaskIds ?? []));
     setDisplayPercent(0);
     percentAnim.setValue(0);
     percentPillScale.setValue(1);
@@ -39,7 +46,17 @@ export default function GoalDetailScreen({
       clearTimeout(autoScrollTimer.current);
       autoScrollTimer.current = null;
     }
-  }, [goal.id, goal.type, completeTaskButtonAnim, percentAnim, percentPillScale]);
+  }, [goalKey, initialCheckedTaskIds, completeTaskButtonAnim, percentAnim, percentPillScale]);
+
+  useEffect(() => {
+    if (shouldSkipNextProgressSync.current) {
+      shouldSkipNextProgressSync.current = false;
+      return;
+    }
+
+    const normalizedTaskIds = Array.from(checkedTaskIds).sort();
+    onMiniTaskProgressChange?.(goal, normalizedTaskIds);
+  }, [checkedTaskIds, goalKey, goal, onMiniTaskProgressChange]);
 
   useEffect(() => {
     return () => {
