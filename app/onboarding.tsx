@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -195,8 +195,7 @@ const UNIVERSITIES = [
   "Virginia Tech",
   "Yale University",
 ];
-const GOALS = ["Get a SWE internship", "Do research", "Build a startup", "Go to grad school", "Work in ML/AI"];
-const SKILLS = [
+const DEFAULT_SKILLS = [
   { id: "coding", label: "Coding Languages" },
   { id: "dsa", label: "Data Structures" },
   { id: "git", label: "Git / Version Ctrl" },
@@ -204,7 +203,7 @@ const SKILLS = [
   { id: "math", label: "Discrete Math" },
   { id: "systems", label: "Systems / OS" },
 ];
-const SKILL_DESCRIPTIONS: Record<string, string> = {
+const DEFAULT_SKILL_DESCRIPTIONS: Record<string, string> = {
   coding: "Writing code in languages (ex: Python, Java, C++), solving problems with functions, and understanding core programming patterns.",
   dsa: "Using common data structures like arrays, stacks, queues, trees, linked lists, and applying algorithmic thinking.",
   git: "Version control basics: commits, branches, pull requests, and collaborating safely in codebases.",
@@ -212,6 +211,9 @@ const SKILL_DESCRIPTIONS: Record<string, string> = {
   math: "Discrete math topics like logic, sets, combinatorics, and proofs used in CS courses.",
   systems: "Operating systems and systems concepts including processes, memory, concurrency, and performance.",
 };
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8787";
+const DEV_AI_API_KEY = __DEV__ ? process.env.EXPO_PUBLIC_AI_API_KEY ?? "" : "";
+const DEV_AI_MODEL = __DEV__ ? process.env.AI_MODEL ?? "llama-3.3-70b-versatile" : "";
 const SKILL_INTRO_TITLE = "HOW TO RATE YOURSELF";
 const SKILL_INTRO_LEAD = "Use 1 - 4 for each skill so your roadmap matches your current level.";
 const SKILL_LEVEL_OPTIONS = [
@@ -240,6 +242,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [customGoalInput, setCustomGoalInput] = useState("");
   const [customGoals, setCustomGoals] = useState<string[]>([]);
+  const [generatedGoals, setGeneratedGoals] = useState<string[]>([]);
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(startAtQuestions);
   const [isSkillsIntroPopupVisible, setIsSkillsIntroPopupVisible] = useState(false);
@@ -248,9 +251,13 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [isSkillSheetVisible, setIsSkillSheetVisible] = useState(false);
   const [progressTrackWidth, setProgressTrackWidth] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [skillLevels, setSkillLevels] = useState<Record<string, number>>({
-    coding: 0, dsa: 0, git: 0, web: 0, math: 0, systems: 0,
-  });
+  const [skillsToRate, setSkillsToRate] = useState(DEFAULT_SKILLS);
+  const [skillDescriptions, setSkillDescriptions] = useState<Record<string, string>>(DEFAULT_SKILL_DESCRIPTIONS);
+  const [isGeneratingSkills, setIsGeneratingSkills] = useState(false);
+  const [lastGeneratedSkillsKey, setLastGeneratedSkillsKey] = useState("");
+  const [isGeneratingGoals, setIsGeneratingGoals] = useState(false);
+  const [lastGeneratedGoalsKey, setLastGeneratedGoalsKey] = useState("");
+  const [skillLevels, setSkillLevels] = useState<Record<string, number>>({});
   const containerBottomPadding = started ? (step <= 1 ? 120 : 180) : 48;
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
@@ -319,6 +326,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const hasSeenSkillsIntroRef = useRef(false);
   const prevStepRef = useRef(0);
   const prevSelectedMajorRef = useRef("");
+  const prevGoalsMajorRef = useRef("");
   const prevSelectedSchoolRef = useRef("");
   const hasPlayedSelectedMajorLabelIntroRef = useRef(false);
   const filteredMajors = MAJORS.filter((major) =>
@@ -329,6 +337,284 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     school.toLowerCase().includes(normalizedSchoolQuery.toLowerCase())
   );
   const canUseCustomSchool = normalizedSchoolQuery.length > 1 && filteredSchools.length === 0;
+  const hasAllSkillsRated = skillsToRate.length > 0 && skillsToRate.every((skill) => (skillLevels[skill.id] ?? 0) > 0);
+
+  function slugifySkillLabel(label: string, index: number) {
+    const base = label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    return base || `skill-${index + 1}`;
+  }
+
+  function buildSkillState(skills: { id: string }[], prev: Record<string, number>) {
+    const next: Record<string, number> = {};
+    for (const skill of skills) {
+      next[skill.id] = prev[skill.id] ?? 0;
+    }
+    return next;
+  }
+
+  function normalizeGoalList(goalList: unknown): string[] {
+    if (!Array.isArray(goalList)) {
+      return [];
+    }
+
+    const seen = new Set<string>();
+    const normalized: string[] = [];
+
+    for (const goal of goalList) {
+      if (typeof goal !== "string") {
+        continue;
+      }
+
+      const trimmed = goal.trim().slice(0, 80);
+      if (!trimmed) {
+        continue;
+      }
+
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+
+      seen.add(key);
+      normalized.push(trimmed);
+    }
+
+    return normalized;
+  }
+
+  const generateSkillsFromAI = useCallback(async () => {
+    const major = selectedMajor || "computer science";
+    const year = selectedYear || "college";
+    const generationKey = `${major}|${year}`;
+
+    if (isGeneratingSkills || lastGeneratedSkillsKey === generationKey) {
+      return;
+    }
+
+    setIsGeneratingSkills(true);
+    try {
+      let response: Response;
+
+      if (__DEV__) {
+        if (!DEV_AI_API_KEY) {
+          throw new Error("EXPO_PUBLIC_AI_API_KEY is missing in development");
+        }
+
+        response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${DEV_AI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: DEV_AI_MODEL,
+            temperature: 0.5,
+            messages: [
+              {
+                role: "system",
+                content:
+                  'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills.',
+              },
+              {
+                role: "user",
+                content: `Generate exactly 6 technical skills a ${year} ${major} student should self-rate for a roadmap app. Keep labels short and descriptions to one sentence each.`,
+              },
+            ],
+          }),
+        });
+      } else {
+        response = await fetch(`${API_URL}/skills/generate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            major,
+            year,
+          }),
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error("Skill generation request failed");
+      }
+
+      const data = await response.json();
+      const apiSkills = __DEV__
+        ? (() => {
+            const rawText = data?.choices?.[0]?.message?.content ?? "";
+            const jsonStart = rawText.indexOf("{");
+            const jsonEnd = rawText.lastIndexOf("}");
+            const jsonText = jsonStart >= 0 && jsonEnd > jsonStart ? rawText.slice(jsonStart, jsonEnd + 1) : rawText;
+            const parsed = JSON.parse(jsonText);
+            return Array.isArray(parsed?.skills) ? parsed.skills.slice(0, 6) : [];
+          })()
+        : Array.isArray(data?.skills)
+        ? data.skills.slice(0, 6)
+        : [];
+
+      if (apiSkills.length !== 6) {
+        throw new Error("Skill generation did not return 6 skills");
+      }
+
+      const normalizedSkills = apiSkills.map((skill: { label?: string; description?: string }, index: number) => ({
+        id: slugifySkillLabel(skill?.label?.trim() || `Skill ${index + 1}`, index),
+        label: (skill?.label?.trim() || `Skill ${index + 1}`).slice(0, 40),
+        description: (skill?.description?.trim() || "Rate your familiarity with this skill.").slice(0, 220),
+      }));
+
+      const dedupedSkills = normalizedSkills.map(
+        (skill: { id: string; label: string; description: string }, index: number) => {
+          const duplicates = normalizedSkills.filter(
+            (s: { id: string; label: string; description: string }) => s.id === skill.id
+          );
+          if (duplicates.length <= 1) {
+            return skill;
+          }
+          return { ...skill, id: `${skill.id}-${index + 1}` };
+        }
+      );
+
+      const descriptions: Record<string, string> = {};
+      for (const skill of dedupedSkills) {
+        descriptions[skill.id] = skill.description;
+      }
+
+      setSkillsToRate(dedupedSkills.map((skill: { id: string; label: string }) => ({ id: skill.id, label: skill.label })));
+      setSkillDescriptions(descriptions);
+      setSkillLevels((prev) => buildSkillState(dedupedSkills, prev));
+      setLastGeneratedSkillsKey(generationKey);
+    } catch (error) {
+      if (__DEV__) {
+        console.warn("Skill generation failed:", error);
+      }
+    } finally {
+      setIsGeneratingSkills(false);
+    }
+  }, [isGeneratingSkills, lastGeneratedSkillsKey, selectedMajor, selectedYear]);
+
+  const generateGoalsFromAI = useCallback(async () => {
+    const major = selectedMajor || "computer science";
+    const generationKey = major;
+
+    if (isGeneratingGoals || lastGeneratedGoalsKey === generationKey) {
+      return;
+    }
+
+    setIsGeneratingGoals(true);
+    try {
+      let response: Response;
+
+      if (__DEV__) {
+        if (!DEV_AI_API_KEY) {
+          throw new Error("EXPO_PUBLIC_AI_API_KEY is missing in development");
+        }
+
+        response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${DEV_AI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: DEV_AI_MODEL,
+            temperature: 0.5,
+            messages: [
+              {
+                role: "system",
+                content:
+                  'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 5 goals. Each goal must be a short phrase of 2 to 5 words, like "Get a SWE internship" or "Publish a paper". Focus on common outcome goals such as getting a job, getting an internship, publishing a paper, going to grad school, or getting certified. No project-based goals and no full sentences.',
+              },
+              {
+                role: "user",
+                content: `Generate exactly 5 short common outcome goals for a ${major} student using a roadmap app. Each goal should be 2 to 5 words, like "Get a SWE internship" or "Publish a paper". Focus on common outcomes such as getting a job, getting an internship, publishing a paper, going to grad school, or getting certified. Do not include project-based goals. Return only JSON.`,
+              },
+            ],
+          }),
+        });
+      } else {
+        response = await fetch(`${API_URL}/goals/generate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ major }),
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error("Goal generation request failed");
+      }
+
+      const data = await response.json();
+      const apiGoals = __DEV__
+        ? (() => {
+            const rawText = data?.choices?.[0]?.message?.content ?? "";
+            const jsonStart = rawText.indexOf("{");
+            const jsonEnd = rawText.lastIndexOf("}");
+            const jsonText = jsonStart >= 0 && jsonEnd > jsonStart ? rawText.slice(jsonStart, jsonEnd + 1) : rawText;
+            const parsed = JSON.parse(jsonText);
+            return normalizeGoalList(parsed?.goals)
+              .map((goal) => goal.replace(/[.!?]+$/g, "").trim())
+              .slice(0, 5);
+          })()
+        : normalizeGoalList(data?.goals)
+            .map((goal) => goal.replace(/[.!?]+$/g, "").trim())
+            .slice(0, 5);
+
+      if (apiGoals.length !== 5) {
+        throw new Error("Goal generation did not return 5 goals");
+      }
+
+      setGeneratedGoals(apiGoals);
+      setSelectedGoals([]);
+      setCustomGoals([]);
+      setCustomGoalInput("");
+      setLastGeneratedGoalsKey(generationKey);
+    } catch (error) {
+      if (__DEV__) {
+        console.warn("Goal generation failed:", error);
+      }
+    } finally {
+      setIsGeneratingGoals(false);
+    }
+  }, [isGeneratingGoals, lastGeneratedGoalsKey, selectedMajor]);
+
+  useEffect(() => {
+    setSkillLevels((prev) => buildSkillState(skillsToRate, prev));
+  }, [skillsToRate]);
+
+  useEffect(() => {
+    if (started && step === 2) {
+      generateSkillsFromAI();
+    }
+  }, [generateSkillsFromAI, started, step]);
+
+  useEffect(() => {
+    if (selectedMajor.trim().length === 0) {
+      return;
+    }
+
+    if (selectedMajor !== prevGoalsMajorRef.current) {
+      setGeneratedGoals([]);
+      setSelectedGoals([]);
+      setCustomGoals([]);
+      setCustomGoalInput("");
+      setLastGeneratedGoalsKey("");
+    }
+
+    prevGoalsMajorRef.current = selectedMajor;
+  }, [selectedMajor]);
+
+  useEffect(() => {
+    // Preload goals while the user is on skills so step 4 renders without pop-in.
+    if (started && step >= 2 && selectedMajor.trim().length > 0) {
+      generateGoalsFromAI();
+    }
+  }, [generateGoalsFromAI, selectedMajor, started, step]);
 
   useEffect(() => {
     if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -620,8 +906,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     const hasMajorSelection = selectedMajor.trim().length > 0;
     const hasSchoolSelection = selectedSchool.trim().length > 0;
     const hasYearSelection = selectedYear.trim().length > 0;
-    const hasGoalSelection = selectedGoals.length > 0;
-    const hasAllSkillsRated = SKILLS.every((skill) => (skillLevels[skill.id] ?? 0) > 0);
+    const hasGoalSelection = generatedGoals.length > 0 && selectedGoals.length > 0;
     const shouldEnableNext =
       step === 0
         ? hasMajorSelection
@@ -642,9 +927,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     TOTAL_STEPS,
     nextBtnEnableAnim,
     selectedGoals.length,
+    generatedGoals.length,
     selectedMajor,
     selectedSchool,
     selectedYear,
+    hasAllSkillsRated,
     skillLevels,
     step,
   ]);
@@ -679,7 +966,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return;
     }
 
-    const allGoals = [...GOALS, ...customGoals];
+    const allGoals = [...generatedGoals, ...customGoals];
     const existingGoal = allGoals.find((goal) => goal.toLowerCase() === rawGoal.toLowerCase());
     const goalToSelect = existingGoal ?? rawGoal;
 
@@ -827,7 +1114,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return;
     }
 
-    if (step === 2 && !SKILLS.every((skill) => (skillLevels[skill.id] ?? 0) > 0)) {
+    if (step === 2 && !hasAllSkillsRated) {
       return;
     }
 
@@ -909,15 +1196,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return "Rate each skill from 1 to 4.";
     }
 
-    return "Select all goals that apply. You can choose more than one.";
+    return "Goals are generated from your selected major. You can choose more than one.";
   }
 
   const isNextDisabled =
     isTransitioning ||
     (step === 0 && selectedMajor.trim().length === 0) ||
     (step === 1 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) ||
-    (step === 2 && !SKILLS.every((skill) => (skillLevels[skill.id] ?? 0) > 0)) ||
-    (step === TOTAL_STEPS - 1 && selectedGoals.length === 0);
+    (step === 2 && !hasAllSkillsRated) ||
+    (step === TOTAL_STEPS - 1 && (!generatedGoals.length || selectedGoals.length === 0));
   const nextBtnTextColor = nextBtnEnableAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["#cfd3da", "#f7f5ff"],
@@ -1365,7 +1652,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (step === 2) {
       return (
         <>
-          {SKILLS.map((skill) => {
+          {skillsToRate.map((skill) => {
             const currentLevel = skillLevels[skill.id] ?? 0;
             const labelAnim = getSkillLabelAnim(skill.id);
 
@@ -1462,8 +1749,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     return (
       <>
+        {isGeneratingGoals || generatedGoals.length === 0 ? (
+          <View style={styles.noMajorResultsCard}>
+            <Text style={styles.noMajorResultsTitle}>Generating goals for {selectedMajor}...</Text>
+            <Text style={styles.noMajorResultsBody}>We are pulling in major-specific goals from Groq right now.</Text>
+          </View>
+        ) : null}
+
         <View style={styles.pillGroup}>
-          {[...GOALS, ...customGoals].map((g) => {
+          {[...generatedGoals, ...customGoals].map((g) => {
             const scaleAnim = getGoalPillScaleAnim(g);
             const isCustomGoal = customGoals.includes(g);
             const appearAnim = isCustomGoal ? getCustomGoalAppearAnim(g) : null;
@@ -1585,7 +1879,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   ]}
                 >
                   <LinearGradient
-                        colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                    colors={["#9584fb", "#765ee8", "#5f45d1"]}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
                     style={StyleSheet.absoluteFillObject}
@@ -1625,7 +1919,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               style={[styles.ctaGradientLayer, { opacity: nextBtnEnableAnim }]}
             >
               <LinearGradient
-                colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                colors={["#9584fb", "#765ee8", "#5f45d1"]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={styles.ctaGradient}
@@ -1723,14 +2017,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           </View>
           <View style={styles.skillSheetHeader}>
             <Text style={styles.skillSheetTitle}>
-              {SKILLS.find((s) => s.id === activeSkillId)?.label}
+              {skillsToRate.find((s) => s.id === activeSkillId)?.label}
             </Text>
             <Pressable style={({ pressed }) => [styles.skillSheetCloseBtn, pressed && styles.skillSheetCloseBtnPressed]} onPress={closeSkillSheet}>
               <Text style={styles.skillSheetCloseText}>close</Text>
             </Pressable>
           </View>
           <Text style={styles.skillSheetBody}>
-            {activeSkillId ? SKILL_DESCRIPTIONS[activeSkillId] : ""}
+            {activeSkillId ? skillDescriptions[activeSkillId] ?? "Rate your familiarity with this skill." : ""}
           </Text>
         </Animated.View>
       )}
@@ -2155,8 +2449,8 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.995 }],
   },
   ctaBtnText: {
-    fontFamily: "ClashGrotesk-Bold",
-    fontSize: 15,
+    fontFamily: "ClashGrotesk-SemiBold",
+    fontSize: 18,
     letterSpacing: 2,
   },
   footer: {
@@ -2188,6 +2482,7 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Semibold",
     color: "#b7adff",
     fontSize: 15,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
   },
   secondaryBtnPressed: {

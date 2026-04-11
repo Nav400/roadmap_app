@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Switch,
   ScrollView,
   SafeAreaView,
   Animated,
@@ -17,7 +18,7 @@ import { GradientBackground } from "@/components/gradient-background";
 import OnboardingScreen from "../onboarding";
 import RevealScreen from "../reveal";
 import RoadmapLoadingScreen from "../roadmap_loading";
-import RoadmapScreen, { FAKE_PROJECTS } from "../roadmap";
+import RoadmapScreen, { FAKE_MILESTONES, FAKE_PROJECTS } from "../roadmap";
 import GoalDetailScreen from "../goal_detail";
 import type { RoadmapGoalSelection } from "@/constants/goal-details";
 import { getPriorityMilestone } from "@/constants/priority-milestone";
@@ -150,6 +151,10 @@ export default function HomeScreen() {
   const [selectedGoal, setSelectedGoal] = useState<RoadmapGoalSelection | null>(null);
   const [pendingGoalCompletion, setPendingGoalCompletion] = useState<{ goal: RoadmapGoalSelection; requestId: number } | null>(null);
   const [goalMiniTaskProgress, setGoalMiniTaskProgress] = useState<Record<string, string[]>>({});
+  const [completedMilestoneIds, setCompletedMilestoneIds] = useState<string[]>([]);
+  const [completedProjectIds, setCompletedProjectIds] = useState<string[]>([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [studyRemindersEnabled, setStudyRemindersEnabled] = useState(true);
   const [roadmapStartTab, setRoadmapStartTab] = useState<RoadmapTab>("milestones");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const goalCompletionRequestCounter = useRef(0);
@@ -177,6 +182,35 @@ export default function HomeScreen() {
       };
     });
   }, []);
+
+  const handleRoadmapCompletionStateChange = useCallback(
+    (state: { completedMilestoneIds: string[]; completedProjectIds: string[] }) => {
+      setCompletedMilestoneIds(state.completedMilestoneIds);
+      setCompletedProjectIds(state.completedProjectIds);
+    },
+    []
+  );
+
+  const homeMilestones = useMemo(() => {
+    const [firstMilestone, ...remainingMilestones] = FAKE_MILESTONES;
+    const priorityMilestone = getPriorityMilestone(profile ?? {});
+
+    if (!firstMilestone) {
+      return [];
+    }
+
+    return [
+      {
+        ...firstMilestone,
+        title: priorityMilestone.title,
+        desc: priorityMilestone.reason,
+      },
+      ...remainingMilestones,
+    ];
+  }, [profile]);
+
+  const nextHomeMilestone = homeMilestones.find((milestone) => !completedMilestoneIds.includes(milestone.id)) ?? homeMilestones[0];
+  const nextHomeProject = FAKE_PROJECTS.find((project) => !completedProjectIds.includes(project.id)) ?? FAKE_PROJECTS[0];
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -319,8 +353,6 @@ export default function HomeScreen() {
   }
 
   if (screen === "mainApp" || screen === "goalDetail") {
-    const priorityMilestone = getPriorityMilestone(profile ?? {});
-    const featuredProject = FAKE_PROJECTS[0];
     const goalsSummary = Array.isArray(profile?.goals) && profile.goals.length > 0
       ? profile.goals.join(" • ")
       : "No goals selected yet";
@@ -331,7 +363,7 @@ export default function HomeScreen() {
     return (
       <View style={styles.mainContainer}>
         <GradientBackground />
-        <AnimatedBackground />
+        {screen === "goalDetail" && <AnimatedBackground />}
         <SafeAreaView style={styles.mainSafe}>
           <View style={styles.mainContent}>
             <Animated.View
@@ -344,6 +376,7 @@ export default function HomeScreen() {
                   profile={profile}
                   viewMode={renderedMainTab === "events" ? "events" : "roadmap"}
                   startTab={roadmapStartTab}
+                  onCompletionStateChange={handleRoadmapCompletionStateChange}
                   autoCompleteGoalRequest={pendingGoalCompletion}
                   onAutoCompleteHandled={(requestId) => {
                     setPendingGoalCompletion((prev) => (prev && prev.requestId === requestId ? null : prev));
@@ -362,19 +395,19 @@ export default function HomeScreen() {
 
                   <View style={styles.homeCard}>
                     <Text style={styles.homeCardLabel}>Top priority milestone</Text>
-                    <Text style={styles.homeCardTitle}>{priorityMilestone.title}</Text>
-                    <Text style={styles.homeCardBody}>{priorityMilestone.reason}</Text>
+                    <Text style={styles.homeCardTitle}>{nextHomeMilestone.title}</Text>
+                    <Text style={styles.homeCardBody}>{nextHomeMilestone.desc}</Text>
                     <TouchableOpacity style={styles.homeButton} onPress={() => openRoadmapTab("milestones")}>
-                      <Text style={styles.homeButtonText}>Open roadmap</Text>
+                      <Text style={styles.homeButtonText}>SEE MILESTONES</Text>
                     </TouchableOpacity>
                   </View>
 
                   <View style={styles.homeCard}>
                     <Text style={styles.homeCardLabel}>Top priority project</Text>
-                    <Text style={styles.homeCardTitle}>{featuredProject?.title}</Text>
-                    <Text style={styles.homeCardBody}>{featuredProject?.desc}</Text>
+                    <Text style={styles.homeCardTitle}>{nextHomeProject?.title}</Text>
+                    <Text style={styles.homeCardBody}>{nextHomeProject?.desc}</Text>
                     <TouchableOpacity style={styles.homeButtonAlt} onPress={() => openRoadmapTab("projects")}>
-                      <Text style={styles.homeButtonText}>See projects</Text>
+                      <Text style={styles.homeButtonText}>SEE PROJECTS</Text>
                     </TouchableOpacity>
                   </View>
                 </ScrollView>
@@ -403,9 +436,26 @@ export default function HomeScreen() {
                   </View>
 
                   <Text style={styles.settingsHeader}>Settings</Text>
-                  <View style={styles.settingRow}><Text style={styles.settingText}>Notifications</Text><Text style={styles.settingValue}>On</Text></View>
-                  <View style={styles.settingRow}><Text style={styles.settingText}>Study reminders</Text><Text style={styles.settingValue}>On</Text></View>
-                  <View style={styles.settingRow}><Text style={styles.settingText}>Theme</Text><Text style={styles.settingValue}>Nebula Dark</Text></View>
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingText}>Notifications</Text>
+                    <Switch
+                      value={notificationsEnabled}
+                      onValueChange={setNotificationsEnabled}
+                      trackColor={{ false: "#4a5060", true: "#7c5cff" }}
+                      thumbColor="#f5f7fb"
+                      ios_backgroundColor="#4a5060"
+                    />
+                  </View>
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingText}>Study reminders</Text>
+                    <Switch
+                      value={studyRemindersEnabled}
+                      onValueChange={setStudyRemindersEnabled}
+                      trackColor={{ false: "#4a5060", true: "#7c5cff" }}
+                      thumbColor="#f5f7fb"
+                      ios_backgroundColor="#4a5060"
+                    />
+                  </View>
                 </ScrollView>
               </View>
             </Animated.View>
@@ -512,7 +562,7 @@ export default function HomeScreen() {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+              colors={["#9584fb", "#765ee8", "#5f45d1"]}
               start={{ x: 0, y: 0.5 }}
               end={{ x: 1, y: 0.5 }}
               style={styles.ctaGradient}
@@ -587,7 +637,7 @@ const styles = StyleSheet.create({
   },
   homeCardLabel: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 12,
+    fontSize: 16,
     color: "#b7adff",
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -602,26 +652,28 @@ const styles = StyleSheet.create({
   },
   homeCardBody: {
     fontFamily: "ClashGrotesk-Regular",
-    fontSize: 18,
+    fontSize: 19,
     color: "#c7cfde",
+    letterSpacing: 0.5,
     lineHeight: 25,
-    marginBottom: 12,
+    marginBottom: 30,
   },
   homeButton: {
     alignItems: "center",
     backgroundColor: "#7c5cff",
     borderRadius: 999,
-    paddingVertical: 11,
+    paddingVertical: 14,
   },
   homeButtonAlt: {
     alignItems: "center",
-    backgroundColor: "#1b2336",
+    backgroundColor: "#202633",
     borderRadius: 999,
-    paddingVertical: 11,
+    paddingVertical: 14,
   },
   homeButtonText: {
     fontFamily: "ClashGrotesk-Semibold",
-    fontSize: 16,
+    fontSize: 18,
+    letterSpacing: 2,
     color: "#f5f7fb",
   },
   profileContainer: {
@@ -796,10 +848,10 @@ const styles = StyleSheet.create({
   },
   ctaBtnText: {
     color: "#f7f5ff",
-    fontSize: 15,
-    fontWeight: "900",
-    fontFamily: "ClashGrotesk-Bold",
-    letterSpacing: 1,
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "ClashGrotesk-SemiBold",
+    letterSpacing: 2,
   },
   finePrint: {
     fontSize: 11,

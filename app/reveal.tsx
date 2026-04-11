@@ -470,7 +470,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
                   disabled={isTransitioning}
                 >
                   <LinearGradient
-                    colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                    colors={["#7c5cff", "#6f54f0", "#5f45d1"]}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
                     style={styles.ctaGradient}
@@ -695,10 +695,10 @@ const styles = StyleSheet.create({
   },
   ctaBtnText: {
     color: "#f5f7fb",
-    fontFamily: "ClashGrotesk-Bold",
-    fontSize: 15,
-    fontWeight: "900",
-    letterSpacing: 1.2,
+    fontFamily: "ClashGrotesk-SemiBold",
+    fontSize: 18,
+    fontWeight: "600",
+    letterSpacing: 2,
     textTransform: "uppercase",
   },
 });

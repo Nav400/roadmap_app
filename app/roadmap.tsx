@@ -16,7 +16,7 @@ import { GradientBackground } from "@/components/gradient-background";
 import type { GoalSourceTab, RoadmapGoalSelection } from "@/constants/goal-details";
 import { getPriorityMilestone } from "@/constants/priority-milestone";
 
-const FAKE_MILESTONES = [
+export const FAKE_MILESTONES = [
   { id: "1", title: "Set up your dev environment", desc: "Install VS Code, Git, and a Python environment. Get comfortable with the terminal.", tag: "foundation", done: false },
   { id: "2", title: "Learn Git basics", desc: "Commit, branch, push, pull. Create a GitHub profile and make it look active.", tag: "foundation", done: false },
   { id: "3", title: "Complete one CS project", desc: "Build anything and put it on GitHub. A calculator, a game, a script.", tag: "projects", done: false },
@@ -111,6 +111,7 @@ export default function RoadmapScreen({
   onOpenGoal,
   autoCompleteGoalRequest,
   onAutoCompleteHandled,
+  onCompletionStateChange,
   viewMode = "roadmap",
   startTab,
 }: {
@@ -118,6 +119,7 @@ export default function RoadmapScreen({
   onOpenGoal?: (goal: RoadmapGoalSelection) => void;
   autoCompleteGoalRequest?: { goal: RoadmapGoalSelection; requestId: number } | null;
   onAutoCompleteHandled?: (requestId: number) => void;
+  onCompletionStateChange?: (state: { completedMilestoneIds: string[]; completedProjectIds: string[] }) => void;
   viewMode?: "roadmap" | "events";
   startTab?: "milestones" | "projects" | "events" | "completed";
 }) {
@@ -171,6 +173,13 @@ export default function RoadmapScreen({
   const removedMilestoneGreenAnims = useRef<Record<string, Animated.Value>>({}).current;
   const removedProjectGreenAnims = useRef<Record<string, Animated.Value>>({}).current;
   const removedEventGreenAnims = useRef<Record<string, Animated.Value>>({}).current;
+
+  useEffect(() => {
+    onCompletionStateChange?.({
+      completedMilestoneIds: completedMilestones.map((milestone) => milestone.id),
+      completedProjectIds: completedProjects.map((project) => project.id),
+    });
+  }, [completedMilestones, completedProjects, onCompletionStateChange]);
 
   const done =
     milestones.filter((m) => m.done).length +
