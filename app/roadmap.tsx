@@ -13,6 +13,8 @@ import Reanimated, { LinearTransition } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { GradientBackground } from "@/components/gradient-background";
+import type { GoalSourceTab, RoadmapGoalSelection } from "@/constants/goal-details";
+import { getPriorityMilestone } from "@/constants/priority-milestone";
 
 const FAKE_MILESTONES = [
   { id: "1", title: "Set up your dev environment", desc: "Install VS Code, Git, and a Python environment. Get comfortable with the terminal.", tag: "foundation", done: false },
@@ -66,11 +68,36 @@ const MILESTONE_ORDER = new Map(FAKE_MILESTONES.map((milestone, index) => [miles
 const PROJECT_ORDER = new Map(FAKE_PROJECTS.map((project, index) => [project.id, index]));
 const LIST_ITEM_LAYOUT = LinearTransition.springify().damping(35).stiffness(150);
 
-export default function RoadmapScreen({ profile }: { profile: any }) {
+export default function RoadmapScreen({
+  profile,
+  onOpenGoal,
+  autoCompleteGoalRequest,
+  onAutoCompleteHandled,
+}: {
+  profile: any;
+  onOpenGoal?: (goal: RoadmapGoalSelection) => void;
+  autoCompleteGoalRequest?: { goal: RoadmapGoalSelection; requestId: number } | null;
+  onAutoCompleteHandled?: (requestId: number) => void;
+}) {
   const entryOpacityAnim = useRef(new Animated.Value(0)).current;
   const entryTranslateYAnim = useRef(new Animated.Value(14)).current;
   const [activeTab, setActiveTab] = useState<"milestones" | "projects" | "events" | "completed">("milestones");
-  const [milestones, setMilestones] = useState<Milestone[]>(FAKE_MILESTONES);
+  const priorityMilestone = getPriorityMilestone(profile ?? {});
+  const [milestones, setMilestones] = useState<Milestone[]>(() => {
+    const [first, ...rest] = FAKE_MILESTONES;
+    if (!first) {
+      return [];
+    }
+
+    return [
+      {
+        ...first,
+        title: priorityMilestone.title,
+        desc: priorityMilestone.reason,
+      },
+      ...rest,
+    ];
+  });
   const [completedMilestones, setCompletedMilestones] = useState<Milestone[]>([]);
   const [projects, setProjects] = useState<Project[]>(FAKE_PROJECTS);
   const [completedProjects, setCompletedProjects] = useState<Project[]>([]);
@@ -293,6 +320,37 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
         setCompletionToastVisible(false);
       });
     }, 2600);
+  }
+
+  function openMilestoneDetail(milestone: Milestone, sourceTab: GoalSourceTab) {
+    if (!onOpenGoal) {
+      return;
+    }
+
+    onOpenGoal({
+      type: "milestone",
+      sourceTab,
+      id: milestone.id,
+      title: milestone.title,
+      desc: milestone.desc,
+      tag: milestone.tag,
+    });
+  }
+
+  function openProjectDetail(project: Project, sourceTab: GoalSourceTab) {
+    if (!onOpenGoal) {
+      return;
+    }
+
+    onOpenGoal({
+      type: "project",
+      sourceTab,
+      id: project.id,
+      title: project.title,
+      desc: project.desc,
+      skills: project.skills,
+      difficulty: project.diff,
+    });
   }
 
   function completeMilestone(milestone: Milestone) {
@@ -545,6 +603,42 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
     }, 420);
   }
 
+  useEffect(() => {
+    if (!autoCompleteGoalRequest) {
+      return;
+    }
+
+    const { goal, requestId } = autoCompleteGoalRequest;
+
+    if (goal.type === "milestone") {
+      const milestone = milestones.find((item) => item.id === goal.id);
+      if (milestone && !completingMilestoneIds.has(milestone.id)) {
+        animateTabChange(goal.sourceTab === "completed" ? "milestones" : goal.sourceTab ?? "milestones");
+        completeMilestone(milestone);
+      }
+      onAutoCompleteHandled?.(requestId);
+      return;
+    }
+
+    if (goal.type === "project") {
+      const project = projects.find((item) => item.id === goal.id);
+      if (project && !completingProjectIds.has(project.id)) {
+        animateTabChange(goal.sourceTab === "completed" ? "projects" : goal.sourceTab ?? "projects");
+        completeProject(project);
+      }
+      onAutoCompleteHandled?.(requestId);
+    }
+  }, [
+    autoCompleteGoalRequest,
+    completeMilestone,
+    completeProject,
+    completingMilestoneIds,
+    completingProjectIds,
+    milestones,
+    onAutoCompleteHandled,
+    projects,
+  ]);
+
   if (!profile) {
     return null;
   }
@@ -634,16 +728,15 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
               {milestones.map((m) => {
                 const isMilestoneCompleting = completingMilestoneIds.has(m.id);
                 const isTopPriorityMilestone = m.id === topPriorityMilestoneId;
+                const showTopPriorityStyle = isTopPriorityMilestone && !(m.done || isMilestoneCompleting);
                 return (
                   <Reanimated.View key={m.id} layout={LIST_ITEM_LAYOUT}>
-                    <Pressable
-                      style={({ pressed }) => [
+                    <View
+                      style={[
                         styles.milestoneRow,
+                        showTopPriorityStyle && styles.milestoneRowTopPriority,
                         (m.done || isMilestoneCompleting) && styles.milestoneRowCompleting,
-                        pressed && styles.milestoneRowPressed,
                       ]}
-                      onPress={() => completeMilestone(m)}
-                      disabled={m.done || isMilestoneCompleting}
                     >
                       <Animated.View
                         style={[
@@ -673,7 +766,10 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                         />
                         {(m.done || isMilestoneCompleting) && <Text style={styles.checkMark}>✓</Text>}
                       </Animated.View>
-                      <View style={styles.milestoneBody}>
+                      <Pressable
+                        style={({ pressed }) => [styles.goalDetailBody, pressed && styles.goalDetailBodyPressed]}
+                        onPress={() => openMilestoneDetail(m, "milestones")}
+                      >
                         <View style={styles.milestoneHeader}>
                           <Text
                             style={[
@@ -684,8 +780,8 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                             {m.title}
                           </Text>
                           {isTopPriorityMilestone && !(m.done || isMilestoneCompleting) && (
-                            <View style={styles.priorityPill}>
-                              <Text style={styles.priorityPillText}>Top Priority</Text>
+                            <View style={[styles.priorityPill, styles.topMilestonePriorityPill]}>
+                              <Text style={[styles.priorityPillText, styles.topMilestonePriorityPillText]}>Top Priority</Text>
                             </View>
                           )}
                         </View>
@@ -712,8 +808,8 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                             {m.tag}
                           </Text>
                         </View>
-                      </View>
-                    </Pressable>
+                      </Pressable>
+                    </View>
                   </Reanimated.View>
                 );
               })}
@@ -726,6 +822,7 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
               const isCompleting = completingProjectIds.has(p.id);
               const projectCheckAnimId = `project-${p.id}`;
               const isTopPriorityProject = p.id === topPriorityProjectId;
+              const showTopPriorityProjectStyle = isTopPriorityProject && !isCompleting;
               return (
               <Reanimated.View key={p.id} layout={LIST_ITEM_LAYOUT}>
               <Animated.View
@@ -734,47 +831,50 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                   transform: [{ scale: getProjectScaleAnim(p.id) }],
                 }}
               >
-              <View style={[styles.projectCard, isCompleting && styles.projectCardCompleting]}>
-                <Pressable
-                  style={({ pressed }) => [styles.checkButton, pressed && styles.checkButtonPressed]}
-                  onPress={() => completeProject(p)}
-                  disabled={isCompleting}
+              <View
+                style={[
+                  styles.projectCard,
+                  showTopPriorityProjectStyle && styles.projectCardTopPriority,
+                  isCompleting && styles.projectCardCompleting,
+                ]}
+              >
+                <Animated.View
+                  style={[
+                    styles.check,
+                    isCompleting && styles.checkDone,
+                    {
+                      transform: [{ scale: getCheckScaleAnim(projectCheckAnimId) }],
+                    },
+                  ]}
                 >
                   <Animated.View
+                    pointerEvents="none"
                     style={[
-                      styles.check,
-                      isCompleting && styles.checkDone,
+                      styles.checkBurst,
                       {
-                        transform: [{ scale: getCheckScaleAnim(projectCheckAnimId) }],
+                        opacity: getCheckBurstAnim(projectCheckAnimId),
+                        transform: [
+                          {
+                            scale: getCheckBurstAnim(projectCheckAnimId).interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.7, 1.75],
+                            }),
+                          },
+                        ],
                       },
                     ]}
-                  >
-                    <Animated.View
-                      pointerEvents="none"
-                      style={[
-                        styles.checkBurst,
-                        {
-                          opacity: getCheckBurstAnim(projectCheckAnimId),
-                          transform: [
-                            {
-                              scale: getCheckBurstAnim(projectCheckAnimId).interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0.7, 1.75],
-                              }),
-                            },
-                          ],
-                        },
-                      ]}
-                    />
-                    {isCompleting && <Text style={styles.checkMark}>✓</Text>}
-                  </Animated.View>
-                </Pressable>
-                <View style={styles.projectBody}>
+                  />
+                  {isCompleting && <Text style={styles.checkMark}>✓</Text>}
+                </Animated.View>
+                <Pressable
+                  style={({ pressed }) => [styles.goalDetailBody, pressed && styles.goalDetailBodyPressed]}
+                  onPress={() => openProjectDetail(p, "projects")}
+                >
                 <View style={styles.projectHeader}>
                   <Text style={[styles.projectTitle, isCompleting && styles.projectTitleGray]} numberOfLines={2}>{p.title}</Text>
                   {isTopPriorityProject && !isCompleting && (
-                    <View style={styles.priorityPill}>
-                      <Text style={styles.priorityPillText}>Top Priority</Text>
+                    <View style={[styles.priorityPill, styles.topProjectPriorityPill]}>
+                      <Text style={[styles.priorityPillText, styles.topProjectPriorityPillText]}>Top Priority</Text>
                     </View>
                   )}
                 </View>
@@ -798,7 +898,7 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                     );
                   })}
                 </View>
-              </View>
+              </Pressable>
               </View>
               </Animated.View>
               </Reanimated.View>
@@ -890,16 +990,16 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                         const removedAnim = getRemovedMilestoneGreenAnim(m.id);
                         return (
                           <Reanimated.View key={m.id} layout={LIST_ITEM_LAYOUT}>
-                            <Pressable
-                              style={({ pressed }) => [
+                            <View
+                              style={[
                                 styles.completedMilestoneRow,
                                 isRestoring && styles.completedRowRestoring,
-                                pressed && !isRestoring && styles.eventRowPressed,
                               ]}
-                              onPress={() => restoreMilestone(m)}
-                              disabled={isRestoring}
                             >
-                              <View style={styles.milestoneBody}>
+                              <Pressable
+                                style={({ pressed }) => [styles.goalDetailBody, pressed && styles.goalDetailBodyPressed]}
+                                onPress={() => openMilestoneDetail(m, "completed")}
+                              >
                                 <Text style={[styles.milestoneTitle, styles.completedEventTitle]}>{m.title}</Text>
                                 <Text style={styles.milestoneDescDone}>{m.desc}</Text>
                                 <View
@@ -914,7 +1014,88 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                                 >
                                   <Text style={[styles.tagText, { color: getTagColors(m.tag).text }]}>{m.tag}</Text>
                                 </View>
+                              </Pressable>
+                              <Pressable
+                                style={({ pressed }) => [styles.checkButton, pressed && styles.checkButtonPressed]}
+                                onPress={() => restoreMilestone(m)}
+                                disabled={isRestoring}
+                              >
+                                <Animated.View
+                                  style={[
+                                    styles.eventBadge,
+                                    styles.completedBadge,
+                                    {
+                                      opacity: removedAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [1, 0],
+                                      }),
+                                      transform: [
+                                        {
+                                          scale: removedAnim.interpolate({
+                                            inputRange: [0, 1],
+                                            outputRange: [1, 0.78],
+                                          }),
+                                        },
+                                      ],
+                                    },
+                                  ]}
+                                >
+                                  <Text style={styles.completedBadgeText}>✓</Text>
+                                </Animated.View>
+                              </Pressable>
+                            </View>
+                          </Reanimated.View>
+                        );
+                      })}
+                    </Reanimated.View>
+                  )}
+
+                  {completedProjects.length > 0 && (
+                    <Reanimated.View layout={LIST_ITEM_LAYOUT}>
+                      <Text style={styles.completedSectionLabel}>Completed projects</Text>
+                      {completedProjects.map((p) => {
+                        const isRestoring = completingProjectIds.has(p.id);
+                        const removedAnim = getRemovedProjectGreenAnim(p.id);
+                        return (
+                        <Reanimated.View key={p.id} layout={LIST_ITEM_LAYOUT}>
+                          <View
+                            style={[
+                              styles.completedProjectRow,
+                              isRestoring && styles.completedRowRestoring,
+                            ]}
+                          >
+                            <Pressable
+                              style={({ pressed }) => [styles.goalDetailBody, pressed && styles.goalDetailBodyPressed]}
+                              onPress={() => openProjectDetail(p, "completed")}
+                            >
+                              <Text style={[styles.projectTitle, styles.completedEventTitle]}>{p.title}</Text>
+                              <Text style={[styles.projectDesc, styles.milestoneDescDone]}>{p.desc}</Text>
+                              <View style={styles.skillTags}>
+                                {p.skills.map((s) => {
+                                  const colors = getSkillColors(s);
+                                  return (
+                                  <View
+                                    key={s}
+                                    style={[
+                                      styles.skillTag,
+                                      {
+                                        backgroundColor: colors.bg,
+                                        borderColor: colors.border,
+                                        opacity: 0.75,
+                                      },
+                                    ]}
+                                  >
+                                    <Text style={[styles.skillTagText, { color: colors.text }]}>{s}</Text>
+                                  </View>
+                                  );
+                                })}
                               </View>
+                            </Pressable>
+                            <Pressable
+                              style={({ pressed }) => [styles.checkButton, pressed && styles.checkButtonPressed]}
+                              onPress={() => uncompleteProject(p)}
+                              disabled={isRestoring}
+                            >
                               <Animated.View
                                 style={[
                                   styles.eventBadge,
@@ -938,76 +1119,7 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                                 <Text style={styles.completedBadgeText}>✓</Text>
                               </Animated.View>
                             </Pressable>
-                          </Reanimated.View>
-                        );
-                      })}
-                    </Reanimated.View>
-                  )}
-
-                  {completedProjects.length > 0 && (
-                    <Reanimated.View layout={LIST_ITEM_LAYOUT}>
-                      <Text style={styles.completedSectionLabel}>Completed projects</Text>
-                      {completedProjects.map((p) => {
-                        const isRestoring = completingProjectIds.has(p.id);
-                        const removedAnim = getRemovedProjectGreenAnim(p.id);
-                        return (
-                        <Reanimated.View key={p.id} layout={LIST_ITEM_LAYOUT}>
-                          <Pressable
-                            style={({ pressed }) => [
-                              styles.completedProjectRow,
-                              isRestoring && styles.completedRowRestoring,
-                              pressed && !isRestoring && styles.eventRowPressed,
-                            ]}
-                            onPress={() => uncompleteProject(p)}
-                            disabled={isRestoring}
-                          >
-                            <View style={styles.eventBody}>
-                              <Text style={[styles.projectTitle, styles.completedEventTitle]}>{p.title}</Text>
-                              <Text style={[styles.projectDesc, styles.milestoneDescDone]}>{p.desc}</Text>
-                              <View style={styles.skillTags}>
-                                {p.skills.map((s) => {
-                                  const colors = getSkillColors(s);
-                                  return (
-                                  <View
-                                    key={s}
-                                    style={[
-                                      styles.skillTag,
-                                      {
-                                        backgroundColor: colors.bg,
-                                        borderColor: colors.border,
-                                        opacity: 0.75,
-                                      },
-                                    ]}
-                                  >
-                                    <Text style={[styles.skillTagText, { color: colors.text }]}>{s}</Text>
-                                  </View>
-                                  );
-                                })}
-                              </View>
-                            </View>
-                            <Animated.View
-                              style={[
-                                styles.eventBadge,
-                                styles.completedBadge,
-                                {
-                                  opacity: removedAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [1, 0],
-                                  }),
-                                  transform: [
-                                    {
-                                      scale: removedAnim.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [1, 0.78],
-                                      }),
-                                    },
-                                  ],
-                                },
-                              ]}
-                            >
-                              <Text style={styles.completedBadgeText}>✓</Text>
-                            </Animated.View>
-                          </Pressable>
+                          </View>
                         </Reanimated.View>
                       );
                       })}
@@ -1022,14 +1134,11 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                         const removedAnim = getRemovedEventGreenAnim(e.id);
                         return (
                         <Reanimated.View key={e.id} layout={LIST_ITEM_LAYOUT}>
-                          <Pressable
-                            style={({ pressed }) => [
+                          <View
+                            style={[
                               styles.completedEventRow,
                               isRestoring && styles.completedRowRestoring,
-                              pressed && !isRestoring && styles.eventRowPressed,
                             ]}
-                            onPress={() => uncompleteEvent(e)}
-                            disabled={isRestoring}
                           >
                             <View style={styles.eventDate}>
                               <Text style={styles.eventMonth}>{e.month}</Text>
@@ -1040,29 +1149,35 @@ export default function RoadmapScreen({ profile }: { profile: any }) {
                               <Text style={styles.eventMeta}>{e.meta}</Text>
                               <Text style={styles.eventWhy}>{e.why}</Text>
                             </View>
-                            <Animated.View
-                              style={[
-                                styles.eventBadge,
-                                styles.completedBadge,
-                                {
-                                  opacity: removedAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [1, 0],
-                                  }),
-                                  transform: [
-                                    {
-                                      scale: removedAnim.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [1, 0.78],
-                                      }),
-                                    },
-                                  ],
-                                },
-                              ]}
+                            <Pressable
+                              style={({ pressed }) => [styles.checkButton, pressed && styles.checkButtonPressed]}
+                              onPress={() => uncompleteEvent(e)}
+                              disabled={isRestoring}
                             >
-                              <Text style={styles.completedBadgeText}>✓</Text>
-                            </Animated.View>
-                          </Pressable>
+                              <Animated.View
+                                style={[
+                                  styles.eventBadge,
+                                  styles.completedBadge,
+                                  {
+                                    opacity: removedAnim.interpolate({
+                                      inputRange: [0, 1],
+                                      outputRange: [1, 0],
+                                    }),
+                                    transform: [
+                                      {
+                                        scale: removedAnim.interpolate({
+                                          inputRange: [0, 1],
+                                          outputRange: [1, 0.78],
+                                        }),
+                                      },
+                                    ],
+                                  },
+                                ]}
+                              >
+                                <Text style={styles.completedBadgeText}>✓</Text>
+                              </Animated.View>
+                            </Pressable>
+                          </View>
                         </Reanimated.View>
                       );
                       })}
@@ -1219,6 +1334,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#141824",
     marginBottom: 10,
   },
+  milestoneRowTopPriority: {
+    borderColor: "#a995ff",
+    borderWidth: 1.5,
+    backgroundColor: "#19172a",
+    shadowColor: "#8c76ff",
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
   milestoneRowPressed: {
     opacity: 0.9,
     transform: [{ scale: 0.995 }],
@@ -1308,6 +1433,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: "flex-start",
   },
+  projectCardTopPriority: {
+    borderColor: "#a995ff",
+    borderWidth: 1.5,
+    backgroundColor: "#19172a",
+    shadowColor: "#8c76ff",
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
   projectCardCompleting: {
     backgroundColor: "#0a0f14",
     borderColor: "#1a2028",
@@ -1326,6 +1461,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.35,
     color: "#ddd6ff",
     textTransform: "uppercase",
+  },
+  topMilestonePriorityPill: {
+    backgroundColor: "#35276a",
+    borderColor: "#c4b6ff",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  topMilestonePriorityPillText: {
+    color: "#f1ecff",
+    letterSpacing: 0.45,
+  },
+  topProjectPriorityPill: {
+    backgroundColor: "#35276a",
+    borderColor: "#c4b6ff",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  topProjectPriorityPillText: {
+    color: "#f1ecff",
+    letterSpacing: 0.45,
   },
   projectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
   projectBody: { flex: 1 },
@@ -1383,6 +1538,12 @@ const styles = StyleSheet.create({
   checkButtonPressed: {
     opacity: 0.75,
     transform: [{ scale: 0.95 }],
+  },
+  goalDetailBody: {
+    flex: 1,
+  },
+  goalDetailBodyPressed: {
+    opacity: 0.84,
   },
   eventRowCompleting: {
     backgroundColor: "#0a0f14",

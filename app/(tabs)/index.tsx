@@ -16,6 +16,8 @@ import OnboardingScreen from "../onboarding";
 import RevealScreen from "../reveal";
 import RoadmapLoadingScreen from "../roadmap_loading";
 import RoadmapScreen from "../roadmap";
+import GoalDetailScreen from "../goal_detail";
+import type { RoadmapGoalSelection } from "@/constants/goal-details";
 
 const { height } = Dimensions.get("window");
 
@@ -133,9 +135,12 @@ function AnimatedBackground() {
 }
 
 export default function HomeScreen() {
-  const [screen, setScreen] = useState<"landing" | "onboarding" | "reveal" | "loading" | "roadmap">("landing");
+  const [screen, setScreen] = useState<"landing" | "onboarding" | "reveal" | "loading" | "roadmap" | "goalDetail">("landing");
   const [profile, setProfile] = useState<any>(null);
+  const [selectedGoal, setSelectedGoal] = useState<RoadmapGoalSelection | null>(null);
+  const [pendingGoalCompletion, setPendingGoalCompletion] = useState<{ goal: RoadmapGoalSelection; requestId: number } | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const goalCompletionRequestCounter = useRef(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -192,7 +197,33 @@ export default function HomeScreen() {
   }
 
   if (screen === "roadmap") {
-    return <RoadmapScreen profile={profile} />;
+    return (
+      <RoadmapScreen
+        profile={profile}
+        autoCompleteGoalRequest={pendingGoalCompletion}
+        onAutoCompleteHandled={(requestId) => {
+          setPendingGoalCompletion((prev) => (prev && prev.requestId === requestId ? null : prev));
+        }}
+        onOpenGoal={(goal) => {
+          setSelectedGoal(goal);
+          setScreen("goalDetail");
+        }}
+      />
+    );
+  }
+
+  if (screen === "goalDetail" && selectedGoal) {
+    return (
+      <GoalDetailScreen
+        goal={selectedGoal}
+        onBack={() => setScreen("roadmap")}
+        onCompleteGoal={(goal) => {
+          goalCompletionRequestCounter.current += 1;
+          setPendingGoalCompletion({ goal, requestId: goalCompletionRequestCounter.current });
+          setScreen("roadmap");
+        }}
+      />
+    );
   }
 
   return (

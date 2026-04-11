@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { GradientBackground } from "@/components/gradient-background";
+import { getPriorityMilestone } from "@/constants/priority-milestone";
 
 export default function RevealScreen({ profile, onContinue }: { profile: any; onContinue: () => void }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -26,20 +27,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
   const skillValues = Object.values(profile.skills as Record<string, number>);
   const avgSkill = skillValues.reduce((a, b) => a + b, 0) / Math.max(skillValues.length, 1);
   const level = avgSkill < 1.5 ? "Beginner" : avgSkill < 2.8 ? "Intermediate" : "Advanced";
-
-  const firstMilestone =
-    avgSkill < 1.5
-      ? "Set up your dev environment and push your first project to GitHub."
-      : avgSkill < 2.8
-      ? "Build a full-stack project and deploy it with a live URL."
-      : "Lead a project or apply for a research position.";
-
-  const reason =
-    profile.goals.includes("Get a SWE internship")
-      ? "Recruiters want to see you can ship something real. This is step one."
-      : profile.goals.includes("Do research")
-      ? "Professors want students who show initiative. A project proves that."
-      : "Every goal you picked starts here. Build the habit first.";
+  const { title: firstMilestone, reason } = getPriorityMilestone(profile);
 
   useEffect(() => {
     const pulseLoop = Animated.loop(
