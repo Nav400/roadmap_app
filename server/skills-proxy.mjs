@@ -39,11 +39,11 @@ async function generateSkills(major, year) {
         {
           role: "system",
           content:
-            'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills.',
+            'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills. Skills must be specific to the student\'s major and academic level, not generic computer science skills unless the major is CS-related. Include domain-specific areas used in that major (for example, actuarial science should emphasize probability, statistics, financial mathematics, risk modeling, insurance concepts, and actuarial software). Keep labels short and descriptions to one sentence each.',
         },
         {
           role: "user",
-          content: `Generate exactly 6 technical skills a ${year} ${major} student should self-rate for a roadmap app. Keep labels short and descriptions to one sentence each.`,
+          content: `Generate exactly 6 major-specific skills a ${year} ${major} student should self-rate for a roadmap app. Do not default to software engineering skills unless the major is software/computer related. Keep labels short and descriptions to one sentence each.`,
         },
       ],
     }),
@@ -64,7 +64,17 @@ async function generateSkills(major, year) {
   return skills;
 }
 
-async function generateGoals(major) {
+async function generateGoals(major, year, school, skills) {
+  const normalizedSkills =
+    skills && typeof skills === "object"
+      ? Object.fromEntries(
+          Object.entries(skills)
+            .filter(([, level]) => typeof level === "number")
+            .sort(([left], [right]) => String(left).localeCompare(String(right)))
+        )
+      : {};
+  const skillsJson = JSON.stringify(normalizedSkills);
+
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -78,11 +88,11 @@ async function generateGoals(major) {
         {
           role: "system",
           content:
-            'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 5 goals. Each goal must be a short phrase of 2 to 5 words, like "Get a SWE internship" or "Publish a paper". Focus on common outcome goals such as getting a job, getting an internship, publishing a paper, going to grad school, or getting certified. No project-based goals and no full sentences.',
+            'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 6 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and achieving a career outcome. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
         },
         {
           role: "user",
-          content: `Generate exactly 5 short common outcome goals for a ${major} student using a roadmap app. Each goal should be 2 to 5 words, like "Get a SWE internship" or "Publish a paper". Focus on common outcomes such as getting a job, getting an internship, publishing a paper, going to grad school, or getting certified. Do not include project-based goals. Return only JSON.`,
+          content: `Generate exactly 6 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and career goals. Return only JSON.`,
         },
       ],
     }),
@@ -97,13 +107,13 @@ async function generateGoals(major) {
   const goals = Array.isArray(parsed?.goals)
     ? parsed.goals
         .filter((goal) => typeof goal === "string")
-        .map((goal) => goal.trim().replace(/[.!?]+$/g, "").slice(0, 40))
+        .map((goal) => goal.trim().replace(/[.!?]+$/g, "").slice(0, 48))
         .filter(Boolean)
-        .slice(0, 5)
+        .slice(0, 6)
     : [];
 
-  if (goals.length !== 5) {
-    throw new Error("Model did not return 5 goals");
+  if (goals.length !== 6) {
+    throw new Error("Model did not return 6 goals");
   }
 
   return goals;
@@ -136,7 +146,8 @@ const server = createServer(async (req, res) => {
     const year = typeof body.year === "string" && body.year.trim() ? body.year.trim() : "college";
 
     if (req.url === "/goals/generate") {
-      const goals = await generateGoals(major);
+      const school = typeof body.school === "string" && body.school.trim() ? body.school.trim() : "their university";
+      const goals = await generateGoals(major, year, school, body.skills);
       sendJson(res, 200, { goals });
       return;
     }

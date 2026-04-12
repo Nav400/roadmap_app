@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
   },
   bottomNavLabel: {
     fontFamily: "ClashGrotesk-Medium",
-    fontSize: 12,
+    fontSize: 14,
     color: "#8f98ab",
   },
   bottomNavLabelActive: {

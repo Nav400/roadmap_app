@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
+  InteractionManager,
   LayoutAnimation,
   PanResponder,
   Platform,
@@ -196,20 +197,20 @@ const UNIVERSITIES = [
   "Yale University",
 ];
 const DEFAULT_SKILLS = [
-  { id: "coding", label: "Coding Languages" },
-  { id: "dsa", label: "Data Structures" },
-  { id: "git", label: "Git / Version Ctrl" },
-  { id: "web", label: "Web Development" },
-  { id: "math", label: "Discrete Math" },
-  { id: "systems", label: "Systems / OS" },
+  { id: "domain-core", label: "Core Domain Knowledge" },
+  { id: "quant-analytical", label: "Quantitative / Analytical" },
+  { id: "research-methods", label: "Research / Methodology" },
+  { id: "tools-platforms", label: "Industry Tools" },
+  { id: "communication", label: "Professional Communication" },
+  { id: "problem-solving", label: "Problem Solving" },
 ];
 const DEFAULT_SKILL_DESCRIPTIONS: Record<string, string> = {
-  coding: "Writing code in languages (ex: Python, Java, C++), solving problems with functions, and understanding core programming patterns.",
-  dsa: "Using common data structures like arrays, stacks, queues, trees, linked lists, and applying algorithmic thinking.",
-  git: "Version control basics: commits, branches, pull requests, and collaborating safely in codebases.",
-  web: "Building web apps with frontend UI, backend APIs, and connecting data between them.",
-  math: "Discrete math topics like logic, sets, combinatorics, and proofs used in CS courses.",
-  systems: "Operating systems and systems concepts including processes, memory, concurrency, and performance.",
+  "domain-core": "Foundational concepts and vocabulary in your major that you should be comfortable using.",
+  "quant-analytical": "Applying quantitative reasoning, analysis, or modeling expected in your field.",
+  "research-methods": "Understanding how your field gathers evidence, validates findings, and applies methods.",
+  "tools-platforms": "Using common tools, software, or platforms relevant to your discipline.",
+  communication: "Explaining technical ideas clearly in writing, presentations, or discussions.",
+  "problem-solving": "Breaking complex tasks into steps and choosing effective strategies to solve them.",
 };
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8787";
 const DEV_AI_API_KEY = __DEV__ ? process.env.EXPO_PUBLIC_AI_API_KEY ?? "" : "";
@@ -258,6 +259,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [isGeneratingGoals, setIsGeneratingGoals] = useState(false);
   const [lastGeneratedGoalsKey, setLastGeneratedGoalsKey] = useState("");
   const [skillLevels, setSkillLevels] = useState<Record<string, number>>({});
+  const [isQuestionEntrySettled, setIsQuestionEntrySettled] = useState(startAtQuestions);
   const containerBottomPadding = started ? (step <= 1 ? 120 : 180) : 48;
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
@@ -324,6 +326,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   };
   const activeSkillRef = useRef<string | null>(null);
   const hasSeenSkillsIntroRef = useRef(false);
+  const hasEnteredQuestionsRef = useRef(startAtQuestions);
   const prevStepRef = useRef(0);
   const prevSelectedMajorRef = useRef("");
   const prevGoalsMajorRef = useRef("");
@@ -332,6 +335,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const filteredMajors = MAJORS.filter((major) =>
     major.toLowerCase().includes(majorQuery.trim().toLowerCase())
   );
+  const majorsToRender = !isQuestionEntrySettled && majorQuery.trim().length === 0 ? filteredMajors.slice(0, 28) : filteredMajors;
   const normalizedSchoolQuery = schoolQuery.trim();
   const filteredSchools = UNIVERSITIES.filter((school) =>
     school.toLowerCase().includes(normalizedSchoolQuery.toLowerCase())
@@ -416,11 +420,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               {
                 role: "system",
                 content:
-                  'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills.',
+                  'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills. Skills must be specific to the student\'s major and academic level, not generic computer science skills unless the major is CS-related. Include domain-specific areas used in that major (for example, actuarial science should emphasize probability, statistics, financial mathematics, risk modeling, insurance concepts, and actuarial software). Keep labels short and descriptions to one sentence each.',
               },
               {
                 role: "user",
-                content: `Generate exactly 6 technical skills a ${year} ${major} student should self-rate for a roadmap app. Keep labels short and descriptions to one sentence each.`,
+                content: `Generate exactly 6 major-specific skills a ${year} ${major} student should self-rate for a roadmap app. Do not default to software engineering skills unless the major is software/computer related. Keep labels short and descriptions to one sentence each.`,
               },
             ],
           }),
@@ -431,10 +435,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            major,
-            year,
-          }),
+          body: JSON.stringify({ major, year }),
         });
       }
 
@@ -498,7 +499,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
   const generateGoalsFromAI = useCallback(async () => {
     const major = selectedMajor || "computer science";
-    const generationKey = major;
+    const year = selectedYear || "college";
+    const school = selectedSchool || "their university";
+    const normalizedSkillEntries = Object.entries(skillLevels)
+      .filter(([, level]) => typeof level === "number")
+      .sort(([left], [right]) => left.localeCompare(right));
+    const normalizedSkills = Object.fromEntries(normalizedSkillEntries);
+    const skillsJson = JSON.stringify(normalizedSkills);
+    const generationKey = `${major}|${year}|${school}|${skillsJson}`;
 
     if (isGeneratingGoals || lastGeneratedGoalsKey === generationKey) {
       return;
@@ -526,11 +534,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               {
                 role: "system",
                 content:
-                  'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 5 goals. Each goal must be a short phrase of 2 to 5 words, like "Get a SWE internship" or "Publish a paper". Focus on common outcome goals such as getting a job, getting an internship, publishing a paper, going to grad school, or getting certified. No project-based goals and no full sentences.',
+                  'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 6 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and achieving a career outcome. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
               },
               {
                 role: "user",
-                content: `Generate exactly 5 short common outcome goals for a ${major} student using a roadmap app. Each goal should be 2 to 5 words, like "Get a SWE internship" or "Publish a paper". Focus on common outcomes such as getting a job, getting an internship, publishing a paper, going to grad school, or getting certified. Do not include project-based goals. Return only JSON.`,
+                content: `Generate exactly 6 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and career goals. Return only JSON.`,
               },
             ],
           }),
@@ -541,7 +549,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ major }),
+          body: JSON.stringify({ major, year, school, skills: normalizedSkills }),
         });
       }
 
@@ -559,14 +567,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             const parsed = JSON.parse(jsonText);
             return normalizeGoalList(parsed?.goals)
               .map((goal) => goal.replace(/[.!?]+$/g, "").trim())
-              .slice(0, 5);
+              .slice(0, 6);
           })()
         : normalizeGoalList(data?.goals)
             .map((goal) => goal.replace(/[.!?]+$/g, "").trim())
-            .slice(0, 5);
+            .slice(0, 6);
 
-      if (apiGoals.length !== 5) {
-        throw new Error("Goal generation did not return 5 goals");
+      if (apiGoals.length !== 6) {
+        throw new Error("Goal generation did not return 6 goals");
       }
 
       setGeneratedGoals(apiGoals);
@@ -581,7 +589,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     } finally {
       setIsGeneratingGoals(false);
     }
-  }, [isGeneratingGoals, lastGeneratedGoalsKey, selectedMajor]);
+  }, [
+    isGeneratingGoals,
+    lastGeneratedGoalsKey,
+    selectedMajor,
+    selectedSchool,
+    selectedYear,
+    skillLevels,
+  ]);
 
   useEffect(() => {
     setSkillLevels((prev) => buildSkillState(skillsToRate, prev));
@@ -621,6 +636,25 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!started) {
+      setIsQuestionEntrySettled(startAtQuestions);
+      return;
+    }
+
+    if (isQuestionEntrySettled) {
+      return;
+    }
+
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      setIsQuestionEntrySettled(true);
+    });
+
+    return () => {
+      interactionTask.cancel();
+    };
+  }, [isQuestionEntrySettled, startAtQuestions, started]);
 
   useEffect(() => {
     activeSkillRef.current = activeSkillId;
@@ -664,8 +698,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     }).start();
 
     const direction = step >= prevStepRef.current ? 1 : -1;
-    contentOpacity.setValue(0.12);
-    contentTranslateY.setValue(direction * 12);
+    if (!hasEnteredQuestionsRef.current) {
+      contentOpacity.setValue(0);
+      contentTranslateY.setValue(16);
+      hasEnteredQuestionsRef.current = true;
+    } else {
+      contentOpacity.setValue(0.12);
+      contentTranslateY.setValue(direction * 12);
+    }
 
     Animated.parallel([
       Animated.timing(contentOpacity, {
@@ -803,11 +843,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   useEffect(() => {
     const hasSelectedMajor = selectedMajor.length > 0;
 
+    selectedMajorRowAnim.stopAnimation();
+    selectedMajorLabelAnim.stopAnimation();
+    selectedMajorAppearAnim.stopAnimation();
+
     Animated.timing(selectedMajorRowAnim, {
       toValue: hasSelectedMajor ? 1 : 0,
-      duration: hasSelectedMajor ? 360 : 220,
+      duration: hasSelectedMajor ? 260 : 180,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start();
 
     if (hasSelectedMajor && selectedMajor !== prevSelectedMajorRef.current) {
@@ -1101,6 +1145,21 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
   function goNext() {
     if (!started) {
+      LayoutAnimation.configureNext({
+        duration: 320,
+        create: {
+          type: LayoutAnimation.Types.easeInEaseOut,
+          property: LayoutAnimation.Properties.opacity,
+        },
+        update: {
+          type: LayoutAnimation.Types.easeInEaseOut,
+        },
+        delete: {
+          type: LayoutAnimation.Types.easeInEaseOut,
+          property: LayoutAnimation.Properties.opacity,
+        },
+      });
+      setIsQuestionEntrySettled(false);
       setStarted(true);
       setStep(0);
       return;
@@ -1223,21 +1282,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             pointerEvents={hasSelectedMajor ? "auto" : "none"}
             style={[
               styles.selectedMajorShell,
+              hasSelectedMajor && styles.selectedMajorShellVisible,
               {
                 opacity: selectedMajorRowAnim,
-                marginTop: selectedMajorRowAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 8],
-                }),
-                marginBottom: selectedMajorRowAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 8],
-                }),
                 transform: [
                   {
                     translateY: selectedMajorRowAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [-6, 0],
+                      outputRange: [-4, 0],
                     }),
                   },
                 ],
@@ -1346,7 +1398,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           </Animated.View>
 
           <View style={styles.pillGroup}>
-            {filteredMajors.map((m) => {
+            {majorsToRender.map((m) => {
               const scaleAnim = getPillScaleAnim(m);
               return (
                 <Animated.View
@@ -1376,20 +1428,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       }).start();
                     }}
                     onPress={() => {
-                      LayoutAnimation.configureNext({
-                        duration: 420,
-                        create: {
-                          type: LayoutAnimation.Types.easeInEaseOut,
-                          property: LayoutAnimation.Properties.opacity,
-                        },
-                        update: {
-                          type: LayoutAnimation.Types.easeInEaseOut,
-                        },
-                        delete: {
-                          type: LayoutAnimation.Types.easeInEaseOut,
-                          property: LayoutAnimation.Properties.opacity,
-                        },
-                      });
                       setSelectedMajor(m);
                     }}
                   >
@@ -2104,6 +2142,10 @@ const styles = StyleSheet.create({
   selectedMajorShell: {
     overflow: "visible",
   },
+  selectedMajorShellVisible: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
   selectedMajorRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -2352,12 +2394,13 @@ const styles = StyleSheet.create({
   },
   skillHeaderRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     marginBottom: 14,
   },
   skillNameBtn: {
-    maxWidth: "72%",
+    flex: 1,
+    marginRight: 10,
     alignItems: "flex-start",
   },
   skillNameBtnPressed: {
@@ -2418,7 +2461,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 0.4,
     color: "#b7adff",
-    width: 142,
+    minWidth: 132,
     textAlign: "right",
   },
   ctaBtnShell: {
