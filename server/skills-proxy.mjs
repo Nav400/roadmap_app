@@ -88,11 +88,11 @@ async function generateGoals(major, year, school, skills) {
         {
           role: "system",
           content:
-            'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 6 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and achieving a career outcome. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
+            'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 6 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and building career readiness. Do not mention specific job titles, role names, company names, or exact positions. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
         },
         {
           role: "user",
-          content: `Generate exactly 6 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and career goals. Return only JSON.`,
+          content: `Generate exactly 6 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and broad career-readiness goals. Do not use specific job titles or role names. Return only JSON.`,
         },
       ],
     }),
@@ -104,9 +104,20 @@ async function generateGoals(major, year, school, skills) {
   const jsonEnd = rawText.lastIndexOf("}");
   const jsonText = jsonStart >= 0 && jsonEnd > jsonStart ? rawText.slice(jsonStart, jsonEnd + 1) : rawText;
   const parsed = JSON.parse(jsonText);
+  const broadenSpecificGoal = (goal) => {
+    const normalized = String(goal).trim().replace(/[.!?]+$/g, "");
+    const hasRoleWord = /\b(role|position|job)\b/i.test(normalized);
+    const hasJobTitlePattern = /\b(analyst|engineer|developer|manager|consultant|scientist|specialist)\b/i.test(normalized);
+    const hasTargetingVerb = /\b(secure|get|land|become|attain|obtain|win)\b/i.test(normalized);
+    if (hasRoleWord || (hasJobTitlePattern && hasTargetingVerb)) {
+      return "Advance Career Readiness";
+    }
+    return normalized;
+  };
   const goals = Array.isArray(parsed?.goals)
     ? parsed.goals
         .filter((goal) => typeof goal === "string")
+        .map((goal) => broadenSpecificGoal(goal))
         .map((goal) => goal.trim().replace(/[.!?]+$/g, "").slice(0, 48))
         .filter(Boolean)
         .slice(0, 6)

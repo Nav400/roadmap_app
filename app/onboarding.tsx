@@ -20,136 +20,179 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GradientBackground } from "@/components/gradient-background";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
-const MAJORS = [
-  "Accounting",
-  "Actuarial Science",
-  "Aerospace Engineering",
-  "African American Studies",
-  "Agricultural Engineering",
-  "Agricultural Science",
-  "Animal Science",
-  "Anthropology",
-  "Applied Mathematics",
-  "Architecture",
-  "Art Education",
-  "Art History",
-  "Artificial Intelligence",
-  "Asian Studies",
-  "Astronomy",
-  "Athletic Training",
-  "Biochemistry",
-  "Bioengineering",
-  "Biomedical Engineering",
-  "Biophysics",
-  "Biostatistics",
-  "Business Administration",
-  "Business Analytics",
-  "Chemical Engineering",
-  "Clinical Psychology",
-  "Cognitive Science",
-  "Communication",
-  "Communication Disorders",
-  "Comparative Literature",
-  "Computer Engineering",
-  "Computer Information Systems",
-  "Computer Science",
-  "Construction Management",
-  "Criminal Justice",
-  "Cybersecurity",
-  "Dance",
-  "Data Science",
-  "Dentistry (Pre-Dental)",
-  "Digital Media",
-  "Early Childhood Education",
-  "Economics",
-  "Education",
-  "Electrical Engineering",
-  "Elementary Education",
-  "Engineering Physics",
-  "Engineering Technology",
-  "English",
-  "Environmental Engineering",
-  "Environmental Science",
-  "Ethnic Studies",
-  "Finance",
-  "Fine Arts",
-  "Food Science",
-  "Forensic Science",
-  "French",
-  "Game Design",
-  "Genetics",
-  "Geography",
-  "Geology",
-  "German",
-  "Global Studies",
-  "Graphic Design",
-  "Health Administration",
-  "Health Science",
-  "History",
-  "Hospitality Management",
-  "Human Development",
-  "Human Resources",
-  "Humanities",
-  "Industrial Design",
-  "Industrial Engineering",
-  "Information Systems",
-  "Information Technology",
-  "Interdisciplinary Studies",
-  "Interior Design",
-  "International Business",
-  "International Relations",
-  "Journalism",
-  "Kinesiology",
-  "Landscape Architecture",
-  "Latin American Studies",
-  "Law (Pre-Law)",
-  "Linguistics",
-  "Management",
-  "Management Information Systems",
-  "Marketing",
-  "Materials Science",
-  "Mathematics",
-  "Mechanical Engineering",
-  "Media Studies",
-  "Medicine (Pre-Med)",
-  "Microbiology",
-  "Middle Eastern Studies",
-  "Molecular Biology",
-  "Music",
-  "Music Education",
-  "Neuroscience",
-  "Nursing",
-  "Nutrition",
-  "Occupational Therapy",
-  "Pharmacy (Pre-Pharm)",
-  "Philosophy",
-  "Photography",
-  "Physical Education",
-  "Physical Therapy",
-  "Physics",
-  "Physiology",
-  "Political Science",
-  "Psychology",
-  "Public Administration",
-  "Public Health",
-  "Public Policy",
-  "Radiologic Science",
-  "Religious Studies",
-  "Social Work",
-  "Sociology",
-  "Software Engineering",
-  "Spanish",
-  "Special Education",
-  "Speech-Language Pathology",
-  "Sports Management",
-  "Statistics",
-  "Supply Chain Management",
-  "Theater",
-  "Urban Planning",
-  "Veterinary Medicine (Pre-Vet)",
-  "Women and Gender Studies",
-  "Undecided / Exploring",
+const MAJOR_CATEGORIES = [
+  {
+    label: "STEM",
+    description: "Science, technology, engineering, and math majors.",
+    majors: [
+      "Aerospace Engineering",
+      "Agricultural Engineering",
+      "Agricultural Science",
+      "Animal Science",
+      "Applied Mathematics",
+      "Artificial Intelligence",
+      "Astronomy",
+      "Biochemistry",
+      "Bioengineering",
+      "Biomedical Engineering",
+      "Biophysics",
+      "Biostatistics",
+      "Chemical Engineering",
+      "Cognitive Science",
+      "Computer Engineering",
+      "Computer Information Systems",
+      "Computer Science",
+      "Construction Management",
+      "Cybersecurity",
+      "Data Science",
+      "Electrical Engineering",
+      "Engineering Physics",
+      "Engineering Technology",
+      "Environmental Engineering",
+      "Environmental Science",
+      "Food Science",
+      "Forensic Science",
+      "Genetics",
+      "Geography",
+      "Geology",
+      "Industrial Engineering",
+      "Information Technology",
+      "Landscape Architecture",
+      "Materials Science",
+      "Mathematics",
+      "Mechanical Engineering",
+      "Microbiology",
+      "Molecular Biology",
+      "Neuroscience",
+      "Physics",
+      "Physiology",
+      "Software Engineering",
+      "Statistics",
+    ],
+  },
+  {
+    label: "Health & Medicine",
+    description: "Clinical, care, and public health pathways.",
+    majors: [
+      "Athletic Training",
+      "Clinical Psychology",
+      "Communication Disorders",
+      "Dentistry (Pre-Dental)",
+      "Health Administration",
+      "Health Science",
+      "Kinesiology",
+      "Medicine (Pre-Med)",
+      "Nursing",
+      "Nutrition",
+      "Occupational Therapy",
+      "Pharmacy (Pre-Pharm)",
+      "Physical Education",
+      "Physical Therapy",
+      "Public Health",
+      "Radiologic Science",
+      "Speech-Language Pathology",
+      "Veterinary Medicine (Pre-Vet)",
+    ],
+  },
+  {
+    label: "Business & Finance",
+    description: "Business, economics, and management majors.",
+    majors: [
+      "Accounting",
+      "Actuarial Science",
+      "Business Administration",
+      "Business Analytics",
+      "Economics",
+      "Finance",
+      "Hospitality Management",
+      "Human Resources",
+      "Information Systems",
+      "International Business",
+      "Management",
+      "Management Information Systems",
+      "Marketing",
+      "Public Administration",
+      "Public Policy",
+      "Sports Management",
+      "Supply Chain Management",
+    ],
+  },
+  {
+    label: "Arts & Design",
+    description: "Creative, visual, and performance-focused majors.",
+    majors: [
+      "Architecture",
+      "Art Education",
+      "Art History",
+      "Dance",
+      "Digital Media",
+      "Fine Arts",
+      "Game Design",
+      "Graphic Design",
+      "Industrial Design",
+      "Interior Design",
+      "Music",
+      "Music Education",
+      "Photography",
+      "Theater",
+    ],
+  },
+  {
+    label: "Humanities & Languages",
+    description: "Writing, history, languages, and cultural study.",
+    majors: [
+      "African American Studies",
+      "Asian Studies",
+      "Comparative Literature",
+      "English",
+      "Ethnic Studies",
+      "French",
+      "German",
+      "Global Studies",
+      "History",
+      "Humanities",
+      "Latin American Studies",
+      "Linguistics",
+      "Middle Eastern Studies",
+      "Philosophy",
+      "Religious Studies",
+      "Spanish",
+      "Women and Gender Studies",
+    ],
+  },
+  {
+    label: "Social Sciences & Policy",
+    description: "Behavior, society, systems, and public policy.",
+    majors: [
+      "Anthropology",
+      "Communication",
+      "Criminal Justice",
+      "Early Childhood Education",
+      "Elementary Education",
+      "Human Development",
+      "International Relations",
+      "Journalism",
+      "Law (Pre-Law)",
+      "Media Studies",
+      "Political Science",
+      "Psychology",
+      "Social Work",
+      "Sociology",
+      "Urban Planning",
+    ],
+  },
+  {
+    label: "Education",
+    description: "Teaching and learning-focused majors.",
+    majors: ["Education", "Special Education"],
+  },
+  {
+    label: "Other / Undecided",
+    description: "Flexible or interdisciplinary options.",
+    majors: ["Interdisciplinary Studies", "Undecided / Exploring"],
+  },
 ];
+
 const YEARS = ["Freshman", "Sophomore", "Junior", "Senior"];
 const UNIVERSITIES = [
   "Arizona State University",
@@ -223,6 +266,7 @@ const SKILL_LEVEL_OPTIONS = [
   { value: 3, label: "Comfortable" },
   { value: 4, label: "Confident" },
 ];
+const SKILL_DESCRIPTION_PROMPT_VERSION = "skills-desc-25-35-v2";
 
 const SKILL_SHEET_HEIGHT = 220;
 
@@ -260,6 +304,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [lastGeneratedGoalsKey, setLastGeneratedGoalsKey] = useState("");
   const [skillLevels, setSkillLevels] = useState<Record<string, number>>({});
   const [isQuestionEntrySettled, setIsQuestionEntrySettled] = useState(startAtQuestions);
+  const [expandedMajorCategories, setExpandedMajorCategories] = useState<string[]>([]);
   const containerBottomPadding = started ? (step <= 1 ? 120 : 180) : 48;
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
@@ -281,17 +326,17 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const skillIntroCardScale = useRef(new Animated.Value(0.96)).current;
   const skillIntroCardTranslateY = useRef(new Animated.Value(18)).current;
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
-  const pillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const majorCategoryExpandAnimsRef = useRef<Record<string, Animated.Value>>({});
   const yearPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const goalPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const customGoalAppearAnimsRef = useRef<Record<string, Animated.Value>>({});
   const skillDotTapAnimsRef = useRef<Record<string, Animated.Value>>({});
   const skillLabelAnimsRef = useRef<Record<string, Animated.Value>>({});
-  const getPillScaleAnim = (major: string) => {
-    if (!pillScaleAnimsRef.current[major]) {
-      pillScaleAnimsRef.current[major] = new Animated.Value(1);
+  const getMajorCategoryExpandAnim = (categoryLabel: string) => {
+    if (!majorCategoryExpandAnimsRef.current[categoryLabel]) {
+      majorCategoryExpandAnimsRef.current[categoryLabel] = new Animated.Value(0);
     }
-    return pillScaleAnimsRef.current[major];
+    return majorCategoryExpandAnimsRef.current[categoryLabel];
   };
   const getYearPillScaleAnim = (year: string) => {
     if (!yearPillScaleAnimsRef.current[year]) {
@@ -332,16 +377,35 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const prevGoalsMajorRef = useRef("");
   const prevSelectedSchoolRef = useRef("");
   const hasPlayedSelectedMajorLabelIntroRef = useRef(false);
-  const filteredMajors = MAJORS.filter((major) =>
-    major.toLowerCase().includes(majorQuery.trim().toLowerCase())
-  );
-  const majorsToRender = !isQuestionEntrySettled && majorQuery.trim().length === 0 ? filteredMajors.slice(0, 28) : filteredMajors;
+  const normalizedMajorQuery = majorQuery.trim().toLowerCase();
+  const visibleMajorCategories = MAJOR_CATEGORIES.map((category) => {
+    const categoryMatches = category.label.toLowerCase().includes(normalizedMajorQuery);
+    const majors =
+      normalizedMajorQuery.length === 0 || categoryMatches
+        ? category.majors
+        : category.majors.filter((major) => major.toLowerCase().includes(normalizedMajorQuery));
+
+    return {
+      ...category,
+      majors,
+    };
+  }).filter((category) => category.majors.length > 0);
+  const hasMajorSearchResults = visibleMajorCategories.length > 0;
   const normalizedSchoolQuery = schoolQuery.trim();
   const filteredSchools = UNIVERSITIES.filter((school) =>
     school.toLowerCase().includes(normalizedSchoolQuery.toLowerCase())
   );
   const canUseCustomSchool = normalizedSchoolQuery.length > 1 && filteredSchools.length === 0;
   const hasAllSkillsRated = skillsToRate.length > 0 && skillsToRate.every((skill) => (skillLevels[skill.id] ?? 0) > 0);
+  const currentSkillsGenerationKey = `${selectedMajor || "computer science"}|${selectedYear || "college"}|${SKILL_DESCRIPTION_PROMPT_VERSION}`;
+  const areSkillsReadyForCurrentSelection =
+    lastGeneratedSkillsKey === currentSkillsGenerationKey && skillsToRate.length > 0;
+  const normalizedGoalSkillEntries = Object.entries(skillLevels)
+    .filter(([, level]) => typeof level === "number")
+    .sort(([left], [right]) => left.localeCompare(right));
+  const currentGoalsGenerationKey = `${selectedMajor || "computer science"}|${selectedYear || "college"}|${selectedSchool || "their university"}|${JSON.stringify(Object.fromEntries(normalizedGoalSkillEntries))}`;
+  const areGoalsReadyForCurrentSelection =
+    lastGeneratedGoalsKey === currentGoalsGenerationKey && generatedGoals.length > 0;
 
   function slugifySkillLabel(label: string, index: number) {
     const base = label
@@ -389,10 +453,33 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     return normalized;
   }
 
+  function broadenSpecificGoal(goal: string): string {
+    const normalized = goal.trim().replace(/[.!?]+$/g, "");
+    const hasRoleWord = /\b(role|position|job)\b/i.test(normalized);
+    const hasJobTitlePattern = /\b(analyst|engineer|developer|manager|consultant|scientist|specialist)\b/i.test(normalized);
+    const hasTargetingVerb = /\b(secure|get|land|become|attain|obtain|win)\b/i.test(normalized);
+
+    if (hasRoleWord || (hasJobTitlePattern && hasTargetingVerb)) {
+      return "Advance Career Readiness";
+    }
+
+    return normalized;
+  }
+
+  function getMajorCategoryLabel(major: string) {
+    return MAJOR_CATEGORIES.find((category) => category.majors.includes(major))?.label ?? "";
+  }
+
+  function toggleMajorCategory(categoryLabel: string) {
+    setExpandedMajorCategories((prev) =>
+      prev.includes(categoryLabel) ? prev.filter((label) => label !== categoryLabel) : [...prev, categoryLabel]
+    );
+  }
+
   const generateSkillsFromAI = useCallback(async () => {
     const major = selectedMajor || "computer science";
     const year = selectedYear || "college";
-    const generationKey = `${major}|${year}`;
+    const generationKey = `${major}|${year}|${SKILL_DESCRIPTION_PROMPT_VERSION}`;
 
     if (isGeneratingSkills || lastGeneratedSkillsKey === generationKey) {
       return;
@@ -420,11 +507,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               {
                 role: "system",
                 content:
-                  'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills. Skills must be specific to the student\'s major and academic level, not generic computer science skills unless the major is CS-related. Include domain-specific areas used in that major (for example, actuarial science should emphasize probability, statistics, financial mathematics, risk modeling, insurance concepts, and actuarial software). Keep labels short and descriptions to one sentence each.',
+                  'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills. Skills must be specific to the student\'s major and academic level, not generic computer science skills unless the major is CS-related. Include domain-specific areas used in that major (for example, actuarial science should emphasize probability, statistics, financial mathematics, risk modeling, insurance concepts, and actuarial software). Keep labels short and write each description in 2 to 3 sentences having a maximum of 18 words per description. Avoid template-like repeated endings across skills.',
               },
               {
                 role: "user",
-                content: `Generate exactly 6 major-specific skills a ${year} ${major} student should self-rate for a roadmap app. Do not default to software engineering skills unless the major is software/computer related. Keep labels short and descriptions to one sentence each.`,
+                content: `Generate exactly 6 major-specific skills a ${year} ${major} student should self-rate for a roadmap app. Do not default to software engineering skills unless the major is software/computer related. Keep labels short and make each description 2 to 3 sentences having a maximum of 18 words per description. Keep each description distinct and avoid repeated stock phrasing.`,
               },
             ],
           }),
@@ -464,7 +551,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       const normalizedSkills = apiSkills.map((skill: { label?: string; description?: string }, index: number) => ({
         id: slugifySkillLabel(skill?.label?.trim() || `Skill ${index + 1}`, index),
         label: (skill?.label?.trim() || `Skill ${index + 1}`).slice(0, 40),
-        description: (skill?.description?.trim() || "Rate your familiarity with this skill.").slice(0, 220),
+        description: (skill?.description?.replace(/\s+/g, " ").trim() || "Rate your familiarity with this skill.").slice(0, 360),
       }));
 
       const dedupedSkills = normalizedSkills.map(
@@ -534,11 +621,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               {
                 role: "system",
                 content:
-                  'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 6 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and achieving a career outcome. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
+                  'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 6 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and building career readiness. Do not mention specific job titles, role names, company names, or exact positions. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
               },
               {
                 role: "user",
-                content: `Generate exactly 6 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and career goals. Return only JSON.`,
+                content: `Generate exactly 6 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and broad career-readiness goals. Do not use specific job titles or role names. Return only JSON.`,
               },
             ],
           }),
@@ -566,10 +653,12 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             const jsonText = jsonStart >= 0 && jsonEnd > jsonStart ? rawText.slice(jsonStart, jsonEnd + 1) : rawText;
             const parsed = JSON.parse(jsonText);
             return normalizeGoalList(parsed?.goals)
+              .map((goal) => broadenSpecificGoal(goal))
               .map((goal) => goal.replace(/[.!?]+$/g, "").trim())
               .slice(0, 6);
           })()
         : normalizeGoalList(data?.goals)
+            .map((goal) => broadenSpecificGoal(goal))
             .map((goal) => goal.replace(/[.!?]+$/g, "").trim())
             .slice(0, 6);
 
@@ -603,10 +692,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [skillsToRate]);
 
   useEffect(() => {
-    if (started && step === 2) {
+    if (started && step >= 1 && selectedMajor.trim().length > 0 && selectedYear.trim().length > 0) {
       generateSkillsFromAI();
     }
-  }, [generateSkillsFromAI, started, step]);
+  }, [generateSkillsFromAI, selectedMajor, selectedYear, started, step]);
 
   useEffect(() => {
     if (selectedMajor.trim().length === 0) {
@@ -626,10 +715,25 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
   useEffect(() => {
     // Preload goals while the user is on skills so step 4 renders without pop-in.
-    if (started && step >= 2 && selectedMajor.trim().length > 0) {
+    if (
+      started &&
+      step >= 2 &&
+      selectedMajor.trim().length > 0 &&
+      selectedSchool.trim().length > 0 &&
+      selectedYear.trim().length > 0 &&
+      hasAllSkillsRated
+    ) {
       generateGoalsFromAI();
     }
-  }, [generateGoalsFromAI, selectedMajor, started, step]);
+  }, [
+    generateGoalsFromAI,
+    hasAllSkillsRated,
+    selectedMajor,
+    selectedSchool,
+    selectedYear,
+    started,
+    step,
+  ]);
 
   useEffect(() => {
     if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -891,6 +995,37 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     selectedMajorRowAnim,
     selectedMajorTapAnim,
   ]);
+
+  useEffect(() => {
+    if (!selectedMajor) {
+      return;
+    }
+
+    const selectedCategoryLabel = getMajorCategoryLabel(selectedMajor);
+    if (!selectedCategoryLabel) {
+      return;
+    }
+
+    setExpandedMajorCategories((prev) =>
+      prev.includes(selectedCategoryLabel) ? prev : [...prev, selectedCategoryLabel]
+    );
+  }, [selectedMajor]);
+
+  useEffect(() => {
+    MAJOR_CATEGORIES.forEach((category) => {
+      const categoryAnim = getMajorCategoryExpandAnim(category.label);
+      const isExpanded = normalizedMajorQuery.length > 0 || expandedMajorCategories.includes(category.label);
+
+      Animated.spring(categoryAnim, {
+        toValue: isExpanded ? 1 : 0,
+        stiffness: isExpanded ? 180 : 210,
+        damping: isExpanded ? 24 : 28,
+        mass: 0.85,
+        overshootClamping: true,
+        useNativeDriver: false,
+      }).start();
+    });
+  }, [majorQuery, normalizedMajorQuery.length, expandedMajorCategories]);
 
   useEffect(() => {
     const hasSelectedSchool = selectedSchool.length > 0;
@@ -1297,7 +1432,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             ]}
           >
             {hasSelectedMajor && (
-              <View style={styles.selectedMajorRow}>
+              <View style={styles.selectedMajorStack}>
                 <Animated.Text
                   style={[
                     styles.selectedMajorLabel,
@@ -1314,7 +1449,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                     },
                   ]}
                 >
-                  Selected:
+                  Selected major
                 </Animated.Text>
                 <Animated.View
                   style={{
@@ -1397,48 +1532,94 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             </View>
           </Animated.View>
 
-          <View style={styles.pillGroup}>
-            {majorsToRender.map((m) => {
-              const scaleAnim = getPillScaleAnim(m);
+          <View style={styles.majorCategoryList}>
+            {visibleMajorCategories.map((category) => {
+              const isExpanded = normalizedMajorQuery.length > 0 || expandedMajorCategories.includes(category.label);
+              const categoryAnim = getMajorCategoryExpandAnim(category.label);
+              const chevronRotate = categoryAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ["0deg", "180deg"],
+              });
+
               return (
-                <Animated.View
-                  key={m}
-                  style={{ transform: [{ scale: scaleAnim }] }}
-                >
+                <View key={category.label} style={styles.majorCategoryCard}>
                   <Pressable
+                    disabled={normalizedMajorQuery.length > 0}
                     style={({ pressed }) => [
-                      styles.pill,
-                      selectedMajor === m && styles.pillSelected,
-                      pressed && styles.pillPressed,
+                      styles.majorCategoryHeader,
+                      pressed && normalizedMajorQuery.length === 0 && styles.majorCategoryHeaderPressed,
                     ]}
-                    onPressIn={() => {
-                      Animated.spring(scaleAnim, {
-                        toValue: 0.95,
-                        friction: 6,
-                        tension: 100,
-                        useNativeDriver: true,
-                      }).start();
-                    }}
-                    onPressOut={() => {
-                      Animated.spring(scaleAnim, {
-                        toValue: 1,
-                        friction: 6,
-                        tension: 100,
-                        useNativeDriver: true,
-                      }).start();
-                    }}
                     onPress={() => {
-                      setSelectedMajor(m);
+                      if (normalizedMajorQuery.length === 0) {
+                        toggleMajorCategory(category.label);
+                      }
                     }}
                   >
-                    <Text style={[styles.pillText, selectedMajor === m && styles.pillTextSelected]}>{m}</Text>
+                    <View style={styles.majorCategoryHeaderCopy}>
+                      <Text style={styles.majorCategoryTitle}>{category.label}</Text>
+                      <Text style={styles.majorCategoryDescription}>{category.description}</Text>
+                    </View>
+                    <View style={styles.majorCategoryHeaderMeta}>
+                      <View style={styles.majorCategoryChevronBtn}>
+                        <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
+                          <MaterialIcons name="expand-more" size={24} color="#b7c1d7" />
+                        </Animated.View>
+                      </View>
+                    </View>
                   </Pressable>
-                </Animated.View>
+
+                  <Animated.View
+                    pointerEvents={isExpanded ? "auto" : "none"}
+                    style={[
+                      styles.majorCategoryBody,
+                      {
+                        maxHeight: categoryAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 1600],
+                        }),
+                        opacity: categoryAnim,
+                        transform: [
+                          {
+                            translateY: categoryAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-6, 0],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <View style={styles.majorOptionList}>
+                      {category.majors.map((major) => {
+                        const isSelected = selectedMajor === major;
+
+                        return (
+                          <View key={major}>
+                            <Pressable
+                              style={({ pressed }) => [
+                                styles.majorOption,
+                                isSelected && styles.majorOptionSelected,
+                                pressed && styles.pillPressed,
+                              ]}
+                              onPress={() => {
+                                setSelectedMajor(major);
+                              }}
+                            >
+                              <Text style={[styles.majorOptionText, isSelected && styles.majorOptionTextSelected]}>
+                                {major}
+                              </Text>
+                            </Pressable>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </Animated.View>
+                </View>
               );
             })}
           </View>
 
-          {filteredMajors.length === 0 && (
+          {!hasMajorSearchResults && majorQuery.trim().length > 0 && (
             <View style={styles.noMajorResultsCard}>
               <Text style={styles.noMajorResultsTitle}>No majors found</Text>
               <Text style={styles.noMajorResultsBody}>Try a different keyword or clear search to browse all options.</Text>
@@ -1499,7 +1680,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   }}
                 >
                   <Pressable
-                    style={({ pressed }) => [styles.selectedMajorPill, pressed && styles.selectedMajorPillPressed]}
+                    style={({ pressed }) => [styles.selectedSchoolPill, pressed && styles.selectedMajorPillPressed]}
                     onPress={() => {
                       setSelectedSchool("");
                       setSelectedYear("");
@@ -1688,6 +1869,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     }
 
     if (step === 2) {
+      if (!areSkillsReadyForCurrentSelection) {
+        return (
+          <View style={styles.noMajorResultsCard}>
+            <Text style={styles.noMajorResultsTitle}>Preparing your skill set...</Text>
+            <Text style={styles.noMajorResultsBody}>Loading your major-specific skills before this step appears.</Text>
+          </View>
+        );
+      }
+
       return (
         <>
           {skillsToRate.map((skill) => {
@@ -1787,94 +1977,96 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     return (
       <>
-        {isGeneratingGoals || generatedGoals.length === 0 ? (
+        {!areGoalsReadyForCurrentSelection ? (
           <View style={styles.noMajorResultsCard}>
             <Text style={styles.noMajorResultsTitle}>Generating goals for {selectedMajor}...</Text>
             <Text style={styles.noMajorResultsBody}>We are pulling in major-specific goals from Groq right now.</Text>
           </View>
-        ) : null}
+        ) : (
+          <>
+            <View style={styles.pillGroup}>
+              {[...generatedGoals, ...customGoals].map((g) => {
+                const scaleAnim = getGoalPillScaleAnim(g);
+                const isCustomGoal = customGoals.includes(g);
+                const appearAnim = isCustomGoal ? getCustomGoalAppearAnim(g) : null;
+                return (
+                  <Animated.View
+                    key={g}
+                    style={{
+                      opacity: appearAnim ?? 1,
+                      transform: [
+                        {
+                          translateY: appearAnim
+                            ? appearAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [10, 0],
+                              })
+                            : 0,
+                        },
+                        {
+                          scale: appearAnim
+                            ? Animated.multiply(
+                                scaleAnim,
+                                appearAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0.95, 1],
+                                })
+                              )
+                            : scaleAnim,
+                        },
+                      ],
+                    }}
+                  >
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.pill,
+                        selectedGoals.includes(g) && styles.pillSelected,
+                        pressed && styles.pillPressed,
+                      ]}
+                      onPressIn={() => {
+                        Animated.spring(scaleAnim, {
+                          toValue: 0.95,
+                          friction: 6,
+                          tension: 100,
+                          useNativeDriver: true,
+                        }).start();
+                      }}
+                      onPressOut={() => {
+                        Animated.spring(scaleAnim, {
+                          toValue: 1,
+                          friction: 6,
+                          tension: 100,
+                          useNativeDriver: true,
+                        }).start();
+                      }}
+                      onPress={() => toggleGoal(g)}
+                    >
+                      <Text style={[styles.pillText, selectedGoals.includes(g) && styles.pillTextSelected]}>{g}</Text>
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
+            </View>
 
-        <View style={styles.pillGroup}>
-          {[...generatedGoals, ...customGoals].map((g) => {
-            const scaleAnim = getGoalPillScaleAnim(g);
-            const isCustomGoal = customGoals.includes(g);
-            const appearAnim = isCustomGoal ? getCustomGoalAppearAnim(g) : null;
-            return (
-              <Animated.View
-                key={g}
-                style={{
-                  opacity: appearAnim ?? 1,
-                  transform: [
-                    {
-                      translateY: appearAnim
-                        ? appearAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [10, 0],
-                          })
-                        : 0,
-                    },
-                    {
-                      scale: appearAnim
-                        ? Animated.multiply(
-                            scaleAnim,
-                            appearAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [0.95, 1],
-                            })
-                          )
-                        : scaleAnim,
-                    },
-                  ],
-                }}
+            <View style={styles.customGoalRow}>
+              <TextInput
+                value={customGoalInput}
+                onChangeText={setCustomGoalInput}
+                placeholder="Add your own goal"
+                placeholderTextColor="#6e7790"
+                style={styles.customGoalInput}
+                returnKeyType="done"
+                onSubmitEditing={addCustomGoal}
+              />
+              <Pressable
+                style={({ pressed }) => [styles.customGoalAddBtn, pressed && styles.customGoalAddBtnPressed]}
+                onPress={addCustomGoal}
               >
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.pill,
-                    selectedGoals.includes(g) && styles.pillSelected,
-                    pressed && styles.pillPressed,
-                  ]}
-                  onPressIn={() => {
-                    Animated.spring(scaleAnim, {
-                      toValue: 0.95,
-                      friction: 6,
-                      tension: 100,
-                      useNativeDriver: true,
-                    }).start();
-                  }}
-                  onPressOut={() => {
-                    Animated.spring(scaleAnim, {
-                      toValue: 1,
-                      friction: 6,
-                      tension: 100,
-                      useNativeDriver: true,
-                    }).start();
-                  }}
-                  onPress={() => toggleGoal(g)}
-                >
-                  <Text style={[styles.pillText, selectedGoals.includes(g) && styles.pillTextSelected]}>{g}</Text>
-                </Pressable>
-              </Animated.View>
-            );
-          })}
-        </View>
-
-        <View style={styles.customGoalRow}>
-          <TextInput
-            value={customGoalInput}
-            onChangeText={setCustomGoalInput}
-            placeholder="Add your own goal"
-            placeholderTextColor="#6e7790"
-            style={styles.customGoalInput}
-            returnKeyType="done"
-            onSubmitEditing={addCustomGoal}
-          />
-          <Pressable
-            style={({ pressed }) => [styles.customGoalAddBtn, pressed && styles.customGoalAddBtnPressed]}
-            onPress={addCustomGoal}
-          >
-            <Text style={styles.customGoalAddText}>Add</Text>
-          </Pressable>
-        </View>
+                <Text style={styles.customGoalAddText}>Add</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
       </>
     );
   }
@@ -2141,10 +2333,15 @@ const styles = StyleSheet.create({
   },
   selectedMajorShell: {
     overflow: "visible",
+    width: "100%",
   },
   selectedMajorShellVisible: {
     marginTop: 8,
     marginBottom: 8,
+  },
+  selectedMajorStack: {
+    width: "100%",
+    gap: 10,
   },
   selectedMajorRow: {
     flexDirection: "row",
@@ -2160,8 +2357,22 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   selectedMajorPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#7c5cff",
+    backgroundColor: "#1d1835",
+  },
+  selectedSchoolPill: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#7c5cff",
@@ -2175,6 +2386,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     letterSpacing: 1,
     color: "#ddd6ff",
+    textAlign: "center",
   },
   majorSearchShell: {
     marginTop: 8,
@@ -2223,17 +2435,99 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: "#b7c1d7",
   },
-  pillGroup: {
+  majorCategoryList: {
+    gap: 12,
+    marginTop: 10,
+    marginBottom: 24,
+  },
+  majorCategoryCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#2c3548",
+    backgroundColor: "#121723",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  majorCategoryHeader: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  majorCategoryHeaderPressed: {
+    opacity: 0.9,
+  },
+  majorCategoryHeaderCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  majorCategoryTitle: {
+    fontFamily: "ClashGrotesk-Semibold",
+    fontSize: 23,
+    color: "#f1f4fb",
+    letterSpacing: 0.4,
+  },
+  majorCategoryDescription: {
+    fontFamily: "ClashGrotesk-Regular",
+    fontSize: 18,
+    color: "#95a2bb",
+    lineHeight: 23,
+  },
+  majorCategoryHeaderMeta: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  majorCategoryChevronBtn: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -4,
+  },
+  majorCategoryBody: {
+    overflow: "hidden",
+    paddingTop: 14,
+  },
+  majorOptionList: {
+    gap: 10,
+  },
+  majorOption: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#3a404d",
+    backgroundColor: "#181c24",
+  },
+  majorOptionSelected: {
+    backgroundColor: "#1d1835",
+    borderColor: "#7c5cff",
+  },
+  majorOptionText: {
+    fontFamily: "ClashGrotesk-Medium",
+    fontSize: 19,
+    color: "#b0b9c8",
+    textAlign: "center",
+  },
+  majorOptionTextSelected: {
+    color: "#ddd6ff",
+  },
+  pillGroup: {
+    flexDirection: "column",
+    gap: 10,
     fontSize: 15,
     marginTop: 10,
     marginBottom: 24,
   },
   pill: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingVertical: 12,
     borderRadius: 100,
     borderWidth: 1,
     borderColor: "#3a404d",
@@ -2418,7 +2712,7 @@ const styles = StyleSheet.create({
     color: "#7c5cff",
     marginTop: 2,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.9,
   },
   skillRatingRow: {
     flexDirection: "row",
