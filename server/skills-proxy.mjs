@@ -25,6 +25,40 @@ async function readJsonBody(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
+function expandSkillLabelAbbreviations(label) {
+  const ABBREVIATION_MAP = [
+    { pattern: /\bmgmt\b/gi, replacement: "Management" },
+    { pattern: /\badmin\b/gi, replacement: "Administration" },
+    { pattern: /\bops\b/gi, replacement: "Operations" },
+    { pattern: /\btech\b/gi, replacement: "Technology" },
+    { pattern: /\binfo\b/gi, replacement: "Information" },
+    { pattern: /\bbiz\b/gi, replacement: "Business" },
+    { pattern: /\bcomm\b/gi, replacement: "Communication" },
+    { pattern: /\banalyt\b/gi, replacement: "Analytics" },
+    { pattern: /\bdev\b/gi, replacement: "Development" },
+    { pattern: /\beng\b/gi, replacement: "Engineering" },
+    { pattern: /\bfin\b/gi, replacement: "Finance" },
+    { pattern: /\bacct\b/gi, replacement: "Accounting" },
+  ];
+
+  let expanded = String(label ?? "");
+  for (const { pattern, replacement } of ABBREVIATION_MAP) {
+    expanded = expanded.replace(pattern, replacement);
+  }
+
+  return expanded.replace(/\s+/g, " ").trim();
+}
+
+function limitSkillLabelToTwoWords(label) {
+  const words = String(label ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .filter(Boolean);
+
+  return words.slice(0, 2).join(" ");
+}
+
 async function generateSkills(major, year) {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -39,11 +73,11 @@ async function generateSkills(major, year) {
         {
           role: "system",
           content:
-            'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills. Skills must be specific to the student\'s major and academic level, not generic computer science skills unless the major is CS-related. Include domain-specific areas used in that major (for example, actuarial science should emphasize probability, statistics, financial mathematics, risk modeling, insurance concepts, and actuarial software). Keep labels short and descriptions to one sentence each.',
+            'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills. Skills must be specific to the student\'s major and academic level, not generic computer science skills unless the major is CS-related. Include domain-specific areas used in that major (for example, actuarial science should emphasize probability, statistics, financial mathematics, risk modeling, insurance concepts, and actuarial software). Every skill label must be 2 words or less. Spell out labels in full words and do not abbreviate or shorten words (for example, write "Pest Management", never "Pest Mgmt"). Keep descriptions to one sentence each.',
         },
         {
           role: "user",
-          content: `Generate exactly 6 major-specific skills a ${year} ${major} student should self-rate for a roadmap app. Do not default to software engineering skills unless the major is software/computer related. Keep labels short and descriptions to one sentence each.`,
+          content: `Generate exactly 6 major-specific skills a ${year} ${major} student should self-rate for a roadmap app. Do not default to software engineering skills unless the major is software/computer related. Each skill label must be 2 words or less. Spell out each label fully with no abbreviations or shortened words. Keep descriptions to one sentence each.`,
         },
       ],
     }),
@@ -61,7 +95,10 @@ async function generateSkills(major, year) {
     throw new Error("Model did not return 6 skills");
   }
 
-  return skills;
+  return skills.map((skill) => ({
+    ...skill,
+    label: limitSkillLabelToTwoWords(expandSkillLabelAbbreviations(skill?.label || "")),
+  }));
 }
 
 async function generateGoals(major, year, school, skills) {
@@ -88,11 +125,11 @@ async function generateGoals(major, year, school, skills) {
         {
           role: "system",
           content:
-            'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 6 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and building career readiness. Do not mention specific job titles, role names, company names, or exact positions. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
+            'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 5 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and building career readiness. Do not mention specific job titles, role names, company names, or exact positions. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
         },
         {
           role: "user",
-          content: `Generate exactly 6 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and broad career-readiness goals. Do not use specific job titles or role names. Return only JSON.`,
+          content: `Generate exactly 5 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and broad career-readiness goals. Do not use specific job titles or role names. Return only JSON.`,
         },
       ],
     }),
@@ -120,11 +157,11 @@ async function generateGoals(major, year, school, skills) {
         .map((goal) => broadenSpecificGoal(goal))
         .map((goal) => goal.trim().replace(/[.!?]+$/g, "").slice(0, 48))
         .filter(Boolean)
-        .slice(0, 6)
+        .slice(0, 5)
     : [];
 
-  if (goals.length !== 6) {
-    throw new Error("Model did not return 6 goals");
+  if (goals.length !== 5) {
+    throw new Error("Model did not return 5 goals");
   }
 
   return goals;

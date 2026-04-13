@@ -326,7 +326,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const skillIntroCardScale = useRef(new Animated.Value(0.96)).current;
   const skillIntroCardTranslateY = useRef(new Animated.Value(18)).current;
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
+  const onboardingScrollRef = useRef<ScrollView | null>(null);
+  const majorCategoryTopOffsetsRef = useRef<Record<string, number>>({});
+  const pendingMajorCategoryAutoScrollRef = useRef<string | null>(null);
   const majorCategoryExpandAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const prevMajorCategoryExpandedStateRef = useRef<Record<string, boolean>>({});
   const yearPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const goalPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const customGoalAppearAnimsRef = useRef<Record<string, Animated.Value>>({});
@@ -453,6 +457,40 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     return normalized;
   }
 
+  function expandSkillLabelAbbreviations(label: string) {
+    const ABBREVIATION_MAP: { pattern: RegExp; replacement: string }[] = [
+      { pattern: /\bmgmt\b/gi, replacement: "Management" },
+      { pattern: /\badmin\b/gi, replacement: "Administration" },
+      { pattern: /\bops\b/gi, replacement: "Operations" },
+      { pattern: /\btech\b/gi, replacement: "Technology" },
+      { pattern: /\binfo\b/gi, replacement: "Information" },
+      { pattern: /\bbiz\b/gi, replacement: "Business" },
+      { pattern: /\bcomm\b/gi, replacement: "Communication" },
+      { pattern: /\banalyt\b/gi, replacement: "Analytics" },
+      { pattern: /\bdev\b/gi, replacement: "Development" },
+      { pattern: /\beng\b/gi, replacement: "Engineering" },
+      { pattern: /\bfin\b/gi, replacement: "Finance" },
+      { pattern: /\bacct\b/gi, replacement: "Accounting" },
+    ];
+
+    let expanded = label;
+    for (const { pattern, replacement } of ABBREVIATION_MAP) {
+      expanded = expanded.replace(pattern, replacement);
+    }
+
+    return expanded.replace(/\s+/g, " ").trim();
+  }
+
+  function limitSkillLabelToTwoWords(label: string) {
+    const words = label
+      .trim()
+      .replace(/\s+/g, " ")
+      .split(" ")
+      .filter(Boolean);
+
+    return words.slice(0, 2).join(" ");
+  }
+
   function broadenSpecificGoal(goal: string): string {
     const normalized = goal.trim().replace(/[.!?]+$/g, "");
     const hasRoleWord = /\b(role|position|job)\b/i.test(normalized);
@@ -471,9 +509,16 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }
 
   function toggleMajorCategory(categoryLabel: string) {
-    setExpandedMajorCategories((prev) =>
-      prev.includes(categoryLabel) ? prev.filter((label) => label !== categoryLabel) : [...prev, categoryLabel]
-    );
+    setExpandedMajorCategories((prev) => {
+      const isAlreadyOpen = prev.includes(categoryLabel);
+      if (isAlreadyOpen) {
+        pendingMajorCategoryAutoScrollRef.current = null;
+        return [];
+      }
+
+      pendingMajorCategoryAutoScrollRef.current = categoryLabel;
+      return [categoryLabel];
+    });
   }
 
   const generateSkillsFromAI = useCallback(async () => {
@@ -507,11 +552,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               {
                 role: "system",
                 content:
-                  'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills. Skills must be specific to the student\'s major and academic level, not generic computer science skills unless the major is CS-related. Include domain-specific areas used in that major (for example, actuarial science should emphasize probability, statistics, financial mathematics, risk modeling, insurance concepts, and actuarial software). Keep labels short and write each description in 2 to 3 sentences having a maximum of 18 words per description. Avoid template-like repeated endings across skills.',
+                  'Return strict JSON only. Output format: {"skills":[{"label":"...","description":"..."}]}. Exactly 6 skills. Skills must be specific to the student\'s major and academic level, not generic computer science skills unless the major is CS-related. Include domain-specific areas used in that major (for example, actuarial science should emphasize probability, statistics, financial mathematics, risk modeling, insurance concepts, and actuarial software). Every skill label must be at most 2 words. Spell out labels in full words and do not abbreviate or shorten words (for example, write "Pest Management", never "Pest Mgmt"). Write each description in 2 to 3 sentences having a maximum of 18 words per description. Avoid template-like repeated endings across skills.',
               },
               {
                 role: "user",
-                content: `Generate exactly 6 major-specific skills a ${year} ${major} student should self-rate for a roadmap app. Do not default to software engineering skills unless the major is software/computer related. Keep labels short and make each description 2 to 3 sentences having a maximum of 18 words per description. Keep each description distinct and avoid repeated stock phrasing.`,
+                content: `Generate exactly 6 major-specific skills a ${year} ${major} student should self-rate for a roadmap app. Do not default to software engineering skills unless the major is software/computer related. Each skill label must be 1 to 2 words only. Spell out each label fully with no abbreviations or shortened words. Make each description 2 to 3 sentences having a maximum of 18 words per description. Keep each description distinct and avoid repeated stock phrasing.`,
               },
             ],
           }),
@@ -548,11 +593,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
         throw new Error("Skill generation did not return 6 skills");
       }
 
-      const normalizedSkills = apiSkills.map((skill: { label?: string; description?: string }, index: number) => ({
-        id: slugifySkillLabel(skill?.label?.trim() || `Skill ${index + 1}`, index),
-        label: (skill?.label?.trim() || `Skill ${index + 1}`).slice(0, 40),
-        description: (skill?.description?.replace(/\s+/g, " ").trim() || "Rate your familiarity with this skill.").slice(0, 360),
-      }));
+      const normalizedSkills = apiSkills.map((skill: { label?: string; description?: string }, index: number) => {
+        const fullLabel = expandSkillLabelAbbreviations(skill?.label?.trim() || `Skill ${index + 1}`);
+        const twoWordLabel = limitSkillLabelToTwoWords(fullLabel) || `Skill ${index + 1}`;
+        return {
+          id: slugifySkillLabel(twoWordLabel, index),
+          label: twoWordLabel,
+          description: (skill?.description?.replace(/\s+/g, " ").trim() || "Rate your familiarity with this skill.").slice(0, 360),
+        };
+      });
 
       const dedupedSkills = normalizedSkills.map(
         (skill: { id: string; label: string; description: string }, index: number) => {
@@ -621,11 +670,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               {
                 role: "system",
                 content:
-                  'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 6 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and building career readiness. Do not mention specific job titles, role names, company names, or exact positions. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
+                  'Return strict JSON only. Output format: {"goals":["..."]}. Exactly 5 goals. Each goal must be a short phrase of 2 to 6 words. Goals should be clear, useful, and outcome-focused, but not overly specific. Keep them broad enough to be widely applicable to students in the major. Include a mix of goals like getting certified, landing an internship, preparing for grad school, and building career readiness. Do not mention specific job titles, role names, company names, or exact positions. Goals must match the major and skill level provided. No project-based goals and no full sentences.',
               },
               {
                 role: "user",
-                content: `Generate exactly 6 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and broad career-readiness goals. Do not use specific job titles or role names. Return only JSON.`,
+                content: `Generate exactly 5 short outcome goals for a ${year} ${major} student at ${school} whose skill ratings are: ${skillsJson}. Each goal should be 2 to 6 words. Keep the goals practical and broad rather than highly specific. It is okay to use goals like "Get Certified" or "Get an Internship". Make goals fit the student's major and skill level. Include a mix of certification, internship/research, grad-school, and broad career-readiness goals. Do not use specific job titles or role names. Return only JSON.`,
               },
             ],
           }),
@@ -655,15 +704,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             return normalizeGoalList(parsed?.goals)
               .map((goal) => broadenSpecificGoal(goal))
               .map((goal) => goal.replace(/[.!?]+$/g, "").trim())
-              .slice(0, 6);
+              .slice(0, 5);
           })()
         : normalizeGoalList(data?.goals)
             .map((goal) => broadenSpecificGoal(goal))
             .map((goal) => goal.replace(/[.!?]+$/g, "").trim())
-            .slice(0, 6);
+            .slice(0, 5);
 
-      if (apiGoals.length !== 6) {
-        throw new Error("Goal generation did not return 6 goals");
+      if (apiGoals.length !== 5) {
+        throw new Error("Goal generation did not return 5 goals");
       }
 
       setGeneratedGoals(apiGoals);
@@ -1006,26 +1055,60 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return;
     }
 
-    setExpandedMajorCategories((prev) =>
-      prev.includes(selectedCategoryLabel) ? prev : [...prev, selectedCategoryLabel]
-    );
+    setExpandedMajorCategories((prev) => (prev[0] === selectedCategoryLabel ? prev : [selectedCategoryLabel]));
   }, [selectedMajor]);
 
   useEffect(() => {
     MAJOR_CATEGORIES.forEach((category) => {
       const categoryAnim = getMajorCategoryExpandAnim(category.label);
       const isExpanded = normalizedMajorQuery.length > 0 || expandedMajorCategories.includes(category.label);
+      const prevExpanded = prevMajorCategoryExpandedStateRef.current[category.label];
+
+      if (prevExpanded === undefined) {
+        categoryAnim.setValue(isExpanded ? 1 : 0);
+        prevMajorCategoryExpandedStateRef.current[category.label] = isExpanded;
+        return;
+      }
+
+      if (prevExpanded === isExpanded) {
+        return;
+      }
 
       Animated.spring(categoryAnim, {
         toValue: isExpanded ? 1 : 0,
-        stiffness: isExpanded ? 180 : 210,
-        damping: isExpanded ? 24 : 28,
-        mass: 0.85,
+        stiffness: isExpanded ? 250 : 280,
+        damping: isExpanded ? 30 : 34,
+        mass: 0.72,
+        velocity: isExpanded ? 2.4 : 2,
         overshootClamping: true,
         useNativeDriver: false,
       }).start();
+
+      prevMajorCategoryExpandedStateRef.current[category.label] = isExpanded;
     });
   }, [majorQuery, normalizedMajorQuery.length, expandedMajorCategories]);
+
+  useEffect(() => {
+    const targetLabel = pendingMajorCategoryAutoScrollRef.current;
+    if (!targetLabel) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const targetY = majorCategoryTopOffsetsRef.current[targetLabel];
+      if (typeof targetY === "number") {
+        onboardingScrollRef.current?.scrollTo({
+          y: Math.max(0, targetY - 400),
+          animated: true,
+        });
+      }
+      pendingMajorCategoryAutoScrollRef.current = null;
+    }, 140);
+
+    return () => clearTimeout(timer);
+  }, [expandedMajorCategories]);
+
+
 
   useEffect(() => {
     const hasSelectedSchool = selectedSchool.length > 0;
@@ -1542,19 +1625,23 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               });
 
               return (
-                <View key={category.label} style={styles.majorCategoryCard}>
-                  <Pressable
-                    disabled={normalizedMajorQuery.length > 0}
-                    style={({ pressed }) => [
-                      styles.majorCategoryHeader,
-                      pressed && normalizedMajorQuery.length === 0 && styles.majorCategoryHeaderPressed,
-                    ]}
-                    onPress={() => {
-                      if (normalizedMajorQuery.length === 0) {
-                        toggleMajorCategory(category.label);
-                      }
-                    }}
-                  >
+                <Pressable
+                  key={category.label}
+                  disabled={normalizedMajorQuery.length > 0}
+                  style={({ pressed }) => [
+                    styles.majorCategoryCard,
+                    pressed && normalizedMajorQuery.length === 0 && styles.majorCategoryHeaderPressed,
+                  ]}
+                  onLayout={(event) => {
+                    majorCategoryTopOffsetsRef.current[category.label] = event.nativeEvent.layout.y;
+                  }}
+                  onPress={() => {
+                    if (normalizedMajorQuery.length === 0) {
+                      toggleMajorCategory(category.label);
+                    }
+                  }}
+                >
+                  <View style={styles.majorCategoryHeader}>
                     <View style={styles.majorCategoryHeaderCopy}>
                       <Text style={styles.majorCategoryTitle}>{category.label}</Text>
                       <Text style={styles.majorCategoryDescription}>{category.description}</Text>
@@ -1566,7 +1653,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                         </Animated.View>
                       </View>
                     </View>
-                  </Pressable>
+                  </View>
 
                   <Animated.View
                     pointerEvents={isExpanded ? "auto" : "none"}
@@ -1601,7 +1688,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                                 isSelected && styles.majorOptionSelected,
                                 pressed && styles.pillPressed,
                               ]}
-                              onPress={() => {
+                              onPress={(event) => {
+                                event.stopPropagation();
                                 setSelectedMajor(major);
                               }}
                             >
@@ -1614,7 +1702,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       })}
                     </View>
                   </Animated.View>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -2095,7 +2183,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           transform: [{ translateY: exitSlideAnim }],
         }}
       >
-        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: containerBottomPadding }]} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={onboardingScrollRef}
+          contentContainerStyle={[styles.container, { paddingBottom: containerBottomPadding }]}
+          showsVerticalScrollIndicator={false}
+        >
           {started && (
             <>
               <Text style={styles.progressLabel}>step {step + 1} of {TOTAL_STEPS}</Text>
@@ -2528,7 +2620,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: 100,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: "#3a404d",
     backgroundColor: "#181c24",
@@ -2607,7 +2699,9 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontFamily: "ClashGrotesk-Medium",
-    fontSize: 18,
+    fontSize: 20,
+    letterSpacing: 0.9,
+    lineHeight: 24,
     color: "#b0b9c8",
   },
   pillTextSelected: {
@@ -2617,7 +2711,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginTop: -8,
+    marginTop: 14,
     marginBottom: 24,
   },
   customGoalInput: {
@@ -2921,14 +3015,18 @@ const styles = StyleSheet.create({
   skillSheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 10,
   },
   skillSheetTitle: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 25,
+    lineHeight: 28,
     letterSpacing: 0.8,
     color: "#f1f5ff",
+    flex: 1,
+    flexShrink: 1,
+    marginRight: 12,
   },
   skillSheetCloseBtn: {
     paddingHorizontal: 10,
@@ -2936,6 +3034,8 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     borderWidth: 1,
     borderColor: "#3a445b",
+    flexShrink: 0,
+    alignSelf: "flex-start",
   },
   skillSheetCloseBtnPressed: {
     opacity: 0.75,
