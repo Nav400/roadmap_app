@@ -512,12 +512,12 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     setExpandedMajorCategories((prev) => {
       const isAlreadyOpen = prev.includes(categoryLabel);
       if (isAlreadyOpen) {
-        pendingMajorCategoryAutoScrollRef.current = null;
-        return [];
+        // Remove the category from the array (close it)
+        return prev.filter((label) => label !== categoryLabel);
       }
-
+      // Add the category to the array (open it)
       pendingMajorCategoryAutoScrollRef.current = categoryLabel;
-      return [categoryLabel];
+      return [...prev, categoryLabel];
     });
   }
 
@@ -1045,18 +1045,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     selectedMajorTapAnim,
   ]);
 
-  useEffect(() => {
-    if (!selectedMajor) {
-      return;
-    }
-
-    const selectedCategoryLabel = getMajorCategoryLabel(selectedMajor);
-    if (!selectedCategoryLabel) {
-      return;
-    }
-
-    setExpandedMajorCategories((prev) => (prev[0] === selectedCategoryLabel ? prev : [selectedCategoryLabel]));
-  }, [selectedMajor]);
+  // Removed effect that forced only one open category based on selectedMajor
 
   useEffect(() => {
     MAJOR_CATEGORIES.forEach((category) => {
@@ -1098,7 +1087,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       const targetY = majorCategoryTopOffsetsRef.current[targetLabel];
       if (typeof targetY === "number") {
         onboardingScrollRef.current?.scrollTo({
-          y: Math.max(0, targetY - 400),
+          y: Math.max(0, targetY),
           animated: true,
         });
       }
