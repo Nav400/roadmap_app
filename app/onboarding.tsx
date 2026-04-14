@@ -512,10 +512,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     setExpandedMajorCategories((prev) => {
       const isAlreadyOpen = prev.includes(categoryLabel);
       if (isAlreadyOpen) {
-        // Remove the category from the array (close it)
         return prev.filter((label) => label !== categoryLabel);
       }
-      // Add the category to the array (open it)
       pendingMajorCategoryAutoScrollRef.current = categoryLabel;
       return [...prev, categoryLabel];
     });
@@ -763,7 +761,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [selectedMajor]);
 
   useEffect(() => {
-    // Preload goals while the user is on skills so step 4 renders without pop-in.
     if (
       started &&
       step >= 2 &&
@@ -1045,7 +1042,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     selectedMajorTapAnim,
   ]);
 
-  // Removed effect that forced only one open category based on selectedMajor
 
   useEffect(() => {
     MAJOR_CATEGORIES.forEach((category) => {
