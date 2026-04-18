@@ -1419,21 +1419,21 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (step === 0) {
       return (
         <View style={styles.titleContainer}>
-          <Text style={styles.titleSmallRest}>WHAT&apos;S YOUR MAJOR?</Text>
+          <Text style={styles.titleSmallRest}>What&apos;s Your Major?</Text>
         </View>
       );
     }
     if (step === 1) {
       return (
         <View style={styles.titleContainer}>
-          <Text style={styles.titleSmallRest}>WHERE DO YOU STUDY?</Text>
+          <Text style={styles.titleSmallRest}>Where Do You Study?</Text>
         </View>
       );
     }
     if (step === 2) {
       return (
         <View style={styles.titleContainer}>
-          <Text style={styles.titleSmallRest}>RATE YOUR CURRENT SKILLS</Text>
+          <Text style={styles.titleSmallRest}>Rate Your Current Skills</Text>
         </View>
       );
     }
@@ -1526,13 +1526,13 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       {
                         translateY: selectedMajorAppearAnim.interpolate({
                           inputRange: [0, 1],
-                          outputRange: [-10, 0],
+                          outputRange: [-20, 0],
                         }),
                       },
                       {
                         scale: selectedMajorAppearAnim.interpolate({
                           inputRange: [0, 1],
-                          outputRange: [0.96, 1],
+                          outputRange: [0.8, 1],
                         }),
                       },
                       {
@@ -2384,7 +2384,7 @@ const styles = StyleSheet.create({
   },
   titleSmallRest: {
     fontFamily: "ClashGrotesk-Bold",
-    fontSize: 26,
+    fontSize: 28,
     color: "#f5f7fb",
     letterSpacing: 0.4,
     lineHeight: 30,

@@ -39,7 +39,7 @@ function AnimatedBackground() {
     Animated.loop(
       Animated.timing(anim1, {
         toValue: 1,
-        duration: 6800,
+        duration: 40000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -48,7 +48,7 @@ function AnimatedBackground() {
     Animated.loop(
       Animated.timing(anim2, {
         toValue: 1,
-        duration: 8400,
+        duration: 40000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -57,40 +57,45 @@ function AnimatedBackground() {
     Animated.loop(
       Animated.timing(anim3, {
         toValue: 1,
-        duration: 9800,
+        duration: 40000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
   }, [anim1, anim2, anim3]);
 
-  const blob1Y = anim1.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [0, -32, -10, 18, 0],
-  });
-  const blob1X = anim1.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [0, 28, -12, -26, 0],
-  });
-  const blob2Y = anim2.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [0, 22, -8, -26, 0],
-  });
-  const blob2X = anim2.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [0, -24, -6, 22, 0],
-  });
-  const blob3Y = anim3.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [0, -18, 14, -12, 0],
-  });
-  const blob3X = anim3.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [0, 16, -20, 10, 0],
-  });
-  const blob1Opacity = anim1.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.15, 0.25, 0.15] });
-  const blob2Opacity = anim2.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.1, 0.2, 0.1] });
-  const blob3Opacity = anim3.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.08, 0.15, 0.08] });
+const blob1Y = anim1.interpolate({
+  inputRange: [0, 0.25, 0.5, 0.75, 1],
+  outputRange: [0, -48, -18, 26, 0],
+});
+
+const blob1X = anim1.interpolate({
+  inputRange: [0, 0.25, 0.5, 0.75, 1],
+  outputRange: [0, 40, -20, -38, 0],
+});
+
+const blob2Y = anim2.interpolate({
+  inputRange: [0, 0.25, 0.5, 0.75, 1],
+  outputRange: [0, 34, -16, -38, 0],
+});
+
+const blob2X = anim2.interpolate({
+  inputRange: [0, 0.25, 0.5, 0.75, 1],
+  outputRange: [0, -36, -14, 34, 0],
+});
+
+const blob3Y = anim3.interpolate({
+  inputRange: [0, 0.25, 0.5, 0.75, 1],
+  outputRange: [0, -30, 22, -20, 0],
+});
+
+const blob3X = anim3.interpolate({
+  inputRange: [0, 0.25, 0.5, 0.75, 1],
+  outputRange: [0, 28, -32, 18, 0],
+});
+  const blob1Opacity = anim1.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.8, 0.9, 0.6] });
+  const blob2Opacity = anim2.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.5, 0.3, 0.4] });
+  const blob3Opacity = anim3.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 0.6, 0.4] });
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -100,7 +105,7 @@ function AnimatedBackground() {
           {
             width: 320,
             height: 320,
-            backgroundColor: "#4c1d95",
+            backgroundColor: "#5923aa",
             borderRadius: 160,
             top: -60,
             left: -80,
@@ -115,7 +120,7 @@ function AnimatedBackground() {
           {
             width: 280,
             height: 280,
-            backgroundColor: "#6d28d9",
+            backgroundColor: "#955eec",
             borderRadius: 140,
             top: height * 0.3,
             right: -80,
@@ -130,7 +135,7 @@ function AnimatedBackground() {
           {
             width: 240,
             height: 240,
-            backgroundColor: "#a855f7",
+            backgroundColor: "#64269e",
             borderRadius: 120,
             bottom: 80,
             left: 20,
