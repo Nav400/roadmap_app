@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, SafeAreaView, ScrollView, Animated, Easing } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-
 import { getGoalDetailContent, type RoadmapGoalSelection } from "@/constants/goal-details";
 
 export default function GoalDetailScreen({
@@ -325,6 +324,7 @@ export default function GoalDetailScreen({
           onPress={handleBackPress}
           disabled={isLeaving}
         >
+          
           <Text style={styles.backButtonText}>Back to roadmap</Text>
         </Pressable>
 

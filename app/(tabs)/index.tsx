@@ -1,3 +1,5 @@
+import { ProgressRing } from "../../components/ProgressRing";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
@@ -29,6 +31,16 @@ type MainTab = "home" | "roadmap" | "events" | "profile";
 const TAB_MASK_MAX_OPACITY = 1;
 const TAB_SWAP_SETTLE_MS = 90;
 type RoadmapTab = "milestones" | "projects" | "events" | "completed";
+
+// Returns a dynamic greeting based on the current time
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "Good morning!";
+  if (hour >= 12 && hour < 17) return "Good afternoon!";
+  if (hour >= 17 && hour < 21) return "Good evening!";
+  if (hour >= 21 || hour < 2) return "Night time working?";
+  return "Burning the midnight oil?";
+}
 
 function AnimatedBackground() {
   const anim1 = useRef(new Animated.Value(0)).current;
@@ -395,7 +407,23 @@ export default function HomeScreen() {
 
               <View style={[styles.stackLayer, !showHomeLayer && styles.hiddenLayer]}>
                 <ScrollView contentContainerStyle={styles.homeContainer} showsVerticalScrollIndicator={false}>
-                  <Text style={styles.homeTitle}>Top priorities today</Text>
+
+                  <View style={{ alignItems: "center", marginBottom: 18 }}>
+                    <ProgressRing
+                      percent={
+                        Math.round(
+                          ((completedMilestoneIds.length + completedProjectIds.length) /
+                            (FAKE_MILESTONES.length + FAKE_PROJECTS.length)) *
+                            100
+                        )
+                      }
+                      radius={48}
+                      strokeWidth={10}
+                      color="#7c5cff"
+                      backgroundColor="#23263a"
+                    />
+                  </View>
+                  <Text style={styles.homeTitle}>{getGreeting()}</Text>
                   <Text style={styles.homeSubtitle}>Start with these, then continue through your full roadmap.</Text>
 
                   <View style={styles.homeCard}>
@@ -624,6 +652,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     color: "#f5f7fb",
     marginBottom: 4,
+    letterSpacing: 0.4,
   },
   homeSubtitle: {
     fontFamily: "ClashGrotesk-Regular",
@@ -671,7 +700,7 @@ const styles = StyleSheet.create({
   },
   homeButtonAlt: {
     alignItems: "center",
-    backgroundColor: "#202633",
+    backgroundColor: "#7c5cff",
     borderRadius: 999,
     paddingVertical: 14,
   },

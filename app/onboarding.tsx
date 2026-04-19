@@ -2175,7 +2175,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
         >
           {started && (
             <>
-              <Text style={styles.progressLabel}>step {step + 1} of {TOTAL_STEPS}</Text>
+              
               <View style={styles.progressTrack} onLayout={(event) => setProgressTrackWidth(event.nativeEvent.layout.width)}>
                 <Animated.View
                   style={[
@@ -2215,7 +2215,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       {started && (
         <View style={styles.footer}>
           {step > 0 && (
-            <Pressable style={({ pressed }) => [styles.secondaryBtn, pressed && styles.secondaryBtnPressed]} onPress={goBack}>
+            <Pressable style={({ pressed }) => [styles.secondaryBtn, pressed && styles.secondaryBtnPressed, { flexDirection: "row", alignItems: "center" }]} onPress={goBack}>
+              <MaterialIcons name="arrow-back-ios" size={16} color="#b7adff" style={{ marginRight: 1 }} />
               <Text style={styles.secondaryBtnText}>BACK</Text>
             </Pressable>
           )}
@@ -2386,7 +2387,7 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 28,
     color: "#f5f7fb",
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
     lineHeight: 30,
   },
   subtitle: {
@@ -2613,7 +2614,7 @@ const styles = StyleSheet.create({
   yearGroup: {
     flexDirection: "column",
     gap: 10,
-    marginTop: 50,
+    marginTop: 20,
     marginBottom: 24,
   },
   schoolGroup: {
@@ -2886,9 +2887,9 @@ const styles = StyleSheet.create({
   },
   secondaryBtn: {
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 1,
     borderRadius: 10,
-    paddingBottom: 5,
+    paddingBottom: 3,
     textTransform: "uppercase",
     alignItems: "flex-start",
     justifyContent: "center",
@@ -2897,7 +2898,7 @@ const styles = StyleSheet.create({
   secondaryBtnText: {
     fontFamily: "ClashGrotesk-Semibold",
     color: "#b7adff",
-    fontSize: 15,
+    fontSize: 17,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
