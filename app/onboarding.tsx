@@ -1542,6 +1542,9 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 25, color: "#8f98ab", paddingHorizontal: 4, paddingVertical: 10 }}>
               Nice to meet you, <Text style={{ color: "#b7adff", fontFamily: "ClashGrotesk-Semibold" }}>{userName.trim()}</Text> 
             </Text>
+            <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 21, color: "#8f98ab", paddingHorizontal: 4, paddingVertical: 0 }}>
+              Let&apos;s build your custom roadmap!
+            </Text>
             
           </Animated.View>
         </View>
