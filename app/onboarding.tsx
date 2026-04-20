@@ -276,7 +276,7 @@ type OnboardingScreenProps = {
 };
 
 export default function OnboardingScreen({ onComplete, startAtQuestions = false }: OnboardingScreenProps) {
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 9;
   const [selectedMajor, setSelectedMajor] = useState("");
   const [majorQuery, setMajorQuery] = useState("");
   const [isMajorSearchFocused, setIsMajorSearchFocused] = useState(false);
@@ -284,6 +284,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [schoolQuery, setSchoolQuery] = useState("");
   const [isSchoolSearchFocused, setIsSchoolSearchFocused] = useState(false);
   const [selectedYear, setSelectedYear] = useState("");
+  const [userName, setUserName] = useState("");
+  const nameGreetingAnim = useRef(new Animated.Value(0)).current;
+  const prevUserNameHadContent = useRef(false);
+  const [selectedStruggle, setSelectedStruggle] = useState("");
+  const [selectedTimeline, setSelectedTimeline] = useState("");
+  const [selectedCommitment, setSelectedCommitment] = useState("");
+  const [priorExperiences, setPriorExperiences] = useState<string[]>([]);
+  const [selectedMotivation, setSelectedMotivation] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [customGoalInput, setCustomGoalInput] = useState("");
   const [customGoals, setCustomGoals] = useState<string[]>([]);
@@ -328,8 +337,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const skillSheetTranslateY = useRef(new Animated.Value(SKILL_SHEET_HEIGHT + 40)).current;
   const onboardingScrollRef = useRef<ScrollView | null>(null);
   const majorCategoryTopOffsetsRef = useRef<Record<string, number>>({});
+  const timelineScaleAnimsRef = useRef<Record<string, Animated.Value>>({}).current;
   const pendingMajorCategoryAutoScrollRef = useRef<string | null>(null);
   const majorCategoryExpandAnimsRef = useRef<Record<string, Animated.Value>>({});
+  const struggleScaleAnimsRef = useRef<Record<string, Animated.Value>>({}).current;
   const prevMajorCategoryExpandedStateRef = useRef<Record<string, boolean>>({});
   const yearPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const goalPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
@@ -341,6 +352,18 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       majorCategoryExpandAnimsRef.current[categoryLabel] = new Animated.Value(0);
     }
     return majorCategoryExpandAnimsRef.current[categoryLabel];
+  };
+  const getStruggleScaleAnim = (id: string) => {
+    if (!struggleScaleAnimsRef[id]) {
+      struggleScaleAnimsRef[id] = new Animated.Value(1);
+    }
+    return struggleScaleAnimsRef[id];
+  };
+  const getTimelineScaleAnim = (id: string) => {
+    if (!timelineScaleAnimsRef[id]) {
+      timelineScaleAnimsRef[id] = new Animated.Value(1);
+    }
+    return timelineScaleAnimsRef[id];
   };
   const getYearPillScaleAnim = (year: string) => {
     if (!yearPillScaleAnimsRef.current[year]) {
@@ -739,10 +762,25 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [skillsToRate]);
 
   useEffect(() => {
-    if (started && step >= 1 && selectedMajor.trim().length > 0 && selectedYear.trim().length > 0) {
+    if (started && step >= 2 && selectedMajor.trim().length > 0 && selectedYear.trim().length > 0) {
       generateSkillsFromAI();
     }
   }, [generateSkillsFromAI, selectedMajor, selectedYear, started, step]);
+
+  useEffect(() => {
+    const hasContent = userName.trim().length > 0;
+    if (hasContent === prevUserNameHadContent.current) return;
+    prevUserNameHadContent.current = hasContent;
+
+    Animated.parallel([
+      Animated.timing(nameGreetingAnim, {
+        toValue: hasContent ? 1 : 0,
+        duration: hasContent ? 340 : 200,
+        easing: hasContent ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [userName, nameGreetingAnim]);
 
   useEffect(() => {
     if (selectedMajor.trim().length === 0) {
@@ -763,7 +801,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   useEffect(() => {
     if (
       started &&
-      step >= 2 &&
+      step >= 3 &&
       selectedMajor.trim().length > 0 &&
       selectedSchool.trim().length > 0 &&
       selectedYear.trim().length > 0 &&
@@ -899,13 +937,13 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [activeSkillId, skillSheetTranslateY]);
 
   useEffect(() => {
-    if (step === 2 && !hasSeenSkillsIntroRef.current) {
+    if (step === 3 && !hasSeenSkillsIntroRef.current) {
       hasSeenSkillsIntroRef.current = true;
       setIsSkillsIntroPopupVisible(true);
       return;
     }
 
-    if (step !== 2) {
+    if (step !== 3) {
       setIsSkillsIntroPopupVisible(false);
       setActiveSkillId(null);
     }
@@ -1155,15 +1193,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     const hasYearSelection = selectedYear.trim().length > 0;
     const hasGoalSelection = generatedGoals.length > 0 && selectedGoals.length > 0;
     const shouldEnableNext =
-      step === 0
-        ? hasMajorSelection
-        : step === 1
-        ? hasSchoolSelection && hasYearSelection
-        : step === 2
-        ? hasAllSkillsRated
-        : step === TOTAL_STEPS - 1
-        ? hasGoalSelection
-        : true;
+      step === 0 ? userName.trim().length > 0
+      : step === 1 ? hasMajorSelection
+      : step === 2 ? hasSchoolSelection && hasYearSelection
+      : step === 3 ? hasAllSkillsRated
+      : step === 4 ? hasGoalSelection
+      : step === 5 ? selectedStruggle.trim().length > 0
+      : step === 6 ? selectedTimeline.trim().length > 0
+      : step === 7 ? selectedCommitment.trim().length > 0
+      : true;
     Animated.timing(nextBtnEnableAnim, {
       toValue: shouldEnableNext ? 1 : 0,
       duration: 360,
@@ -1173,6 +1211,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }, [
     TOTAL_STEPS,
     nextBtnEnableAnim,
+    userName,
     selectedGoals.length,
     generatedGoals.length,
     selectedMajor,
@@ -1180,6 +1219,9 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     selectedYear,
     hasAllSkillsRated,
     skillLevels,
+    selectedStruggle,
+    selectedTimeline,
+    selectedCommitment,
     step,
   ]);
 
@@ -1337,11 +1379,17 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       }),
     ]).start(() => {
       onComplete({
+        name: userName.trim(),
         major: selectedMajor,
         school: selectedSchool,
         year: selectedYear,
         goals: selectedGoals,
         skills: skillLevels,
+        struggle: selectedStruggle,
+        timeline: selectedTimeline,
+        commitment: selectedCommitment,
+        priorExperiences,
+        motivation: selectedMotivation,
       });
     });
   }
@@ -1350,17 +1398,9 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (!started) {
       LayoutAnimation.configureNext({
         duration: 320,
-        create: {
-          type: LayoutAnimation.Types.easeInEaseOut,
-          property: LayoutAnimation.Properties.opacity,
-        },
-        update: {
-          type: LayoutAnimation.Types.easeInEaseOut,
-        },
-        delete: {
-          type: LayoutAnimation.Types.easeInEaseOut,
-          property: LayoutAnimation.Properties.opacity,
-        },
+        create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+        update: { type: LayoutAnimation.Types.easeInEaseOut },
+        delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
       });
       setIsQuestionEntrySettled(false);
       setStarted(true);
@@ -1368,19 +1408,18 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return;
     }
 
-    if (step === 0 && selectedMajor.trim().length === 0) {
-      return;
-    }
+    if (step === 0 && userName.trim().length === 0) return;
+    if (step === 1 && selectedMajor.trim().length === 0) return;
+    if (step === 2 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) return;
+    if (step === 3 && !hasAllSkillsRated) return;
+    if (step === 4 && selectedGoals.length === 0) return;
+    if (step === 5 && selectedStruggle.trim().length === 0) return;
+    if (step === 6 && selectedTimeline.trim().length === 0) return;
+    if (step === 7 && selectedCommitment.trim().length === 0) return;
 
-    if (step === 1 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) {
-      return;
-    }
-
-    if (step === 2 && !hasAllSkillsRated) {
-      return;
-    }
-
-    if (step === TOTAL_STEPS - 1 && selectedGoals.length === 0) {
+    // Step 8 (prior experience) is optional — after it show confirmation
+    if (step === 8) {
+      setShowConfirmation(true);
       return;
     }
 
@@ -1388,6 +1427,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       setStep((prev) => prev + 1);
       return;
     }
+
     handleSubmitWithAnimation();
   }
 
@@ -1401,14 +1441,20 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return;
     }
 
-    setStarted(false);
+    setStarted(false); 
   }
 
   function getStepTitle() {
-    if (step === 0) return "What's your major?";
-    if (step === 1) return "Where do you study?";
-    if (step === 2) return "Rate your current skills";
-    return "WHAT ARE YOUR GOALS?";
+    if (step === 0) return "What's Your Name?";
+    if (step === 1) return "What's Your Major?";
+    if (step === 2) return "Where Do You Study?";
+    if (step === 3) return "Rate Your Current Skills";
+    if (step === 4) return "What Are Your Goals?";
+    if (step === 5) return "What's Your Biggest Hurdle?";
+    if (step === 6) return "What's Your Target Timeline?";
+    if (step === 7) return "How Much Time Can You Commit?";
+    if (step === 8) return "Have You Tried Any Of These?";
+    return "What Motivates You Most?";
   }
 
   function renderTitle() {
@@ -1416,24 +1462,17 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return <Text style={styles.title}>{/*Answer a few quick questions*/}</Text>;
     }
 
-    if (step === 0) {
+    const SMALL_TITLE_STEPS = [1, 2, 3];
+    const SMALL_TITLES: Record<number, string> = {
+      1: "What's Your Major?",
+      2: "Where Do You Study?",
+      3: "Rate Your Current Skills",
+    };
+
+    if (SMALL_TITLE_STEPS.includes(step)) {
       return (
         <View style={styles.titleContainer}>
-          <Text style={styles.titleSmallRest}>What&apos;s Your Major?</Text>
-        </View>
-      );
-    }
-    if (step === 1) {
-      return (
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleSmallRest}>Where Do You Study?</Text>
-        </View>
-      );
-    }
-    if (step === 2) {
-      return (
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleSmallRest}>Rate Your Current Skills</Text>
+          <Text style={styles.titleSmallRest}>{SMALL_TITLES[step]}</Text>
         </View>
       );
     }
@@ -1442,31 +1481,29 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }
 
   function getStepSubtitle() {
-    if (!started) {
-      return "";
-    }
-
-    if (step === 0) {
-      return "Pick your major or the closest match.";
-    }
-
-    if (step === 1) {
-      return "Search for your school, then choose your year.";
-    }
-
-    if (step === 2) {
-      return "Rate each skill from 1 to 4.";
-    }
-
-    return "Goals are generated from your selected major. You can choose more than one.";
+    if (!started) return "";
+    if (step === 0) return "This is how we'll address you throughout your journey.";
+    if (step === 1) return "Pick your major or the closest match.";
+    if (step === 2) return "Search for your school, then choose your year.";
+    if (step === 3) return "Rate each skill from 1 to 4.";
+    if (step === 4) return "Goals are generated from your major. Choose one or more.";
+    if (step === 5) return "Pick the one that resonates most.";
+    if (step === 6) return "This shapes how your roadmap is paced.";
+    if (step === 7) return "We'll match your roadmap density to your schedule.";
+    if (step === 8) return "Check everything that applies — we'll skip what you've done.";
+    return "";
   }
 
   const isNextDisabled =
     isTransitioning ||
-    (step === 0 && selectedMajor.trim().length === 0) ||
-    (step === 1 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) ||
-    (step === 2 && !hasAllSkillsRated) ||
-    (step === TOTAL_STEPS - 1 && (!generatedGoals.length || selectedGoals.length === 0));
+    (step === 0 && userName.trim().length === 0) ||
+    (step === 1 && selectedMajor.trim().length === 0) ||
+    (step === 2 && (selectedSchool.trim().length === 0 || selectedYear.trim().length === 0)) ||
+    (step === 3 && !hasAllSkillsRated) ||
+    (step === 4 && (!generatedGoals.length || selectedGoals.length === 0)) ||
+    (step === 5 && selectedStruggle.trim().length === 0) ||
+    (step === 6 && selectedTimeline.trim().length === 0) ||
+    (step === 7 && selectedCommitment.trim().length === 0);
   const nextBtnTextColor = nextBtnEnableAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["#cfd3da", "#f7f5ff"],
@@ -1478,6 +1515,40 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     }
 
     if (step === 0) {
+      return (
+        <View style={{ gap: 12 }}>
+          <TextInput
+            style={{ fontSize: 22, paddingVertical: 16, paddingHorizontal: 16, color: "#f5f7fb", fontFamily: "ClashGrotesk-Semibold", borderRadius: 14, borderWidth: 1.5, borderColor: "#2f3a52", backgroundColor: "#141b29", width: "100%" }}
+            placeholder="Your first name"
+            placeholderTextColor="#5a637a"
+            value={userName}
+            onChangeText={setUserName}
+            autoFocus
+            returnKeyType="next"
+            onSubmitEditing={goNext}
+            maxLength={32}
+          />
+          <Animated.View style={{
+            gap: 6,
+            opacity: nameGreetingAnim,
+            transform: [{
+              translateY: nameGreetingAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [10, 0],
+              }),
+            }],
+            pointerEvents: userName.trim().length > 0 ? "none" : "none",
+          }}>
+            <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 25, color: "#8f98ab", paddingHorizontal: 4, paddingVertical: 10 }}>
+              Nice to meet you, <Text style={{ color: "#b7adff", fontFamily: "ClashGrotesk-Semibold" }}>{userName.trim()}</Text> 
+            </Text>
+            
+          </Animated.View>
+        </View>
+      );
+    }
+
+    if (step === 1) {
       const hasSelectedMajor = selectedMajor.length > 0;
       return (
         <>
@@ -1702,7 +1773,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       );
     }
 
-    if (step === 1) {
+    if (step === 2) {
       return (
         <>
           <Animated.View
@@ -1941,7 +2012,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       );
     }
 
-    if (step === 2) {
+    if (step === 3) {
       if (!areSkillsReadyForCurrentSelection) {
         return (
           <View style={styles.noMajorResultsCard}>
@@ -2047,7 +2118,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
         </>
       );
     }
-
+    if (step === 4) {
     return (
       <>
         {!areGoalsReadyForCurrentSelection ? (
@@ -2144,6 +2215,165 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     );
   }
 
+  if (step === 5) {
+      const options = [
+        { id: "start", label: "I don't know where to start"},
+        { id: "behind", label: "Everyone around me seems ahead"},
+        { id: "want", label: "I don't know what I actually want" },
+        { id: "failing", label: "I'm scared of failing" },
+        { id: "time", label: "I don't have enough time" },
+      ];
+      return (
+        <View style={{ gap: 10 }}>
+          {options.map((opt) => {
+            const scaleAnim = getStruggleScaleAnim(opt.id);
+            return (
+              <Animated.View key={opt.id} style={{ transform: [{ scale: scaleAnim }] }}>
+                <Pressable
+                  style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selectedStruggle === opt.id ? "#9274ff" : "#2f3a52", backgroundColor: selectedStruggle === opt.id ? "#2a1f4e" : "#141b29", padding: 16, flexDirection: "row" as const, alignItems: "center" as const, gap: 12, opacity: pressed ? 0.85 : 1 }]}
+                  onPressIn={() => {
+                    Animated.spring(scaleAnim, {
+                      toValue: 0.965,
+                      friction: 8,
+                      tension: 90,
+                      useNativeDriver: true,
+                    }).start();
+                  }}
+                  onPressOut={() => {
+                    Animated.spring(scaleAnim, {
+                      toValue: 1,
+                      friction: 8,
+                      tension: 90,
+                      useNativeDriver: true,
+                    }).start();
+                  }}
+                  onPress={() => setSelectedStruggle(opt.id)}
+                >
+                  
+                  <Text style={{ fontFamily: "ClashGrotesk-Medium", fontSize: 19, letterSpacing: 0.4, textAlign: "center", color: selectedStruggle === opt.id ? "#e8deff" : "#c2cad8", flex: 1 }}>{opt.label}</Text>
+                  
+                </Pressable>
+              </Animated.View>
+            );
+          })}
+        </View>
+      );
+    }
+
+    if (step === 6) {
+      const options = [
+        { id: "semester", label: "By end of this semester"},
+        { id: "year", label: "Within a year"},
+        { id: "graduation", label: "Before I graduate"},
+        { id: "nosure", label: "I'm not sure yet"},
+      ];
+      return (
+        <View style={{ gap: 10 }}>
+          {options.map((opt) => {
+            const scaleAnim = getTimelineScaleAnim(opt.id);
+            return (
+              <Animated.View key={opt.id} style={{ transform: [{ scale: scaleAnim }] }}>
+                <Pressable
+                  style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selectedTimeline === opt.id ? "#9274ff" : "#2f3a52", backgroundColor: selectedTimeline === opt.id ? "#2a1f4e" : "#141b29", padding: 16, flexDirection: "row" as const, alignItems: "center" as const, gap: 12, opacity: pressed ? 0.85 : 1 }]}
+                  onPressIn={() => {
+                    Animated.spring(scaleAnim, {
+                      toValue: 0.965,
+                      friction: 6,
+                      tension: 95,
+                      useNativeDriver: true,
+                    }).start();
+                  }}
+                  onPressOut={() => {
+                    Animated.spring(scaleAnim, {
+                      toValue: 1,
+                      friction: 7,
+                      tension: 90,
+                      useNativeDriver: true,
+                    }).start();
+                  }}
+                  onPress={() => setSelectedTimeline(opt.id)}
+                >
+                  <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 17, color: selectedTimeline === opt.id ? "#e8deff" : "#c2cad8", flex: 1 }}>{opt.label}</Text>
+
+                </Pressable>
+              </Animated.View>
+            );
+          })}
+        </View>
+      );
+    
+    }
+
+    if (step === 7) {
+      const options = [
+        { id: "1-2", label: "1–2 hours / week", sub: "Light touch, steady progress", emoji: "🌱" },
+        { id: "3-5", label: "3–5 hours / week", sub: "Solid and sustainable", emoji: "🔥" },
+        { id: "6+", label: "6+ hours / week", sub: "All in", emoji: "⚡" },
+      ];
+      return (
+        <View style={{ gap: 10 }}>
+          {options.map((opt) => (
+            <Pressable
+              key={opt.id}
+              style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selectedCommitment === opt.id ? "#9274ff" : "#2f3a52", backgroundColor: selectedCommitment === opt.id ? "#2a1f4e" : "#141b29", padding: 16, flexDirection: "row" as const, alignItems: "center" as const, gap: 14, opacity: pressed ? 0.85 : 1 }]}
+              onPress={() => setSelectedCommitment(opt.id)}
+            >
+              <Text style={{ fontSize: 26 }}>{opt.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 18, color: selectedCommitment === opt.id ? "#e8deff" : "#c2cad8" }}>{opt.label}</Text>
+                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: selectedCommitment === opt.id ? "#a89ee0" : "#6b7585", marginTop: 2 }}>{opt.sub}</Text>
+              </View>
+              
+            </Pressable>
+          ))}
+        </View>
+      );
+    }
+
+    if (step === 8) {
+      const expOptions = [
+        { id: "career-fair", label: "Attended a career fair", emoji: "🤝" },
+        { id: "club", label: "Joined a club or org", emoji: "👥" },
+        { id: "internship", label: "Applied for an internship", emoji: "💼" },
+        { id: "project", label: "Done a personal project", emoji: "🛠️" },
+        { id: "research", label: "Done research or a lab", emoji: "🔬" },
+        { id: "none", label: "None of these yet", emoji: "✨" },
+      ];
+      const toggleExperience = (id: string) => {
+        if (id === "none") {
+          setPriorExperiences(priorExperiences.includes("none") ? [] : ["none"]);
+          return;
+        }
+        setPriorExperiences((prev) => {
+          const without = prev.filter((e) => e !== "none");
+          return without.includes(id) ? without.filter((e) => e !== id) : [...without, id];
+        });
+      };
+      return (
+        <View style={{ gap: 10 }}>
+          <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: "#6b7585", marginBottom: 2 }}>Optional — select all that apply</Text>
+          {expOptions.map((opt) => {
+            const selected = priorExperiences.includes(opt.id);
+            return (
+              <Pressable
+                key={opt.id}
+                style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selected ? "#9274ff" : "#2f3a52", backgroundColor: selected ? "#2a1f4e" : "#141b29", padding: 14, flexDirection: "row" as const, alignItems: "center" as const, gap: 12, opacity: pressed ? 0.85 : 1 }]}
+                onPress={() => toggleExperience(opt.id)}
+              >
+                <Text style={{ fontSize: 20 }}>{opt.emoji}</Text>
+                <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 16, color: selected ? "#e8deff" : "#c2cad8", flex: 1 }}>{opt.label}</Text>
+                {selected && <Text style={{ color: "#9274ff", fontSize: 18 }}>✓</Text>}
+              </Pressable>
+            );
+          })}
+        </View>
+      );
+    }
+
+    return null;
+  }
+
+
   function renderIntroContent() {
     if (started) {
       return null;
@@ -2156,6 +2386,52 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           <Text style={styles.ctaBtnText}>GET STARTED</Text>
         </Pressable>
       </View>
+    );
+  }
+
+  if (showConfirmation) {
+    const timelineLabels: Record<string, string> = { semester: "by end of semester", year: "within a year", graduation: "before graduation", nosure: "whenever feels right" };
+    const commitmentLabels: Record<string, string> = { "1-2": "1–2 hrs/week", "3-5": "3–5 hrs/week", "6+": "6+ hrs/week" };
+    return (
+      <SafeAreaView style={[styles.safe, { justifyContent: "center", padding: 24 }]}>
+        <GradientBackground variant="soft" />
+        <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 28, color: "#f5f7fb", marginBottom: 8 }}>
+          Sound right{userName.trim() ? `, ${userName.trim()}` : ""}?
+        </Text>
+        <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: "#8f98ab", marginBottom: 24, lineHeight: 23 }}>
+          Here&apos;s what we have. Tap Edit to go back, or Looks Good to build your roadmap.
+        </Text>
+        <View style={{ borderRadius: 18, borderWidth: 1, borderColor: "#2f3a52", backgroundColor: "#111827", padding: 20, gap: 14, marginBottom: 24 }}>
+          {([
+            { label: "Name", value: userName.trim() || "—" },
+            { label: "Major", value: selectedMajor || "—" },
+            { label: "School", value: selectedSchool || "—" },
+            { label: "Year", value: selectedYear || "—" },
+            { label: "Goals", value: selectedGoals.join(", ") || "—" },
+            { label: "Timeline", value: timelineLabels[selectedTimeline] ?? "—" },
+            { label: "Commitment", value: commitmentLabels[selectedCommitment] ?? "—" },
+          ] as { label: string; value: string }[]).map(({ label, value }) => (
+            <View key={label} style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
+              <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 15, color: "#6b7585", textTransform: "uppercase" as const, letterSpacing: 0.8 }}>{label}</Text>
+              <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 15, color: "#e8deff", flex: 1, textAlign: "right" as const }} numberOfLines={2}>{value}</Text>
+            </View>
+          ))}
+        </View>
+        <Pressable
+          style={({ pressed }) => [{ borderRadius: 14, overflow: "hidden" as const, marginBottom: 12, opacity: pressed ? 0.9 : 1 }]}
+          onPress={handleSubmitWithAnimation}
+        >
+          <LinearGradient colors={["#9584fb", "#765ee8", "#5f45d1"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ paddingVertical: 16, alignItems: "center" as const, borderRadius: 14 }}>
+            <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 18, color: "#f7f5ff", letterSpacing: 1.5 }}>LOOKS GOOD →</Text>
+          </LinearGradient>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [{ alignItems: "center" as const, paddingVertical: 14, opacity: pressed ? 0.7 : 1 }]}
+          onPress={() => setShowConfirmation(false)}
+        >
+          <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 16, color: "#b7adff", letterSpacing: 1 }}>EDIT ANSWERS</Text>
+        </Pressable>
+      </SafeAreaView>
     );
   }
 
