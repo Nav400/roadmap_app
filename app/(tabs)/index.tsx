@@ -1,4 +1,3 @@
-import { ProgressRing } from "../../components/ProgressRing";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -15,12 +14,12 @@ import {
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
-
+import Svg, { Circle } from "react-native-svg";
 import { GradientBackground } from "@/components/gradient-background";
 import OnboardingScreen from "../onboarding";
 import RevealScreen from "../reveal";
 import RoadmapLoadingScreen from "../roadmap_loading";
-import RoadmapScreen, { FAKE_MILESTONES, FAKE_PROJECTS } from "../roadmap";
+import RoadmapScreen, { FAKE_MILESTONES, FAKE_PROJECTS, FAKE_EVENTS } from "../roadmap";
 import GoalDetailScreen from "../goal_detail";
 import type { RoadmapGoalSelection } from "@/constants/goal-details";
 import { getPriorityMilestone } from "@/constants/priority-milestone";
@@ -40,6 +39,62 @@ function getGreeting() {
   if (hour >= 17 && hour < 21) return "Good evening!";
   if (hour >= 21 || hour < 2) return "Night time working?";
   return "Burning the midnight oil?";
+}
+
+function ProgressRing({ pct, size = 110 }: { pct: number; size?: number }) {
+  const animPct = useRef(new Animated.Value(0)).current;
+  const [displayPct, setDisplayPct] = useState(0);
+  const [strokeDash, setStrokeDash] = useState(0);
+
+  const strokeWidth = 20;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  useEffect(() => {
+    const id = animPct.addListener(({ value }) => {
+      setDisplayPct(Math.round(value));
+      setStrokeDash((value / 100) * circumference);
+    });
+    Animated.timing(animPct, {
+      toValue: pct,
+      duration: 900,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+    return () => animPct.removeListener(id);
+  }, [pct, animPct, circumference]);
+
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <Svg width={size} height={size} style={{ position: "absolute" }}>
+        {/* Track */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#1e1a3a"
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        {/* Filled arc */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#9274ff"
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={circumference - strokeDash}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${size / 2}, ${size / 2}`}
+        />
+      </Svg>
+      <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 35, color: "#f5f7fb" }}>{displayPct}%</Text>
+      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 20, color: "#8f98ab", letterSpacing: 0.5 }}>complete</Text>
+    </View>
+  );
 }
 
 function AnimatedBackground() {
@@ -167,7 +222,7 @@ export default function HomeScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [selectedGoal, setSelectedGoal] = useState<RoadmapGoalSelection | null>(null);
   const [pendingGoalCompletion, setPendingGoalCompletion] = useState<{ goal: RoadmapGoalSelection; requestId: number } | null>(null);
-  const [goalMiniTaskProgress, setGoalMiniTaskProgress] = useState<Record<string, string[]>>({});
+  const [goalMiniTaskProgress, setGoalMiniTaskProgress] = useState<Record<string, { checked: string[]; total: number }>>({});
   const [completedMilestoneIds, setCompletedMilestoneIds] = useState<string[]>([]);
   const [completedProjectIds, setCompletedProjectIds] = useState<string[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -181,22 +236,18 @@ export default function HomeScreen() {
   const revealRaf1Ref = useRef<number | null>(null);
   const revealRaf2Ref = useRef<number | null>(null);
 
-  const handleMiniTaskProgressChange = useCallback((goal: RoadmapGoalSelection, checkedTaskIds: string[]) => {
+  const handleMiniTaskProgressChange = useCallback((goal: RoadmapGoalSelection, checkedTaskIds: string[], totalTaskCount: number) => {
     const goalKey = `${goal.type}:${goal.id}`;
     setGoalMiniTaskProgress((prev) => {
       const normalizedTaskIds = [...checkedTaskIds].sort();
-      const prevTaskIds = prev[goalKey] ?? EMPTY_TASK_IDS;
+      const prevEntry = prev[goalKey];
+      const prevTaskIds = prevEntry?.checked ?? EMPTY_TASK_IDS;
       const hasSameLength = prevTaskIds.length === normalizedTaskIds.length;
       const hasSameItems = hasSameLength && prevTaskIds.every((taskId, index) => taskId === normalizedTaskIds[index]);
-
-      if (hasSameItems) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [goalKey]: normalizedTaskIds,
-      };
+      if (hasSameItems && prevEntry?.total === totalTaskCount) return prev;
+      // Never overwrite with a worse total count
+      const resolvedTotal = Math.max(totalTaskCount, prevEntry?.total ?? 0);
+      return { ...prev, [goalKey]: { checked: normalizedTaskIds, total: resolvedTotal } };
     });
   }, []);
 
@@ -395,6 +446,7 @@ export default function HomeScreen() {
                   startTab={roadmapStartTab}
                   onCompletionStateChange={handleRoadmapCompletionStateChange}
                   autoCompleteGoalRequest={pendingGoalCompletion}
+                  goalMiniTaskProgress={goalMiniTaskProgress}
                   onAutoCompleteHandled={(requestId) => {
                     setPendingGoalCompletion((prev) => (prev && prev.requestId === requestId ? null : prev));
                   }}
@@ -407,24 +459,15 @@ export default function HomeScreen() {
 
               <View style={[styles.stackLayer, !showHomeLayer && styles.hiddenLayer]}>
                 <ScrollView contentContainerStyle={styles.homeContainer} showsVerticalScrollIndicator={false}>
-
-                  <View style={{ alignItems: "center", marginBottom: 18 }}>
-                    <ProgressRing
-                      percent={
-                        Math.round(
-                          ((completedMilestoneIds.length + completedProjectIds.length) /
-                            (FAKE_MILESTONES.length + FAKE_PROJECTS.length)) *
-                            100
-                        )
-                      }
-                      radius={48}
-                      strokeWidth={10}
-                      color="#7c5cff"
-                      backgroundColor="#23263a"
-                    />
-                  </View>
                   <Text style={styles.homeTitle}>{getGreeting()}</Text>
                   <Text style={styles.homeSubtitle}>Start with these, then continue through your full roadmap.</Text>
+                  <View style={{ alignItems: "center", marginBottom: 20 }}>
+                    <ProgressRing pct={(() => {
+                      const total = FAKE_MILESTONES.length + FAKE_PROJECTS.length + FAKE_EVENTS.length;
+                      const done = completedMilestoneIds.length + completedProjectIds.length;
+                      return total > 0 ? Math.round((done / total) * 100) : 0;
+                    })()} size={200} />
+                  </View>
 
                   <View style={styles.homeCard}>
                     <Text style={styles.homeCardLabel}>Top priority milestone</Text>
@@ -497,7 +540,7 @@ export default function HomeScreen() {
               <View style={styles.stackLayer}>
                 <GoalDetailScreen
                   goal={selectedGoal}
-                  initialCheckedTaskIds={goalMiniTaskProgress[`${selectedGoal.type}:${selectedGoal.id}`] ?? EMPTY_TASK_IDS}
+                  initialCheckedTaskIds={goalMiniTaskProgress[`${selectedGoal.type}:${selectedGoal.id}`]?.checked ?? EMPTY_TASK_IDS}
                   onMiniTaskProgressChange={handleMiniTaskProgressChange}
                   onBack={() => setScreen("mainApp")}
                   onCompleteGoal={(goal) => {

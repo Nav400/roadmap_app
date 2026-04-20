@@ -14,7 +14,7 @@ export default function GoalDetailScreen({
   onBack: () => void;
   onCompleteGoal?: (goal: RoadmapGoalSelection) => void;
   initialCheckedTaskIds?: string[];
-  onMiniTaskProgressChange?: (goal: RoadmapGoalSelection, checkedTaskIds: string[]) => void;
+  onMiniTaskProgressChange?: (goal: RoadmapGoalSelection, checkedTaskIds: string[], totalTaskCount: number) => void;
 }) {
   const goalKey = `${goal.type}:${goal.id}`;
   const detail = useMemo(() => getGoalDetailContent(goal), [goal]);
@@ -31,6 +31,32 @@ export default function GoalDetailScreen({
   const taskCheckScaleAnims = useRef<Record<string, Animated.Value>>({}).current;
   const taskCheckBurstAnims = useRef<Record<string, Animated.Value>>({}).current;
   const autoScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const confettiAnims = useRef<{ x: Animated.Value; y: Animated.Value; rot: Animated.Value; op: Animated.Value; color: string }[]>([]);
+
+  function spawnConfetti() {
+    const colors = ["#22c97a", "#7c5cff", "#f7c948", "#ff6eb4", "#4dd5f5", "#ff8c42"];
+    confettiAnims.current = Array.from({ length: 28 }, () => ({
+      x: new Animated.Value((Math.random() - 0.5) * 340),
+      y: new Animated.Value(0),
+      rot: new Animated.Value(0),
+      op: new Animated.Value(1),
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+    setShowConfetti(true);
+    Animated.parallel(
+      confettiAnims.current.map((p) =>
+        Animated.parallel([
+          Animated.timing(p.y, { toValue: -(220 + Math.random() * 180), duration: 900 + Math.random() * 400, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+          Animated.timing(p.rot, { toValue: (Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 360), duration: 1000, easing: Easing.linear, useNativeDriver: true }),
+          Animated.sequence([
+            Animated.delay(500),
+            Animated.timing(p.op, { toValue: 0, duration: 500, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+          ]),
+        ])
+      )
+    ).start(() => setShowConfetti(false));
+  }
   const shouldSkipNextProgressSync = useRef(true);
 
   useEffect(() => {
@@ -54,9 +80,8 @@ export default function GoalDetailScreen({
     }
 
     const normalizedTaskIds = Array.from(checkedTaskIds).sort();
-    onMiniTaskProgressChange?.(goal, normalizedTaskIds);
-  }, [checkedTaskIds, goalKey, goal, onMiniTaskProgressChange]);
-
+    onMiniTaskProgressChange?.(goal, normalizedTaskIds, detail.miniTasks.length);
+  }, [checkedTaskIds]);
   useEffect(() => {
     return () => {
       if (autoScrollTimer.current) {
@@ -192,6 +217,8 @@ export default function GoalDetailScreen({
       return;
     }
 
+    spawnConfetti();
+    setTimeout(() => {
     runExitAnimation(() => {
       if (onCompleteGoal) {
         onCompleteGoal(goal);
@@ -199,6 +226,7 @@ export default function GoalDetailScreen({
       }
       onBack();
     });
+    }, 600);
   }
 
   useEffect(() => {
@@ -300,13 +328,14 @@ export default function GoalDetailScreen({
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={{ flex: 1, backgroundColor: "#070914" }}>
       <LinearGradient
         colors={["#070914", "#121234", "#1a1550"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
+      <SafeAreaView style={styles.safe}>
       <Animated.View
         style={{
           flex: 1,
@@ -324,8 +353,10 @@ export default function GoalDetailScreen({
           onPress={handleBackPress}
           disabled={isLeaving}
         >
-          
-          <Text style={styles.backButtonText}>Back to roadmap</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Text style={[styles.backButtonText, { fontSize: 20, lineHeight: 22 }]}>‹</Text>
+            <Text style={styles.backButtonText}>Back to roadmap</Text>
+          </View>
         </Pressable>
 
         <View style={styles.heroCard}>
@@ -418,7 +449,7 @@ export default function GoalDetailScreen({
               disabled={isLeaving || !allMiniTasksComplete}
             >
               <LinearGradient
-                colors={["#52dcc6", "#3aa8da", "#7167f0"]}
+                colors={["#5a4fcf", "#823dbf", "#7427a8"]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={styles.completeTaskButtonGradient}
@@ -430,14 +461,38 @@ export default function GoalDetailScreen({
         )}
       </ScrollView>
       </Animated.View>
+    {showConfetti && (
+        <View pointerEvents="none" style={{ ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "flex-end", paddingBottom: 80 }}>
+          {confettiAnims.current.map((p, i) => (
+            <Animated.View
+              key={i}
+              style={{
+                position: "absolute",
+                bottom: 80,
+                width: 10,
+                height: 10,
+                borderRadius: 2,
+                backgroundColor: p.color,
+                opacity: p.op,
+                transform: [
+                  { translateX: p.x },
+                  { translateY: p.y },
+                  { rotate: p.rot.interpolate({ inputRange: [0, 360], outputRange: ["0deg", "360deg"] }) },
+                ],
+              }}
+            />
+          ))}
+        </View>
+      )}
     </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#070913",
+    backgroundColor: "transparent",
   },
   container: {
     padding: 24,
@@ -613,11 +668,11 @@ const styles = StyleSheet.create({
   completeTaskButton: {
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: "#4d8bff",
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+    shadowColor: "#3dbf7e",
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 6,
   },
   completeTaskButtonPressed: {
     opacity: 0.9,
@@ -633,6 +688,6 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 18,
     color: "#f8fdff",
-    letterSpacing: 0.3,
+    letterSpacing: 0.7,
   },
 });

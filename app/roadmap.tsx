@@ -32,7 +32,7 @@ export const FAKE_PROJECTS = [
   { id: "4", title: "Discord Bot", desc: "Automate something useful for your friend group. Great for showing initiative.", diff: "medium", skills: ["python", "APIs", "webhooks"] },
 ];
 
-const FAKE_EVENTS = [
+export const FAKE_EVENTS = [
   { id: "1", month: "APR", day: "12", title: "Spring Career Fair", meta: "University Career Center · Main Gym", why: "Internship recruiting still open at some companies", badge: "career" },
   { id: "2", month: "APR", day: "18", title: "HackUFL Spring 2026", meta: "CS Dept. · 36hr hackathon", why: "Build a project, meet teammates, put it on your resume", badge: "hackathon" },
   { id: "3", month: "---", day: "~", title: "ACM Weekly Meeting", meta: "Thursdays 6pm · CSE Building Rm 101", why: "Workshops, guest speakers, project teams", badge: "club" },
@@ -114,6 +114,7 @@ export default function RoadmapScreen({
   onCompletionStateChange,
   viewMode = "roadmap",
   startTab,
+  goalMiniTaskProgress = {},
 }: {
   profile: any;
   onOpenGoal?: (goal: RoadmapGoalSelection) => void;
@@ -122,6 +123,7 @@ export default function RoadmapScreen({
   onCompletionStateChange?: (state: { completedMilestoneIds: string[]; completedProjectIds: string[] }) => void;
   viewMode?: "roadmap" | "events";
   startTab?: "milestones" | "projects" | "events" | "completed";
+  goalMiniTaskProgress?: Record<string, { checked: string[]; total: number }>;
 }) {
   const entryOpacityAnim = useRef(new Animated.Value(0)).current;
   const entryTranslateYAnim = useRef(new Animated.Value(14)).current;
@@ -197,7 +199,7 @@ export default function RoadmapScreen({
   const visibleTabs = viewMode === "events"
     ? (["events"] as const)
     : (["milestones", "projects", "completed"] as const);
-  const pageTitle = viewMode === "events" ? "Events" : `${profile.major} Roadmap`;
+  const pageTitle = viewMode === "events" ? "Events" : `${profile.major}`;
   const pageSubtitle = viewMode === "events"
     ? "Upcoming campus opportunities."
     : `${profile.year} · ${goalsSummary}`;
@@ -881,25 +883,43 @@ export default function RoadmapScreen({
                         <Text style={[styles.milestoneDesc, (m.done || isMilestoneCompleting) && styles.milestoneDescDone]}>
                           {m.desc}
                         </Text>
-                        <View
-                          style={[
-                            styles.tag,
-                            {
-                              backgroundColor: m.done || isMilestoneCompleting ? "#222833" : getTagColors(m.tag).bg,
-                              borderColor: m.done || isMilestoneCompleting ? "#394150" : getTagColors(m.tag).border,
-                            },
-                          ]}
-                        >
-                          <Text
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <View
                             style={[
-                              styles.tagText,
+                              styles.tag,
                               {
-                                color: m.done || isMilestoneCompleting ? "#8a93a4" : getTagColors(m.tag).text,
+                                backgroundColor: m.done || isMilestoneCompleting ? "#222833" : getTagColors(m.tag).bg,
+                                borderColor: m.done || isMilestoneCompleting ? "#394150" : getTagColors(m.tag).border,
                               },
                             ]}
                           >
-                            {m.tag}
-                          </Text>
+                            <Text
+                              style={[
+                                styles.tagText,
+                                {
+                                  color: m.done || isMilestoneCompleting ? "#8a93a4" : getTagColors(m.tag).text,
+                                },
+                              ]}
+                            >
+                              {m.tag}
+                            </Text>
+                          </View>
+                          {(() => {
+                            const key = `milestone:${m.id}`;
+                            const entry = goalMiniTaskProgress[key];
+                            const checked = entry?.checked.length ?? 0;
+                            const total = entry?.total ?? 0;
+                            if (checked === 0 || total === 0) return null;
+                            const pct = Math.min(100, Math.round((checked / total) * 100));
+                            return (
+                              <View style={{ flex: 1, minWidth: 60 }}>
+                                <View style={{ height: 4, borderRadius: 999, backgroundColor: "#1e1a3a", overflow: "hidden" }}>
+                                  <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#7c5cff" }} />
+                                </View>
+                                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#9274ff", marginTop: 2 }}>{pct}% tasks done</Text>
+                              </View>
+                            );
+                          })()}
                         </View>
                       </Pressable>
                     </View>
@@ -991,6 +1011,22 @@ export default function RoadmapScreen({
                     );
                   })}
                 </View>
+                {(() => {
+                  const key = `project:${p.id}`;
+                  const entry = goalMiniTaskProgress[key];
+                  const checked = entry?.checked.length ?? 0;
+                  const total = entry?.total ?? 0;
+                  if (checked === 0 || total === 0) return null;
+                  const pct = Math.min(100, Math.round((checked / total) * 100));
+                  return (
+                    <View style={{ marginTop: 8 }}>
+                      <View style={{ height: 4, borderRadius: 999, backgroundColor: "#1e1a3a", overflow: "hidden" }}>
+                        <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#7c5cff" }} />
+                      </View>
+                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#9274ff", marginTop: 2 }}>{pct}% tasks done</Text>
+                    </View>
+                  );
+                })()}
               </Pressable>
               </View>
               </Animated.View>

@@ -2440,7 +2440,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 999,
+    borderRadius: 15,
     borderWidth: 1,
     borderColor: "#7c5cff",
     backgroundColor: "#1d1835",
@@ -2460,9 +2460,9 @@ const styles = StyleSheet.create({
     opacity: 0.92,
   },
   selectedMajorPillText: {
-    fontFamily: "ClashGrotesk-Medium",
-    fontSize: 17,
-    letterSpacing: 1,
+    fontFamily: "ClashGrotesk-SemiBold",
+    fontSize: 18,
+    letterSpacing: 0.8,
     color: "#ddd6ff",
     textAlign: "center",
   },
@@ -2868,7 +2868,7 @@ const styles = StyleSheet.create({
   ctaBtnText: {
     fontFamily: "ClashGrotesk-SemiBold",
     fontSize: 18,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
   footer: {
     position: "absolute",
