@@ -12,9 +12,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   UIManager,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { GradientBackground } from "@/components/gradient-background";
@@ -2309,9 +2309,9 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     if (step === 7) {
       const options = [
-        { id: "1-2", label: "1–2 hours / week", sub: "Light touch, steady progress", emoji: "🌱" },
-        { id: "3-5", label: "3–5 hours / week", sub: "Solid and sustainable", emoji: "🔥" },
-        { id: "6+", label: "6+ hours / week", sub: "All in", emoji: "⚡" },
+        { id: "1-2", label: "1–2 hours / week", sub: "Light touch, steady progress"},
+        { id: "3-5", label: "3–5 hours / week", sub: "Solid and sustainable"},
+        { id: "6+", label: "6+ hours / week", sub: "All in"},
       ];
       return (
         <View style={{ gap: 10 }}>
@@ -2321,7 +2321,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selectedCommitment === opt.id ? "#9274ff" : "#2f3a52", backgroundColor: selectedCommitment === opt.id ? "#2a1f4e" : "#141b29", padding: 16, flexDirection: "row" as const, alignItems: "center" as const, gap: 14, opacity: pressed ? 0.85 : 1 }]}
               onPress={() => setSelectedCommitment(opt.id)}
             >
-              <Text style={{ fontSize: 26 }}>{opt.emoji}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 18, color: selectedCommitment === opt.id ? "#e8deff" : "#c2cad8" }}>{opt.label}</Text>
                 <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: selectedCommitment === opt.id ? "#a89ee0" : "#6b7585", marginTop: 2 }}>{opt.sub}</Text>
@@ -2335,12 +2334,12 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     if (step === 8) {
       const expOptions = [
-        { id: "career-fair", label: "Attended a career fair", emoji: "🤝" },
-        { id: "club", label: "Joined a club or org", emoji: "👥" },
-        { id: "internship", label: "Applied for an internship", emoji: "💼" },
-        { id: "project", label: "Done a personal project", emoji: "🛠️" },
-        { id: "research", label: "Done research or a lab", emoji: "🔬" },
-        { id: "none", label: "None of these yet", emoji: "✨" },
+        { id: "career-fair", label: "Attended a career fair"},
+        { id: "club", label: "Joined a club or org"},
+        { id: "internship", label: "Applied for an internship"},
+        { id: "project", label: "Done a personal project"},
+        { id: "research", label: "Done research or a lab"},
+        { id: "none", label: "None of these yet"},
       ];
       const toggleExperience = (id: string) => {
         if (id === "none") {
@@ -2363,7 +2362,6 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                 style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selected ? "#9274ff" : "#2f3a52", backgroundColor: selected ? "#2a1f4e" : "#141b29", padding: 14, flexDirection: "row" as const, alignItems: "center" as const, gap: 12, opacity: pressed ? 0.85 : 1 }]}
                 onPress={() => toggleExperience(opt.id)}
               >
-                <Text style={{ fontSize: 20 }}>{opt.emoji}</Text>
                 <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 16, color: selected ? "#e8deff" : "#c2cad8", flex: 1 }}>{opt.label}</Text>
                 {selected && <Text style={{ color: "#9274ff", fontSize: 18 }}>✓</Text>}
               </Pressable>
@@ -2396,7 +2394,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     const timelineLabels: Record<string, string> = { semester: "by end of semester", year: "within a year", graduation: "before graduation", nosure: "whenever feels right" };
     const commitmentLabels: Record<string, string> = { "1-2": "1–2 hrs/week", "3-5": "3–5 hrs/week", "6+": "6+ hrs/week" };
     return (
-      <SafeAreaView style={[styles.safe, { justifyContent: "center", padding: 24 }]}>
+      <SafeAreaView style={[styles.safe, { justifyContent: "center", paddingHorizontal: 10, paddingVertical: 24 }]}>
         <GradientBackground variant="soft" />
         <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 28, color: "#f5f7fb", marginBottom: 8 }}>
           Sound right{userName.trim() ? `, ${userName.trim()}` : ""}?
@@ -2623,6 +2621,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+    paddingHorizontal: 0,
     backgroundColor: "transparent",
   },
   container: {
