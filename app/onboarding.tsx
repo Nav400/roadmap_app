@@ -287,6 +287,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const [userName, setUserName] = useState("");
   const nameGreetingAnim = useRef(new Animated.Value(0)).current;
   const prevUserNameHadContent = useRef(false);
+  const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedStruggle, setSelectedStruggle] = useState("");
   const [selectedTimeline, setSelectedTimeline] = useState("");
   const [selectedCommitment, setSelectedCommitment] = useState("");
@@ -320,6 +321,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const contentTranslateY = useRef(new Animated.Value(0)).current;
   const exitFadeAnim = useRef(new Animated.Value(1)).current;
   const exitSlideAnim = useRef(new Animated.Value(0)).current;
+  const commitmentScaleAnimsRef = useRef<Record<string, Animated.Value>>({}).current;
   const majorSearchFocusAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorRowAnim = useRef(new Animated.Value(0)).current;
   const selectedMajorLabelAnim = useRef(new Animated.Value(0)).current;
@@ -329,6 +331,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const selectedSchoolAppearAnim = useRef(new Animated.Value(0)).current;
   const schoolSearchFocusAnim = useRef(new Animated.Value(0)).current;
   const yearRevealAnim = useRef(new Animated.Value(0)).current;
+  const confirmFadeAnim = useRef(new Animated.Value(0)).current;
+  const confirmSlideAnim = useRef(new Animated.Value(18)).current;
   const nextBtnEnableAnim = useRef(new Animated.Value(0)).current;
   const skillIntroBackdropOpacity = useRef(new Animated.Value(0)).current;
   const skillIntroCardOpacity = useRef(new Animated.Value(0)).current;
@@ -342,6 +346,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   const majorCategoryExpandAnimsRef = useRef<Record<string, Animated.Value>>({});
   const struggleScaleAnimsRef = useRef<Record<string, Animated.Value>>({}).current;
   const prevMajorCategoryExpandedStateRef = useRef<Record<string, boolean>>({});
+  const experienceScaleAnimsRef = useRef<Record<string, Animated.Value>>({}).current;
   const yearPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const goalPillScaleAnimsRef = useRef<Record<string, Animated.Value>>({});
   const customGoalAppearAnimsRef = useRef<Record<string, Animated.Value>>({});
@@ -365,11 +370,23 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     }
     return timelineScaleAnimsRef[id];
   };
+  const getExperienceScaleAnim = (id: string) => {
+    if (!experienceScaleAnimsRef[id]) {
+      experienceScaleAnimsRef[id] = new Animated.Value(1);
+    }
+    return experienceScaleAnimsRef[id];
+  };
   const getYearPillScaleAnim = (year: string) => {
     if (!yearPillScaleAnimsRef.current[year]) {
       yearPillScaleAnimsRef.current[year] = new Animated.Value(1);
     }
     return yearPillScaleAnimsRef.current[year];
+  };
+  const getCommitmentScaleAnim = (id: string) => {
+    if (!commitmentScaleAnimsRef[id]) {
+      commitmentScaleAnimsRef[id] = new Animated.Value(1);
+    }
+    return commitmentScaleAnimsRef[id];
   };
   const getGoalPillScaleAnim = (goal: string) => {
     if (!goalPillScaleAnimsRef.current[goal]) {
@@ -766,6 +783,26 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       generateSkillsFromAI();
     }
   }, [generateSkillsFromAI, selectedMajor, selectedYear, started, step]);
+
+  useEffect(() => {
+  if (!showConfirmation) return;
+  confirmFadeAnim.setValue(0);
+  confirmSlideAnim.setValue(18);
+  Animated.parallel([
+    Animated.timing(confirmFadeAnim, {
+      toValue: 1,
+      duration: 420,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }),
+    Animated.timing(confirmSlideAnim, {
+      toValue: 0,
+      duration: 420,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }),
+  ]).start();
+}, [showConfirmation, confirmFadeAnim, confirmSlideAnim]);
 
   useEffect(() => {
     const hasContent = userName.trim().length > 0;
@@ -1201,6 +1238,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       : step === 5 ? selectedStruggle.trim().length > 0
       : step === 6 ? selectedTimeline.trim().length > 0
       : step === 7 ? selectedCommitment.trim().length > 0
+      : step === 8 ? priorExperiences.length > 0
       : true;
     Animated.timing(nextBtnEnableAnim, {
       toValue: shouldEnableNext ? 1 : 0,
@@ -1222,6 +1260,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     selectedStruggle,
     selectedTimeline,
     selectedCommitment,
+    priorExperiences,
     step,
   ]);
 
@@ -1419,7 +1458,22 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     // Step 8 (prior experience) is optional — after it show confirmation
     if (step === 8) {
-      setShowConfirmation(true);
+      Animated.parallel([
+        Animated.timing(contentOpacity, {
+          toValue: 0,
+          duration: 280,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentTranslateY, {
+          toValue: -12,
+          duration: 280,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowConfirmation(true);
+      });
       return;
     }
 
@@ -1503,7 +1557,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     (step === 4 && (!generatedGoals.length || selectedGoals.length === 0)) ||
     (step === 5 && selectedStruggle.trim().length === 0) ||
     (step === 6 && selectedTimeline.trim().length === 0) ||
-    (step === 7 && selectedCommitment.trim().length === 0);
+    (step === 7 && selectedCommitment.trim().length === 0) ||
+    (step === 8 && priorExperiences.length === 0);
   const nextBtnTextColor = nextBtnEnableAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["#cfd3da", "#f7f5ff"],
@@ -1522,7 +1577,28 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             placeholder="Your first name"
             placeholderTextColor="#5a637a"
             value={userName}
-            onChangeText={setUserName}
+            onChangeText={(text) => {
+              setUserName(text);
+              if (nameDebounceRef.current) clearTimeout(nameDebounceRef.current);
+              const trimmed = text.trim();
+              if (trimmed.length > 0) {
+                nameDebounceRef.current = setTimeout(() => {
+                  Animated.spring(nameGreetingAnim, {
+                    toValue: 1,
+                    friction: 8,
+                    tension: 85,
+                    useNativeDriver: true,
+                  }).start();
+                }, 1000);
+              } else {
+                Animated.timing(nameGreetingAnim, {
+                  toValue: 0,
+                  duration: 180,
+                  easing: Easing.out(Easing.cubic),
+                  useNativeDriver: true,
+                }).start();
+              }
+            }}
             autoFocus
             returnKeyType="next"
             onSubmitEditing={goNext}
@@ -2126,12 +2202,12 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       <>
         {!areGoalsReadyForCurrentSelection ? (
           <View style={styles.noMajorResultsCard}>
-            <Text style={styles.noMajorResultsTitle}>Generating goals for {selectedMajor}...</Text>
-            <Text style={styles.noMajorResultsBody}>We are pulling in major-specific goals from Groq right now.</Text>
+            <Text style={styles.noMajorResultsTitle}>Building your goal list...</Text>
+            <Text style={styles.noMajorResultsBody}>Pulling in goals tailored to {selectedMajor}.</Text>
           </View>
         ) : (
           <>
-            <View style={styles.pillGroup}>
+            <View style={{ gap: 10, marginBottom: 20 }}>
               {[...generatedGoals, ...customGoals].map((g) => {
                 const scaleAnim = getGoalPillScaleAnim(g);
                 const isCustomGoal = customGoals.includes(g);
@@ -2165,51 +2241,95 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                     }}
                   >
                     <Pressable
-                      style={({ pressed }) => [
-                        styles.pill,
-                        selectedGoals.includes(g) && styles.pillSelected,
-                        pressed && styles.pillPressed,
-                      ]}
+                      style={({ pressed }) => [{
+                        borderRadius: 16,
+                        borderWidth: 1.5,
+                        borderColor: selectedGoals.includes(g) ? "#9274ff" : "#2a3347",
+                        backgroundColor: selectedGoals.includes(g) ? "#221944" : "#111827",
+                        paddingHorizontal: 18,
+                        paddingVertical: 15,
+                        flexDirection: "row" as const,
+                        alignItems: "center" as const,
+                        justifyContent: "space-between" as const,
+                        gap: 10,
+                        opacity: pressed ? 0.88 : 1,
+                      }]}
                       onPressIn={() => {
-                        Animated.spring(scaleAnim, {
-                          toValue: 0.95,
-                          friction: 6,
-                          tension: 100,
-                          useNativeDriver: true,
-                        }).start();
+                        Animated.spring(scaleAnim, { toValue: 0.968, friction: 7, tension: 95, useNativeDriver: true }).start();
                       }}
                       onPressOut={() => {
-                        Animated.spring(scaleAnim, {
-                          toValue: 1,
-                          friction: 6,
-                          tension: 100,
-                          useNativeDriver: true,
-                        }).start();
+                        Animated.spring(scaleAnim, { toValue: 1, friction: 7, tension: 90, useNativeDriver: true }).start();
                       }}
                       onPress={() => toggleGoal(g)}
                     >
-                      <Text style={[styles.pillText, selectedGoals.includes(g) && styles.pillTextSelected]}>{g}</Text>
+                      <View style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 11,
+                        borderWidth: 1.5,
+                        borderColor: selectedGoals.includes(g) ? "#9274ff" : "#3a4560",
+                        backgroundColor: selectedGoals.includes(g) ? "#7c5cff" : "transparent",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}>
+                        {selectedGoals.includes(g) && (
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />
+                        )}
+                      </View>
+                      <Text style={{
+                        fontFamily: "ClashGrotesk-Medium",
+                        fontSize: 18,
+                        letterSpacing: 0.3,
+                        lineHeight: 24,
+                        color: selectedGoals.includes(g) ? "#e2d9ff" : "#b0bccf",
+                        flex: 1,
+                      }}>
+                        {g}
+                      </Text>
                     </Pressable>
                   </Animated.View>
                 );
               })}
             </View>
 
-            <View style={styles.customGoalRow}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 24, marginTop: 4 }}>
               <TextInput
                 value={customGoalInput}
                 onChangeText={setCustomGoalInput}
                 placeholder="Add your own goal"
-                placeholderTextColor="#6e7790"
-                style={styles.customGoalInput}
+                placeholderTextColor="#4a5568"
+                style={{
+                  flex: 1,
+                  minHeight: 50,
+                  borderRadius: 14,
+                  borderWidth: 1.5,
+                  borderColor: "#2a3347",
+                  backgroundColor: "#111827",
+                  paddingHorizontal: 16,
+                  fontFamily: "ClashGrotesk-Medium",
+                  fontSize: 17,
+                  color: "#edf2ff",
+                  letterSpacing: 0.3,
+                }}
                 returnKeyType="done"
                 onSubmitEditing={addCustomGoal}
               />
               <Pressable
-                style={({ pressed }) => [styles.customGoalAddBtn, pressed && styles.customGoalAddBtnPressed]}
+                style={({ pressed }) => [{
+                  minHeight: 50,
+                  paddingHorizontal: 18,
+                  borderRadius: 14,
+                  borderWidth: 1.5,
+                  borderColor: "#7c5cff",
+                  backgroundColor: "#1d1835",
+                  alignItems: "center" as const,
+                  justifyContent: "center" as const,
+                  opacity: pressed ? 0.8 : 1,
+                }]}
                 onPress={addCustomGoal}
               >
-                <Text style={styles.customGoalAddText}>Add</Text>
+                <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 14, color: "#ddd6ff", textTransform: "uppercase", letterSpacing: 1.2 }}>Add</Text>
               </Pressable>
             </View>
           </>
@@ -2220,41 +2340,55 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
   if (step === 5) {
       const options = [
-        { id: "start", label: "I don't know where to start"},
-        { id: "behind", label: "Everyone around me seems ahead"},
-        { id: "want", label: "I don't know what I actually want" },
-        { id: "failing", label: "I'm scared of failing" },
-        { id: "time", label: "I don't have enough time" },
+        { id: "start", label: "I don't know where to start", sub: "The path forward feels unclear or overwhelming" },
+        { id: "behind", label: "Everyone around me seems ahead", sub: "Comparison makes it hard to feel on track" },
+        { id: "want", label: "I don't know what I actually want", sub: "The direction is uncertain, not just the steps" },
+        { id: "failing", label: "I'm scared of failing", sub: "Fear of falling short holds you back from trying" },
+        { id: "time", label: "I don't have enough time", sub: "Life is full — carving out space is the challenge" },
       ];
       return (
         <View style={{ gap: 10 }}>
           {options.map((opt) => {
             const scaleAnim = getStruggleScaleAnim(opt.id);
+            const isSelected = selectedStruggle === opt.id;
             return (
               <Animated.View key={opt.id} style={{ transform: [{ scale: scaleAnim }] }}>
                 <Pressable
-                  style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selectedStruggle === opt.id ? "#9274ff" : "#2f3a52", backgroundColor: selectedStruggle === opt.id ? "#2a1f4e" : "#141b29", padding: 16, flexDirection: "row" as const, alignItems: "center" as const, gap: 12, opacity: pressed ? 0.85 : 1 }]}
+                  style={({ pressed }) => [{
+                    borderRadius: 16,
+                    borderWidth: 1.5,
+                    borderColor: isSelected ? "#9274ff" : "#2a3347",
+                    backgroundColor: isSelected ? "#221944" : "#111827",
+                    paddingHorizontal: 18,
+                    paddingVertical: 16,
+                    opacity: pressed ? 0.88 : 1,
+                  }]}
                   onPressIn={() => {
-                    Animated.spring(scaleAnim, {
-                      toValue: 0.965,
-                      friction: 8,
-                      tension: 90,
-                      useNativeDriver: true,
-                    }).start();
+                    Animated.spring(scaleAnim, { toValue: 0.965, friction: 8, tension: 90, useNativeDriver: true }).start();
                   }}
                   onPressOut={() => {
-                    Animated.spring(scaleAnim, {
-                      toValue: 1,
-                      friction: 8,
-                      tension: 90,
-                      useNativeDriver: true,
-                    }).start();
+                    Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 90, useNativeDriver: true }).start();
                   }}
                   onPress={() => setSelectedStruggle(opt.id)}
                 >
-                  
-                  <Text style={{ fontFamily: "ClashGrotesk-Medium", fontSize: 19, letterSpacing: 0.4, textAlign: "center", color: selectedStruggle === opt.id ? "#e8deff" : "#c2cad8", flex: 1 }}>{opt.label}</Text>
-                  
+                  <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+                    <View style={{
+                      width: 22, height: 22, borderRadius: 11, borderWidth: 1.5,
+                      borderColor: isSelected ? "#9274ff" : "#3a4560",
+                      backgroundColor: isSelected ? "#7c5cff" : "transparent",
+                      alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    }}>
+                      {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 20, letterSpacing: 0.3, color: isSelected ? "#e2d9ff" : "#c2cad8", marginBottom: 4 }}>
+                        {opt.label}
+                      </Text>
+                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, letterSpacing: 0.3, color: isSelected ? "#9c8dcc" : "#4e5a6e", lineHeight: 19 }}>
+                        {opt.sub}
+                      </Text>
+                    </View>
+                  </View>
                 </Pressable>
               </Animated.View>
             );
@@ -2265,81 +2399,133 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     if (step === 6) {
       const options = [
-        { id: "semester", label: "By end of this semester"},
-        { id: "year", label: "Within a year"},
-        { id: "graduation", label: "Before I graduate"},
-        { id: "nosure", label: "I'm not sure yet"},
+        { id: "semester", label: "By end of this semester", sub: "A focused, near-term push" },
+        { id: "year", label: "Within a year", sub: "Steady progress over a full academic cycle" },
+        { id: "graduation", label: "Before I graduate", sub: "Long game — build the complete picture" },
+        { id: "nosure", label: "No set timeline yet", sub: "The roadmap adapts as you go" },
       ];
       return (
         <View style={{ gap: 10 }}>
-          {options.map((opt) => {
+          {options.map((opt, index) => {
             const scaleAnim = getTimelineScaleAnim(opt.id);
+            const isSelected = selectedTimeline === opt.id;
             return (
               <Animated.View key={opt.id} style={{ transform: [{ scale: scaleAnim }] }}>
                 <Pressable
-                  style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selectedTimeline === opt.id ? "#9274ff" : "#2f3a52", backgroundColor: selectedTimeline === opt.id ? "#2a1f4e" : "#141b29", padding: 16, flexDirection: "row" as const, alignItems: "center" as const, gap: 12, opacity: pressed ? 0.85 : 1 }]}
+                  style={({ pressed }) => [{
+                    borderRadius: 16,
+                    borderWidth: 1.5,
+                    borderColor: isSelected ? "#9274ff" : "#2a3347",
+                    backgroundColor: isSelected ? "#221944" : "#111827",
+                    paddingHorizontal: 18,
+                    paddingVertical: 16,
+                    flexDirection: "row" as const,
+                    alignItems: "center" as const,
+                    gap: 14,
+                    opacity: pressed ? 0.88 : 1,
+                  }]}
                   onPressIn={() => {
-                    Animated.spring(scaleAnim, {
-                      toValue: 0.965,
-                      friction: 6,
-                      tension: 95,
-                      useNativeDriver: true,
-                    }).start();
+                    Animated.spring(scaleAnim, { toValue: 0.965, friction: 6, tension: 95, useNativeDriver: true }).start();
                   }}
                   onPressOut={() => {
-                    Animated.spring(scaleAnim, {
-                      toValue: 1,
-                      friction: 7,
-                      tension: 90,
-                      useNativeDriver: true,
-                    }).start();
+                    Animated.spring(scaleAnim, { toValue: 1, friction: 7, tension: 90, useNativeDriver: true }).start();
                   }}
                   onPress={() => setSelectedTimeline(opt.id)}
                 >
-                  <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 17, color: selectedTimeline === opt.id ? "#e8deff" : "#c2cad8", flex: 1 }}>{opt.label}</Text>
-
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 11,
+                    borderWidth: 1.5,
+                    borderColor: isSelected ? "#9274ff" : "#3a4560",
+                    backgroundColor: isSelected ? "#7c5cff" : "transparent",
+                    alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 19, letterSpacing: 0.3, color: isSelected ? "#e2d9ff" : "#c2cad8", marginBottom: 3 }}>
+                      {opt.label}
+                    </Text>
+                    <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: isSelected ? "#9c8dcc" : "#4e5a6e", letterSpacing: 0.2 }}>
+                      {opt.sub}
+                    </Text>
+                  </View>
                 </Pressable>
               </Animated.View>
             );
           })}
         </View>
       );
-    
     }
 
     if (step === 7) {
       const options = [
-        { id: "1-2", label: "1–2 hours / week", sub: "Light touch, steady progress"},
-        { id: "3-5", label: "3–5 hours / week", sub: "Solid and sustainable"},
-        { id: "6+", label: "6+ hours / week", sub: "All in"},
+        { id: "1-2", label: "1–2 hrs / week", sub: "Light touch, steady progress", detail: "Best for keeping momentum without pressure" },
+        { id: "3-5", label: "3–5 hrs / week", sub: "Solid and sustainable", detail: "The sweet spot for real skill-building" },
+        { id: "6+", label: "6+ hrs / week", sub: "All in", detail: "Maximum density — roadmap built to match" },
       ];
       return (
-        <View style={{ gap: 10 }}>
-          {options.map((opt) => (
-            <Pressable
-              key={opt.id}
-              style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selectedCommitment === opt.id ? "#9274ff" : "#2f3a52", backgroundColor: selectedCommitment === opt.id ? "#2a1f4e" : "#141b29", padding: 16, flexDirection: "row" as const, alignItems: "center" as const, gap: 14, opacity: pressed ? 0.85 : 1 }]}
-              onPress={() => setSelectedCommitment(opt.id)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 18, color: selectedCommitment === opt.id ? "#e8deff" : "#c2cad8" }}>{opt.label}</Text>
-                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: selectedCommitment === opt.id ? "#a89ee0" : "#6b7585", marginTop: 2 }}>{opt.sub}</Text>
-              </View>
-              
-            </Pressable>
-          ))}
+        <View style={{ gap: 12 }}>
+          {options.map((opt) => {
+            const scaleAnim = getCommitmentScaleAnim(opt.id);
+            const isSelected = selectedCommitment === opt.id;
+            return (
+              <Animated.View key={opt.id} style={{ transform: [{ scale: scaleAnim }] }}>
+              <Pressable
+                style={({ pressed }) => [{
+                  borderRadius: 16,
+                  borderWidth: 1.5,
+                  borderColor: isSelected ? "#9274ff" : "#2a3347",
+                  backgroundColor: isSelected ? "#221944" : "#111827",
+                  paddingHorizontal: 18,
+                  paddingVertical: 18,
+                  opacity: pressed ? 0.88 : 1,
+                }]}
+                onPressIn={() => {
+                  Animated.spring(scaleAnim, { toValue: 0.965, friction: 6, tension: 95, useNativeDriver: true }).start();
+                }}
+                onPressOut={() => {
+                  Animated.spring(scaleAnim, { toValue: 1, friction: 7, tension: 90, useNativeDriver: true }).start();
+                }}
+                onPress={() => setSelectedCommitment(opt.id)}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 11, borderWidth: 1.5,
+                    borderColor: isSelected ? "#9274ff" : "#3a4560",
+                    backgroundColor: isSelected ? "#7c5cff" : "transparent",
+                    alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 22, letterSpacing: 0.3, color: isSelected ? "#e2d9ff" : "#c2cad8" }}>
+                      {opt.label}
+                    </Text>
+                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 13, letterSpacing: 0.8, textTransform: "uppercase" as const, color: isSelected ? "#9c8dcc" : "#3a4560", marginTop: 2 }}>
+                      {opt.sub}
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ height: 1, backgroundColor: isSelected ? "rgba(146,116,255,0.25)" : "rgba(255,255,255,0.05)", marginBottom: 8 }} />
+                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: isSelected ? "#8a79c0" : "#404c5e", letterSpacing: 0.2, lineHeight: 20 }}>
+                  {opt.detail}
+                </Text>
+              </Pressable>
+              </Animated.View>
+            );
+          })}
         </View>
       );
     }
 
     if (step === 8) {
       const expOptions = [
-        { id: "career-fair", label: "Attended a career fair"},
-        { id: "club", label: "Joined a club or org"},
-        { id: "internship", label: "Applied for an internship"},
-        { id: "project", label: "Done a personal project"},
-        { id: "research", label: "Done research or a lab"},
-        { id: "none", label: "None of these yet"},
+        { id: "career-fair", label: "Attended a career fair", sub: "Networking and industry exposure" },
+        { id: "club", label: "Joined a club or org", sub: "Leadership, community, or special interest" },
+        { id: "internship", label: "Applied for an internship", sub: "Competitive, real-world experience" },
+        { id: "project", label: "Built a personal project", sub: "Self-directed creation or portfolio work" },
+        { id: "research", label: "Done research or a lab", sub: "Academic or faculty-led inquiry" },
+        { id: "none", label: "None of these yet", sub: "Everyone starts somewhere — that's fine" },
       ];
       const toggleExperience = (id: string) => {
         if (id === "none") {
@@ -2353,18 +2539,56 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       };
       return (
         <View style={{ gap: 10 }}>
-          <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: "#6b7585", marginBottom: 2 }}>Optional — select all that apply</Text>
+          <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: "#4e5a6e", marginBottom: 4, letterSpacing: 0.3 }}>
+            Optional — select everything that applies
+          </Text>
           {expOptions.map((opt) => {
-            const selected = priorExperiences.includes(opt.id);
+            const scaleAnim = getExperienceScaleAnim(opt.id);
+            const isSelected = priorExperiences.includes(opt.id);
+            const isNone = opt.id === "none";
             return (
+              <Animated.View key={opt.id} style={{ transform: [{ scale: scaleAnim }] }}>
               <Pressable
-                key={opt.id}
-                style={({ pressed }) => [{ borderRadius: 14, borderWidth: 1.5, borderColor: selected ? "#9274ff" : "#2f3a52", backgroundColor: selected ? "#2a1f4e" : "#141b29", padding: 14, flexDirection: "row" as const, alignItems: "center" as const, gap: 12, opacity: pressed ? 0.85 : 1 }]}
+                style={({ pressed }) => [{
+                  borderRadius: 16,
+                  borderWidth: 1.5,
+                  borderColor: isSelected ? (isNone ? "#5a748a" : "#9274ff") : "#2a3347",
+                  backgroundColor: isSelected ? (isNone ? "#111e2a" : "#221944") : "#111827",
+                  paddingHorizontal: 18,
+                  paddingVertical: 14,
+                  flexDirection: "row" as const,
+                  alignItems: "center" as const,
+                  gap: 12,
+                  opacity: pressed ? 0.88 : 1,
+                }]}
+                onPressIn={() => {
+                  Animated.spring(scaleAnim, { toValue: 0.965, friction: 6, tension: 95, useNativeDriver: true }).start();
+                }}
+                onPressOut={() => {
+                  Animated.spring(scaleAnim, { toValue: 1, friction: 7, tension: 90, useNativeDriver: true }).start();
+                }}
                 onPress={() => toggleExperience(opt.id)}
               >
-                <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 16, color: selected ? "#e8deff" : "#c2cad8", flex: 1 }}>{opt.label}</Text>
-                {selected && <Text style={{ color: "#9274ff", fontSize: 18 }}>✓</Text>}
+                <View style={{
+                  width: 22, height: 22,
+                  borderRadius: 11,
+                  borderWidth: 1.5,
+                  borderColor: isSelected ? (isNone ? "#5a9abf" : "#9274ff") : "#3a4560",
+                  backgroundColor: isSelected ? (isNone ? "#1a4a66" : "#7c5cff") : "transparent",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 17, letterSpacing: 0.3, color: isSelected ? (isNone ? "#b0cfe0" : "#e2d9ff") : "#c2cad8" }}>
+                    {opt.label}
+                  </Text>
+                  <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 13, color: isSelected ? (isNone ? "#5a86a0" : "#8a79c0") : "#3e4a5a", marginTop: 2 }}>
+                    {opt.sub}
+                  </Text>
+                </View>
               </Pressable>
+              </Animated.View>
             );
           })}
         </View>
@@ -2391,48 +2615,96 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
   }
 
   if (showConfirmation) {
-    const timelineLabels: Record<string, string> = { semester: "by end of semester", year: "within a year", graduation: "before graduation", nosure: "whenever feels right" };
-    const commitmentLabels: Record<string, string> = { "1-2": "1–2 hrs/week", "3-5": "3–5 hrs/week", "6+": "6+ hrs/week" };
+    const timelineLabels: Record<string, string> = {
+      semester: "End of semester",
+      year: "Within a year",
+      graduation: "Before graduation",
+      nosure: "Whenever feels right",
+    };
+    const commitmentLabels: Record<string, string> = {
+      "1-2": "1–2 hrs / week",
+      "3-5": "3–5 hrs / week",
+      "6+": "6+ hrs / week",
+    };
+    const summaryRows: { label: string; value: string }[] = [
+      { label: "Major", value: selectedMajor || "—" },
+      { label: "School", value: selectedSchool || "—" },
+      { label: "Year", value: selectedYear || "—" },
+      { label: "Goals", value: selectedGoals.join(" · ") || "—" },
+      { label: "Timeline", value: timelineLabels[selectedTimeline] ?? "—" },
+      { label: "Weekly time", value: commitmentLabels[selectedCommitment] ?? "—" },
+    ];
     return (
-      <SafeAreaView style={[styles.safe, { justifyContent: "center", paddingHorizontal: 10, paddingVertical: 24 }]}>
+      <Animated.View style={{ flex: 1, opacity: confirmFadeAnim, transform: [{ translateY: confirmSlideAnim }] }}>
+      <SafeAreaView style={[styles.safe, { justifyContent: "flex-start" }]}>
         <GradientBackground variant="soft" />
-        <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 28, color: "#f5f7fb", marginBottom: 8 }}>
-          Sound right{userName.trim() ? `, ${userName.trim()}` : ""}?
-        </Text>
-        <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: "#8f98ab", marginBottom: 24, lineHeight: 23 }}>
-          Here&apos;s what we have. Tap Edit to go back, or Looks Good to build your roadmap.
-        </Text>
-        <View style={{ borderRadius: 18, borderWidth: 1, borderColor: "#2f3a52", backgroundColor: "#111827", padding: 20, gap: 14, marginBottom: 24 }}>
-          {([
-            { label: "Name", value: userName.trim() || "—" },
-            { label: "Major", value: selectedMajor || "—" },
-            { label: "School", value: selectedSchool || "—" },
-            { label: "Year", value: selectedYear || "—" },
-            { label: "Goals", value: selectedGoals.join(", ") || "—" },
-            { label: "Timeline", value: timelineLabels[selectedTimeline] ?? "—" },
-            { label: "Commitment", value: commitmentLabels[selectedCommitment] ?? "—" },
-          ] as { label: string; value: string }[]).map(({ label, value }) => (
-            <View key={label} style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
-              <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 15, color: "#6b7585", textTransform: "uppercase" as const, letterSpacing: 0.8 }}>{label}</Text>
-              <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 15, color: "#e8deff", flex: 1, textAlign: "right" as const }} numberOfLines={2}>{value}</Text>
-            </View>
-          ))}
-        </View>
-        <Pressable
-          style={({ pressed }) => [{ borderRadius: 14, overflow: "hidden" as const, marginBottom: 12, opacity: pressed ? 0.9 : 1 }]}
-          onPress={handleSubmitWithAnimation}
+        <ScrollView
+          contentContainerStyle={{ padding: 24, paddingBottom: 60, flexGrow: 1, justifyContent: "center" }}
+          showsVerticalScrollIndicator={false}
         >
-          <LinearGradient colors={["#9584fb", "#765ee8", "#5f45d1"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ paddingVertical: 16, alignItems: "center" as const, borderRadius: 14 }}>
-            <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 18, color: "#f7f5ff", letterSpacing: 1.5 }}>LOOKS GOOD →</Text>
-          </LinearGradient>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [{ alignItems: "center" as const, paddingVertical: 14, opacity: pressed ? 0.7 : 1 }]}
-          onPress={() => setShowConfirmation(false)}
-        >
-          <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 16, color: "#b7adff", letterSpacing: 1 }}>EDIT ANSWERS</Text>
-        </Pressable>
+          <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: "#7c5cff", letterSpacing: 1.6, textTransform: "uppercase", marginBottom: 10 }}>
+            Almost there
+          </Text>
+          <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 32, color: "#f5f7fb", letterSpacing: 0.4, lineHeight: 36, marginBottom: 8 }}>
+            {userName.trim() ? `This is your\nroadmap, ${userName.trim()}.` : "Here's your roadmap."}
+          </Text>
+          <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: "#6b7585", lineHeight: 22, marginBottom: 28 }}>
+            Review everything below. Tap{" "}
+            <Text style={{ fontFamily: "ClashGrotesk-Semibold", color: "#9c8dcc" }}>Edit</Text>{" "}
+            to adjust or{" "}
+            <Text style={{ fontFamily: "ClashGrotesk-Semibold", color: "#9c8dcc" }}>Build It</Text>{" "}
+            to generate your plan.
+          </Text>
+
+          <View style={{ borderRadius: 20, borderWidth: 1, borderColor: "#202a3e", backgroundColor: "#0d1320", overflow: "hidden", marginBottom: 20 }}>
+            {summaryRows.map(({ label, value }, i) => (
+              <View
+                key={label}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: 16,
+                  paddingHorizontal: 20,
+                  paddingVertical: 14,
+                  borderBottomWidth: i < summaryRows.length - 1 ? 1 : 0,
+                  borderBottomColor: "#1a2336",
+                }}
+              >
+                <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase" as const, color: "#3d4f63", paddingTop: 2, minWidth: 80 }}>
+                  {label}
+                </Text>
+                <Text style={{ fontFamily: "ClashGrotesk-Medium", fontSize: 16, color: "#d4ddf0", flex: 1, textAlign: "right" as const, lineHeight: 22 }} numberOfLines={3}>
+                  {value}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={{ height: 1, backgroundColor: "rgba(124,92,255,0.15)", marginBottom: 24 }} />
+
+          <Pressable
+            style={({ pressed }) => [{ borderRadius: 16, overflow: "hidden" as const, marginBottom: 14, opacity: pressed ? 0.9 : 1 }]}
+            onPress={handleSubmitWithAnimation}
+          >
+            <LinearGradient colors={["#9584fb", "#765ee8", "#5f45d1"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ paddingVertical: 18, alignItems: "center" as const, borderRadius: 16 }}>
+              <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 17, color: "#f7f5ff", letterSpacing: 2, textTransform: "uppercase" as const }}>
+                Build My Roadmap
+              </Text>
+            </LinearGradient>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [{ alignItems: "center" as const, paddingVertical: 14, opacity: pressed ? 0.65 : 1 }]}
+            onPress={() => setShowConfirmation(false)}
+          >
+            <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 14, color: "#4e5a6e", letterSpacing: 1.4, textTransform: "uppercase" as const }}>
+              Go Back &amp; Edit
+            </Text>
+          </Pressable>
+        </ScrollView>
       </SafeAreaView>
+      </Animated.View>
     );
   }
 
