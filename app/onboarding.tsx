@@ -1404,6 +1404,18 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     setIsTransitioning(true);
     Animated.parallel([
+      Animated.timing(confirmFadeAnim, {
+        toValue: 0,
+        duration: 380,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(confirmSlideAnim, {
+        toValue: 24,
+        duration: 380,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
       Animated.timing(exitFadeAnim, {
         toValue: 0,
         duration: 420,
@@ -1544,7 +1556,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     if (step === 5) return "Pick the one that resonates most.";
     if (step === 6) return "This shapes how your roadmap is paced.";
     if (step === 7) return "We'll match your roadmap density to your schedule.";
-    if (step === 8) return "Check everything that applies — we'll skip what you've done.";
+    if (step === 8) return "Check everything that applies — we want to know what hasn't worked.";
     return "";
   }
 
@@ -2381,12 +2393,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 20, letterSpacing: 0.3, color: isSelected ? "#e2d9ff" : "#c2cad8", marginBottom: 4 }}>
+                      <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 21, letterSpacing: 0.3, color: isSelected ? "#e2d9ff" : "#c2cad8", marginBottom: 6 }}>
                         {opt.label}
                       </Text>
-                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, letterSpacing: 0.3, color: isSelected ? "#9c8dcc" : "#4e5a6e", lineHeight: 19 }}>
+                      <View style={{ height: 1, backgroundColor: isSelected ? "rgba(146,116,255,0.25)" : "rgba(255,255,255,0.05)", marginBottom: 6 }} />
+                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 17, letterSpacing: 0.6, color: isSelected ? "#9c8dcc" : "#586583", marginBottom: 0 }}>
                         {opt.sub}
                       </Text>
+                      
+                      
                     </View>
                   </View>
                 </Pressable>
@@ -2442,12 +2457,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                     {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 19, letterSpacing: 0.3, color: isSelected ? "#e2d9ff" : "#c2cad8", marginBottom: 3 }}>
+                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 20, letterSpacing: 0.4, color: isSelected ? "#e2d9ff" : "#c2cad8", marginBottom: 0 }}>
                       {opt.label}
                     </Text>
-                    <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: isSelected ? "#9c8dcc" : "#4e5a6e", letterSpacing: 0.2 }}>
-                      {opt.sub}
-                    </Text>
+                    
                   </View>
                 </Pressable>
               </Animated.View>
@@ -2459,8 +2472,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     if (step === 7) {
       const options = [
-        { id: "1-2", label: "1–2 hrs / week", sub: "Light touch, steady progress", detail: "Best for keeping momentum without pressure" },
-        { id: "3-5", label: "3–5 hrs / week", sub: "Solid and sustainable", detail: "The sweet spot for real skill-building" },
+        { id: "1-2", label: "1 – 2 hrs / week", sub: "Light touch, steady progress", detail: "Best for keeping momentum without pressure" },
+        { id: "3-5", label: "3 – 5 hrs / week", sub: "Solid and sustainable", detail: "The sweet spot for real skill-building" },
         { id: "6+", label: "6+ hrs / week", sub: "All in", detail: "Maximum density — roadmap built to match" },
       ];
       return (
@@ -2488,12 +2501,13 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                 }}
                 onPress={() => setSelectedCommitment(opt.id)}
               >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
                   <View style={{
                     width: 22, height: 22, borderRadius: 11, borderWidth: 1.5,
                     borderColor: isSelected ? "#9274ff" : "#3a4560",
                     backgroundColor: isSelected ? "#7c5cff" : "transparent",
                     alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    marginTop: 4,
                   }}>
                     {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />}
                   </View>
@@ -2501,15 +2515,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                     <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 22, letterSpacing: 0.3, color: isSelected ? "#e2d9ff" : "#c2cad8" }}>
                       {opt.label}
                     </Text>
-                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 13, letterSpacing: 0.8, textTransform: "uppercase" as const, color: isSelected ? "#9c8dcc" : "#3a4560", marginTop: 2 }}>
+                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 15, letterSpacing: 0.8, textTransform: "uppercase" as const, color: isSelected ? "#9c8dcc" : "#3a4560", marginTop: 2, marginBottom: 8 }}>
                       {opt.sub}
+                    </Text>
+                    <View style={{ height: 1, backgroundColor: isSelected ? "rgba(146,116,255,0.25)" : "rgba(255,255,255,0.05)", marginBottom: 8 }} />
+                    <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: isSelected ? "#8a79c0" : "#404c5e", letterSpacing: 0.2, lineHeight: 20 }}>
+                      {opt.detail}
                     </Text>
                   </View>
                 </View>
-                <View style={{ height: 1, backgroundColor: isSelected ? "rgba(146,116,255,0.25)" : "rgba(255,255,255,0.05)", marginBottom: 8 }} />
-                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: isSelected ? "#8a79c0" : "#404c5e", letterSpacing: 0.2, lineHeight: 20 }}>
-                  {opt.detail}
-                </Text>
               </Pressable>
               </Animated.View>
             );
@@ -2520,11 +2534,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
     if (step === 8) {
       const expOptions = [
-        { id: "career-fair", label: "Attended a career fair", sub: "Networking and industry exposure" },
-        { id: "club", label: "Joined a club or org", sub: "Leadership, community, or special interest" },
-        { id: "internship", label: "Applied for an internship", sub: "Competitive, real-world experience" },
-        { id: "project", label: "Built a personal project", sub: "Self-directed creation or portfolio work" },
-        { id: "research", label: "Done research or a lab", sub: "Academic or faculty-led inquiry" },
+        { id: "resume", label: "Made a resume", sub: "Have a draft, even if it needs work" },
+        { id: "linkedin", label: "Set up a LinkedIn", sub: "Profile exists, complete or not" },
+        { id: "internship", label: "Had an internship or co-op", sub: "Paid or unpaid work experience" },
+        { id: "research", label: "Done research or a lab", sub: "Academic or faculty-led work" },
+        { id: "project", label: "Built a personal project", sub: "Portfolio work, side project, or hackathon" },
+        { id: "interview", label: "Done a job interview", sub: "Any formal interview, even if unsuccessful" },
+        { id: "networking", label: "Reached out to a professional", sub: "Cold outreach, informational interview, or mentorship" },
+        { id: "club", label: "Joined a club or org", sub: "Any extracurricular involvement" },
         { id: "none", label: "None of these yet", sub: "Everyone starts somewhere — that's fine" },
       ];
       const toggleExperience = (id: string) => {
@@ -2539,9 +2556,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       };
       return (
         <View style={{ gap: 10 }}>
-          <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: "#4e5a6e", marginBottom: 4, letterSpacing: 0.3 }}>
-            Optional — select everything that applies
-          </Text>
+          
           {expOptions.map((opt) => {
             const scaleAnim = getExperienceScaleAnim(opt.id);
             const isSelected = priorExperiences.includes(opt.id);
@@ -2557,7 +2572,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   paddingHorizontal: 18,
                   paddingVertical: 14,
                   flexDirection: "row" as const,
-                  alignItems: "center" as const,
+                  alignItems: "flex-start" as const,
                   gap: 12,
                   opacity: pressed ? 0.88 : 1,
                 }]}
@@ -2580,10 +2595,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 17, letterSpacing: 0.3, color: isSelected ? (isNone ? "#b0cfe0" : "#e2d9ff") : "#c2cad8" }}>
+                  <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 22, letterSpacing: 0.4, marginBottom: 5, color: isSelected ? (isNone ? "#b0cfe0" : "#e2d9ff") : "#c2cad8" }}>
                     {opt.label}
                   </Text>
-                  <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 13, color: isSelected ? (isNone ? "#5a86a0" : "#8a79c0") : "#3e4a5a", marginTop: 2 }}>
+                  <View style={{ height: 1, backgroundColor: isSelected ? "rgba(146,116,255,0.25)" : "rgba(255,255,255,0.05)", marginBottom: 3 }} />
+                  <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 17, color: isSelected ? (isNone ? "#5a86a0" : "#8a79c0") : "#3e4a5a", marginTop: 2 }}>
                     {opt.sub}
                   </Text>
                 </View>
@@ -2642,17 +2658,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           contentContainerStyle={{ padding: 24, paddingBottom: 60, flexGrow: 1, justifyContent: "center" }}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 14, color: "#7c5cff", letterSpacing: 1.6, textTransform: "uppercase", marginBottom: 10 }}>
-            Almost there
-          </Text>
+          
           <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 32, color: "#f5f7fb", letterSpacing: 0.4, lineHeight: 36, marginBottom: 8 }}>
             {userName.trim() ? `This is your\nroadmap, ${userName.trim()}.` : "Here's your roadmap."}
           </Text>
-          <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: "#6b7585", lineHeight: 22, marginBottom: 28 }}>
+          <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 18, color: "#6b7585", lineHeight: 22, marginBottom: 28 }}>
             Review everything below. Tap{" "}
-            <Text style={{ fontFamily: "ClashGrotesk-Semibold", color: "#9c8dcc" }}>Edit</Text>{" "}
-            to adjust or{" "}
-            <Text style={{ fontFamily: "ClashGrotesk-Semibold", color: "#9c8dcc" }}>Build It</Text>{" "}
+            
+            <Text style={{ fontFamily: "ClashGrotesk-SemiBold", color: "#9c8dcc" }}>Build My Roadmap</Text>{" "}
             to generate your plan.
           </Text>
 
@@ -2671,10 +2684,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   borderBottomColor: "#1a2336",
                 }}
               >
-                <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase" as const, color: "#3d4f63", paddingTop: 2, minWidth: 80 }}>
+                <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 15, letterSpacing: 1.2, textTransform: "uppercase" as const, color: "#3d4f63", paddingTop: 2, minWidth: 80 }}>
                   {label}
                 </Text>
-                <Text style={{ fontFamily: "ClashGrotesk-Medium", fontSize: 16, color: "#d4ddf0", flex: 1, textAlign: "right" as const, lineHeight: 22 }} numberOfLines={3}>
+                <Text style={{ fontFamily: "ClashGrotesk-Medium", fontSize: 19, color: "#d4ddf0", flex: 1, textAlign: "right" as const, lineHeight: 22 }} numberOfLines={3}>
                   {value}
                 </Text>
               </View>
@@ -2684,11 +2697,11 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           <View style={{ height: 1, backgroundColor: "rgba(124,92,255,0.15)", marginBottom: 24 }} />
 
           <Pressable
-            style={({ pressed }) => [{ borderRadius: 16, overflow: "hidden" as const, marginBottom: 14, opacity: pressed ? 0.9 : 1 }]}
+            style={({ pressed }) => [{ borderRadius: 16, overflow: "hidden" as const, marginBottom: 10, opacity: pressed ? 0.9 : 1 }]}
             onPress={handleSubmitWithAnimation}
           >
-            <LinearGradient colors={["#9584fb", "#765ee8", "#5f45d1"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ paddingVertical: 18, alignItems: "center" as const, borderRadius: 16 }}>
-              <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 17, color: "#f7f5ff", letterSpacing: 2, textTransform: "uppercase" as const }}>
+            <LinearGradient colors={["#9584fb", "#765ee8", "#5f45d1"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ paddingVertical: 15, alignItems: "center" as const, borderRadius: 16 }}>
+              <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 18, color: "#f7f5ff", letterSpacing: 2, textTransform: "uppercase" as const }}>
                 Build My Roadmap
               </Text>
             </LinearGradient>
@@ -2696,9 +2709,23 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
 
           <Pressable
             style={({ pressed }) => [{ alignItems: "center" as const, paddingVertical: 14, opacity: pressed ? 0.65 : 1 }]}
-            onPress={() => setShowConfirmation(false)}
+            onPress={() => {
+              setShowConfirmation(false);
+              Animated.timing(contentOpacity, {
+                toValue: 1,
+                duration: 260,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+              }).start();
+              Animated.timing(contentTranslateY, {
+                toValue: 0,
+                duration: 260,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+              }).start();
+            }}
           >
-            <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 14, color: "#4e5a6e", letterSpacing: 1.4, textTransform: "uppercase" as const }}>
+            <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 18, color: "#758094", letterSpacing: 1.4, textTransform: "uppercase" as const }}>
               Go Back &amp; Edit
             </Text>
           </Pressable>

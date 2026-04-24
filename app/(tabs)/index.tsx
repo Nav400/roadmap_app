@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   Switch,
   ScrollView,
-  SafeAreaView,
   Animated,
   Dimensions,
   Easing,
 } from "react-native";
+import {
+  SafeAreaView
+} from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle } from "react-native-svg";
@@ -536,23 +538,24 @@ export default function HomeScreen() {
               </View>
             </Animated.View>
 
-            {screen === "goalDetail" && selectedGoal && (
-              <View style={styles.stackLayer}>
-                <GoalDetailScreen
-                  goal={selectedGoal}
-                  initialCheckedTaskIds={goalMiniTaskProgress[`${selectedGoal.type}:${selectedGoal.id}`]?.checked ?? EMPTY_TASK_IDS}
-                  onMiniTaskProgressChange={handleMiniTaskProgressChange}
-                  onBack={() => setScreen("mainApp")}
-                  onCompleteGoal={(goal) => {
-                    goalCompletionRequestCounter.current += 1;
-                    setPendingGoalCompletion({ goal, requestId: goalCompletionRequestCounter.current });
-                    setScreen("mainApp");
-                  }}
-                />
-              </View>
-            )}
+            
           </View>
       </SafeAreaView>
+      {screen === "goalDetail" && selectedGoal && (
+        <View style={StyleSheet.absoluteFillObject}>
+          <GoalDetailScreen
+            goal={selectedGoal}
+            initialCheckedTaskIds={goalMiniTaskProgress[`${selectedGoal.type}:${selectedGoal.id}`]?.checked ?? EMPTY_TASK_IDS}
+            onMiniTaskProgressChange={handleMiniTaskProgressChange}
+            onBack={() => setScreen("mainApp")}
+            onCompleteGoal={(goal) => {
+              goalCompletionRequestCounter.current += 1;
+              setPendingGoalCompletion({ goal, requestId: goalCompletionRequestCounter.current });
+              setScreen("mainApp");
+            }}
+          />
+        </View>
+      )}
 
       {screen === "mainApp" && (
         <Animated.View

@@ -470,7 +470,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
                   disabled={isTransitioning}
                 >
                   <LinearGradient
-                    colors={["#7c5cff", "#6f54f0", "#5f45d1"]}
+                    colors={["#9584fb", "#765ee8", "#5f45d1"]}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
                     style={styles.ctaGradient}

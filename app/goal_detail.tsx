@@ -328,7 +328,7 @@ export default function GoalDetailScreen({
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#070914" }}>
+    <View style={{ flex: 1, backgroundColor: "#070914", minHeight: "100%" }}>
       <LinearGradient
         colors={["#070914", "#121234", "#1a1550"]}
         start={{ x: 0, y: 0 }}
@@ -449,7 +449,7 @@ export default function GoalDetailScreen({
               disabled={isLeaving || !allMiniTasksComplete}
             >
               <LinearGradient
-                colors={["#5a4fcf", "#823dbf", "#7427a8"]}
+                colors={["#9584fb", "#765ee8", "#5f45d1"]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={styles.completeTaskButtonGradient}
