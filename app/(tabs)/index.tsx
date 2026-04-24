@@ -12,7 +12,8 @@ import {
   Easing,
 } from "react-native";
 import {
-  SafeAreaView
+  SafeAreaView,
+  useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +21,7 @@ import Svg, { Circle } from "react-native-svg";
 import { GradientBackground } from "@/components/gradient-background";
 import OnboardingScreen from "../onboarding";
 import RevealScreen from "../reveal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import RoadmapLoadingScreen from "../roadmap_loading";
 import RoadmapScreen, { FAKE_MILESTONES, FAKE_PROJECTS, FAKE_EVENTS } from "../roadmap";
 import GoalDetailScreen from "../goal_detail";
@@ -226,9 +228,13 @@ export default function HomeScreen() {
   const [pendingGoalCompletion, setPendingGoalCompletion] = useState<{ goal: RoadmapGoalSelection; requestId: number } | null>(null);
   const [goalMiniTaskProgress, setGoalMiniTaskProgress] = useState<Record<string, { checked: string[]; total: number }>>({});
   const [completedMilestoneIds, setCompletedMilestoneIds] = useState<string[]>([]);
+  const insets = useSafeAreaInsets();
   const [completedProjectIds, setCompletedProjectIds] = useState<string[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [studyRemindersEnabled, setStudyRemindersEnabled] = useState(true);
+  const [streakCount, setStreakCount] = useState(0);
+  const [streakActive, setStreakActive] = useState(false);
+  const streakFlameAnim = useRef(new Animated.Value(1)).current;
   const [roadmapStartTab, setRoadmapStartTab] = useState<RoadmapTab>("milestones");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const goalCompletionRequestCounter = useRef(0);
@@ -291,6 +297,63 @@ export default function HomeScreen() {
       Animated.timing(slideAnim, { toValue: 0, duration: 900, delay: 300, useNativeDriver: true }),
     ]).start();
   }, [fadeAnim, slideAnim]);
+
+  useEffect(() => {
+  async function loadStreak() {
+    try {
+      const stored = await AsyncStorage.getItem("streak");
+      const parsed = stored ? JSON.parse(stored) : { count: 0, lastDate: null };
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+      if (parsed.lastDate === today) {
+        setStreakCount(parsed.count);
+        setStreakActive(true);
+      } else if (parsed.lastDate === yesterday) {
+        setStreakCount(parsed.count);
+        setStreakActive(false);
+      } else {
+        setStreakCount(0);
+        setStreakActive(false);
+      }
+    } catch {}
+  }
+  void loadStreak();
+}, []);
+
+useEffect(() => {
+  const hasActivityToday =
+    completedMilestoneIds.length > 0 || completedProjectIds.length > 0;
+  if (!hasActivityToday) return;
+
+  async function updateStreak() {
+    try {
+      const stored = await AsyncStorage.getItem("streak");
+      const parsed = stored ? JSON.parse(stored) : { count: 0, lastDate: null };
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+      if (parsed.lastDate === today) return;
+
+      const newCount =
+        parsed.lastDate === yesterday ? parsed.count + 1 : 1;
+
+      await AsyncStorage.setItem(
+        "streak",
+        JSON.stringify({ count: newCount, lastDate: today })
+      );
+      setStreakCount(newCount);
+      setStreakActive(true);
+
+      // Pulse animation on new streak
+      Animated.sequence([
+        Animated.timing(streakFlameAnim, { toValue: 1.3, duration: 200, useNativeDriver: true }),
+        Animated.timing(streakFlameAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start();
+    } catch {}
+  }
+  void updateStreak();
+}, [completedMilestoneIds, completedProjectIds]);
 
   useEffect(() => {
     return () => {
@@ -407,7 +470,11 @@ export default function HomeScreen() {
   }
 
   if (screen === "reveal") {
-    return <RevealScreen profile={profile} onContinue={() => setScreen("loading")} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: "#070914" }}>
+        <RevealScreen profile={profile} onContinue={() => setScreen("loading")} />
+      </View>
+    );
   }
 
   if (screen === "loading") {
@@ -463,6 +530,56 @@ export default function HomeScreen() {
                 <ScrollView contentContainerStyle={styles.homeContainer} showsVerticalScrollIndicator={false}>
                   <Text style={styles.homeTitle}>{getGreeting()}</Text>
                   <Text style={styles.homeSubtitle}>Start with these, then continue through your full roadmap.</Text>
+
+                  {/* Streak Card */}
+                  <View style={{
+                    borderRadius: 18,
+                    borderWidth: 1,
+                    borderColor: streakActive ? "rgba(255,160,40,0.3)" : "#262e42",
+                    backgroundColor: streakActive ? "rgba(255,140,20,0.07)" : "#121826",
+                    padding: 16,
+                    marginBottom: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 14,
+                  }}>
+                    <Animated.Text style={{
+                      fontSize: 44,
+                      transform: [{ scale: streakFlameAnim }],
+                    }}>
+                      {streakActive ? "🔥" : "❄️"}
+                    </Animated.Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{
+                        fontFamily: "ClashGrotesk-Semibold",
+                        fontSize: 16,
+                        color: streakActive ? "#ffab40" : "#4e5a6e",
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                        marginBottom: 2,
+                      }}>
+                        {streakActive ? "Streak active" : "No streak yet"}
+                      </Text>
+                      <Text style={{
+                        fontFamily: "ClashGrotesk-Bold",
+                        fontSize: 28,
+                        color: streakActive ? "#ffe0a0" : "#c2cad8",
+                        letterSpacing: 0.3,
+                      }}>
+                        {streakCount} {streakCount === 1 ? "day" : "days"}
+                      </Text>
+                      <Text style={{
+                        fontFamily: "ClashGrotesk-Regular",
+                        fontSize: 16,
+                        color: streakActive ? "#c28040" : "#626d89",
+                        marginTop: 2,
+                      }}>
+                        {streakActive
+                          ? "You completed something today — keep it going!"
+                          : "Complete a task today to start your streak."}
+                      </Text>
+                    </View>
+                  </View>
                   <View style={{ alignItems: "center", marginBottom: 20 }}>
                     <ProgressRing pct={(() => {
                       const total = FAKE_MILESTONES.length + FAKE_PROJECTS.length + FAKE_EVENTS.length;
@@ -570,7 +687,7 @@ export default function HomeScreen() {
       )}
 
       {screen === "mainApp" && (
-        <View style={styles.bottomNav}>
+        <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           {([
             { key: "home", label: "Home", icon: "home" },
             { key: "roadmap", label: "Roadmap", icon: "route" },
@@ -666,7 +783,7 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    paddingBottom: 86,
+    paddingBottom: 0,
   },
   stackContainer: {
     flex: 1,
@@ -683,7 +800,7 @@ const styles = StyleSheet.create({
   },
   homeContainer: {
     padding: 22,
-    paddingBottom: 130,
+    paddingBottom: 110,
   },
   homeKicker: {
     fontFamily: "ClashGrotesk-Semibold",
@@ -819,7 +936,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0f1320",
     flexDirection: "row",
     paddingTop: 13,
-    paddingBottom: 22,
+    paddingBottom: 0,
   },
   bottomNavButton: {
     flex: 1,

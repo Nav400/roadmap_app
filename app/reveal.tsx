@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, Pressable, SafeAreaView, ScrollView, Animated, Easing } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, Animated, Easing } from "react-native";
+import {SafeAreaView} from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -276,8 +277,9 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={{ flex: 1, backgroundColor: "#070914" }}>
       <GradientBackground variant="soft" />
+      <SafeAreaView style={styles.safe}>
       <View style={styles.screenContent}>
         {!hidePreReveal && (
           <Animated.View
@@ -484,6 +486,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
         )}
       </View>
     </SafeAreaView>
+    </View>
   );
 }
 
