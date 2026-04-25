@@ -788,7 +788,7 @@ export default function RoadmapScreen({
                 ]}
               >
                 <LinearGradient
-                  colors={["#7c5cff", "#9274ff", "#b9a7ff"]}
+                  colors={["#00D4AA", "#00B894", "#7ab648"]}
                   start={{ x: 0, y: 0.5 }}
                   end={{ x: 1, y: 0.5 }}
                   style={StyleSheet.absoluteFillObject}
@@ -913,10 +913,10 @@ export default function RoadmapScreen({
                             const pct = Math.min(100, Math.round((checked / total) * 100));
                             return (
                               <View style={{ flex: 1, minWidth: 60 }}>
-                                <View style={{ height: 4, borderRadius: 999, backgroundColor: "#1e1a3a", overflow: "hidden" }}>
-                                  <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#7c5cff" }} />
+                                <View style={{ height: 4, borderRadius: 999, backgroundColor: "#0d1a18", overflow: "hidden" }}>
+                                  <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#00D4AA" }} />
                                 </View>
-                                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#9274ff", marginTop: 2 }}>{pct}% tasks done</Text>
+                                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#00D4AA", marginTop: 2 }}>{pct}% tasks done</Text>
                               </View>
                             );
                           })()}
@@ -1020,10 +1020,10 @@ export default function RoadmapScreen({
                   const pct = Math.min(100, Math.round((checked / total) * 100));
                   return (
                     <View style={{ marginTop: 8 }}>
-                      <View style={{ height: 4, borderRadius: 999, backgroundColor: "#1e1a3a", overflow: "hidden" }}>
-                        <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#7c5cff" }} />
+                      <View style={{ height: 4, borderRadius: 999, backgroundColor: "#0d1a18", overflow: "hidden" }}>
+                        <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#00D4AA" }} />
                       </View>
-                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#9274ff", marginTop: 2 }}>{pct}% tasks done</Text>
+                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#00D4AA", marginTop: 2 }}>{pct}% tasks done</Text>
                     </View>
                   );
                 })()}
@@ -1341,7 +1341,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 15,
-    color: "#b7adff",
+    color: "#00D4AA",
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -1372,16 +1372,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   progressTrack: {
-    height: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 100,
+    height: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.07)",
+    borderRadius: 2,
     marginBottom: 18,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
     backgroundColor: "transparent",
-    borderRadius: 100,
+    borderRadius: 2,
   },
   tabs: {
     flexDirection: "row",
@@ -1398,8 +1398,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#181c24",
   },
   tabActive: {
-    backgroundColor: "#1d1835",
-    borderColor: "#7c5cff",
+    backgroundColor: "#0a1f1c",
+    borderColor: "#00D4AA",
   },
   tabPressed: {
     opacity: 0.85,
@@ -1412,7 +1412,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   tabTextActive: {
-    color: "#ddd6ff",
+    color: "#00D4AA",
   },
   milestoneRow: {
     flexDirection: "row",
@@ -1425,10 +1425,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   milestoneRowTopPriority: {
-    borderColor: "#a995ff",
+    borderColor: "#D4A853",
     borderWidth: 1.5,
-    backgroundColor: "#19172a",
-    shadowColor: "#8c76ff",
+    backgroundColor: "#1a1508",
+    shadowColor: "#D4A853",
     shadowOpacity: 0.3,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -1461,12 +1461,12 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 999,
     borderWidth: 2,
-    borderColor: "#a995ff",
-    backgroundColor: "rgba(124, 92, 255, 0.2)",
+    borderColor: "#00D4AA",
+    backgroundColor: "rgba(0, 212, 170, 0.15)",
   },
   checkDone: {
-    backgroundColor: "#7c5cff",
-    borderColor: "#7c5cff",
+    backgroundColor: "#00B894",
+    borderColor: "#00B894",
   },
   checkMark: {
     fontSize: 12,
@@ -1524,10 +1524,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   projectCardTopPriority: {
-    borderColor: "#a995ff",
+    borderColor: "#D4A853",
     borderWidth: 1.5,
-    backgroundColor: "#19172a",
-    shadowColor: "#8c76ff",
+    backgroundColor: "#1a1508",
+    shadowColor: "#D4A853",
     shadowOpacity: 0.3,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -1541,35 +1541,35 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: "#2a213f",
+    backgroundColor: "#2a1e05",
     borderWidth: 1,
-    borderColor: "#9b86ff",
+    borderColor: "#D4A853",
   },
   priorityPillText: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 10,
     letterSpacing: 0.35,
-    color: "#ddd6ff",
+    color: "#D4A853",
     textTransform: "uppercase",
   },
   topMilestonePriorityPill: {
-    backgroundColor: "#35276a",
-    borderColor: "#c4b6ff",
+    backgroundColor: "#2a1e05",
+    borderColor: "#D4A853",
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   topMilestonePriorityPillText: {
-    color: "#f1ecff",
+    color: "#f5e6c0",
     letterSpacing: 0.45,
   },
   topProjectPriorityPill: {
-    backgroundColor: "#35276a",
-    borderColor: "#c4b6ff",
+    backgroundColor: "#2a1e05",
+    borderColor: "#D4A853",
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   topProjectPriorityPillText: {
-    color: "#f1ecff",
+    color: "#f5e6c0",
     letterSpacing: 0.45,
   },
   projectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
@@ -1599,12 +1599,12 @@ const styles = StyleSheet.create({
   eventTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 21, color: "#f5f7fb", marginBottom: 5, lineHeight: 25 },
   eventMeta: { fontFamily: "ClashGrotesk-Regular", fontSize: 18, color: "#aab3c3", marginBottom: 6, lineHeight: 23 },
   eventWhy: { fontFamily: "ClashGrotesk-Regular", fontSize: 17, color: "#8f98ab", lineHeight: 22 },
-  eventBadge: { borderRadius: 100, borderWidth: 1, borderColor: "#7c5cff", backgroundColor: "#1d1835", paddingHorizontal: 9, paddingVertical: 4, alignSelf: "flex-start" },
-  eventBadgeText: { fontFamily: "ClashGrotesk-Medium", fontSize: 11, color: "#ddd6ff" },
+  eventBadge: { borderRadius: 100, borderWidth: 1, borderColor: "#00D4AA", backgroundColor: "#0a1f1c", paddingHorizontal: 9, paddingVertical: 4, alignSelf: "flex-start" },
+  eventBadgeText: { fontFamily: "ClashGrotesk-Medium", fontSize: 11, color: "#00D4AA" },
   completedSectionLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 15,
-    color: "#b7adff",
+    color: "#00D4AA",
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 10,
@@ -1718,7 +1718,7 @@ const styles = StyleSheet.create({
     right: 24,
     bottom: 24,
     borderRadius: 16,
-    backgroundColor: "rgba(20, 24, 36, 0.96)",
+    backgroundColor: "rgba(10, 12, 15, 0.97)",
     borderWidth: 1,
     borderColor: "#394150",
     paddingVertical: 12,

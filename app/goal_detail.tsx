@@ -330,7 +330,7 @@ export default function GoalDetailScreen({
   return (
     <View style={{ flex: 1, backgroundColor: "#070914", minHeight: "100%" }}>
       <LinearGradient
-        colors={["#070914", "#121234", "#1a1550"]}
+        colors={["#0A0C0F", "#0d1510", "#0a1210"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -449,7 +449,7 @@ export default function GoalDetailScreen({
               disabled={isLeaving || !allMiniTasksComplete}
             >
               <LinearGradient
-                colors={["#9584fb", "#765ee8", "#5f45d1"]}
+                colors={["#00D4AA", "#00B894", "#009b7a"]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={styles.completeTaskButtonGradient}
@@ -500,9 +500,9 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: "flex-start",
-    backgroundColor: "rgba(52, 45, 120, 0.62)",
+    backgroundColor: "rgba(15, 20, 18, 0.85)",
     borderWidth: 1,
-    borderColor: "#7668df",
+    borderColor: "#1f3330",
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -515,13 +515,13 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 16,
-    color: "#f1edff",
+    color: "#c8ede8",
   },
   heroCard: {
-    backgroundColor: "rgba(24, 22, 58, 0.94)",
+    backgroundColor: "rgba(8, 20, 18, 0.94)",
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#6558cf",
+    borderColor: "#1f4a42",
     padding: 18,
     marginBottom: 12,
   },
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 17,
     lineHeight: 24,
-    color: "#c0bbdf",
+    color: "#a8c5c0",
     marginBottom: 8,
   },
   metaRow: {
@@ -547,19 +547,19 @@ const styles = StyleSheet.create({
   metaPill: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 16,
-    color: "#daf5ff",
-    backgroundColor: "rgba(23, 66, 102, 0.7)",
-    borderRadius: 100,
+    color: "#00D4AA",
+    backgroundColor: "rgba(0, 40, 34, 0.7)",
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#43a4db",
+    borderColor: "#00B894",
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   noteCard: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#2f8e92",
-    backgroundColor: "rgba(13, 55, 62, 0.76)",
+    borderColor: "#1f5c50",
+    backgroundColor: "rgba(8, 32, 28, 0.82)",
     padding: 14,
     marginBottom: 16,
   },
@@ -568,21 +568,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 0.75,
     textTransform: "uppercase",
-    color: "#72e5e3",
+    color: "#00D4AA",
     marginBottom: 6,
   },
   noteText: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 18,
     lineHeight: 26,
-    color: "#b2dfdd",
+    color: "#9ecfc8",
   },
   sectionTitle: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 19,
-    color: "#ece7ff",
+    color: "#d8ede9",
     textTransform: "uppercase",
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
     marginBottom: 8,
   },
   taskCard: {
@@ -590,15 +590,15 @@ const styles = StyleSheet.create({
     gap: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#544db0",
-    backgroundColor: "rgba(19, 18, 49, 0.9)",
+    borderColor: "#1a2a28",
+    backgroundColor: "rgba(8, 16, 14, 0.9)",
     padding: 14,
     marginBottom: 10,
     alignItems: "flex-start",
   },
   taskCardChecked: {
-    borderColor: "#4dd5be",
-    backgroundColor: "rgba(12, 73, 72, 0.86)",
+    borderColor: "#00B894",
+    backgroundColor: "rgba(0, 50, 40, 0.9)",
   },
   taskCardPressed: {
     opacity: 0.9,
@@ -610,11 +610,11 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#7a6cff",
+    borderColor: "#1f4a42",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
-    backgroundColor: "#0f1030",
+    backgroundColor: "#060f0d",
     overflow: "visible",
   },
   taskCheckBurst: {
@@ -623,12 +623,12 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 999,
     borderWidth: 1.5,
-    borderColor: "#92fff0",
-    backgroundColor: "rgba(77, 213, 190, 0.24)",
+    borderColor: "#00D4AA",
+    backgroundColor: "rgba(0, 212, 170, 0.2)",
   },
   taskCheckChecked: {
-    borderColor: "#4dd5be",
-    backgroundColor: "#38b8a4",
+    borderColor: "#00B894",
+    backgroundColor: "#00B894",
   },
   taskCheckMark: {
     fontFamily: "ClashGrotesk-Bold",
@@ -641,26 +641,26 @@ const styles = StyleSheet.create({
   taskStep: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 14,
-    color: "#9fd8ff",
+    color: "#00D4AA",
     marginBottom: 4,
   },
   taskTitle: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 20,
-    color: "#f2efff",
+    color: "#f0f4f2",
     marginBottom: 4,
   },
   taskTitleChecked: {
-    color: "#d3fff4",
+    color: "#00D4AA",
   },
   taskTip: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 17,
     lineHeight: 24,
-    color: "#bbb8d8",
+    color: "#8aada8",
   },
   taskTipChecked: {
-    color: "#a8e2d7",
+    color: "#7ecfc4",
   },
   completeTaskButtonContainer: {
     marginTop: 14,
@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
   completeTaskButton: {
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: "#3dbf7e",
+    shadowColor: "#00D4AA",
     shadowOpacity: 0.35,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 5 },
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
   completeTaskButtonGradient: {
-    borderRadius: 14,
+    borderRadius: 8,
     paddingVertical: 13,
     alignItems: "center",
     justifyContent: "center",
