@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView, Animated, Easing } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { GradientBackground } from "@/components/gradient-background";
 import { getPriorityMilestone } from "@/constants/priority-milestone";
@@ -168,7 +167,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
       Animated.parallel([
         Animated.sequence([
           Animated.timing(ripplePrimaryOpacity, {
-            toValue: 0.82,
+            toValue: 0.55,
             duration: 620,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
@@ -277,7 +276,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#070914" }}>
+    <View style={{ flex: 1, backgroundColor: "#080808" }}>
       <GradientBackground variant="soft" />
       <SafeAreaView style={styles.safe}>
       <View style={styles.screenContent}>
@@ -313,7 +312,7 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
                   {
                     opacity: logoPulseAnim.interpolate({
                       inputRange: [0, 0.5, 1],
-                      outputRange: [0, 0.7, 0],
+                      outputRange: [0, 0.5, 0],
                     }),
                     transform: [
                       {
@@ -471,14 +470,9 @@ export default function RevealScreen({ profile, onContinue }: { profile: any; on
                   onPress={handleContinueWithAnimation}
                   disabled={isTransitioning}
                 >
-                  <LinearGradient
-                    colors={["#9584fb", "#765ee8", "#5f45d1"]}
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                    style={styles.ctaGradient}
-                  >
+                  <View style={styles.ctaGradient}>
                     <Text style={styles.ctaBtnText}>CONTINUE TO ROADMAP</Text>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               </View>
             </Animated.View>
@@ -502,7 +496,7 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 11,
-    color: "#b7adff",
+    color: "#666666",
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 10,
@@ -510,7 +504,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 28,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     lineHeight: 32,
     letterSpacing: 0.7,
     marginBottom: 10,
@@ -518,7 +512,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 17,
-    color: "#aab3c3",
+    color: "#888888",
     lineHeight: 22,
     marginBottom: 18,
   },
@@ -526,8 +520,8 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: "#7c5cff",
-    backgroundColor: "#1d1835",
+    borderColor: "#333333",
+    backgroundColor: "#151515",
     paddingHorizontal: 14,
     paddingVertical: 6,
     marginBottom: 16,
@@ -535,7 +529,7 @@ const styles = StyleSheet.create({
   levelPillText: {
     fontFamily: "ClashGrotesk-Medium",
     fontSize: 18,
-    color: "#ddd6ff",
+    color: "#CCCCCC",
   },
   preRevealStage: {
     flex: 1,
@@ -554,9 +548,9 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 46,
-    backgroundColor: "rgba(124, 92, 255, 0.2)",
-    shadowColor: "#7c5cff",
-    shadowOpacity: 0.58,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    shadowColor: "#FFFFFF",
+    shadowOpacity: 0.3,
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 0 },
     elevation: 20,
@@ -569,7 +563,7 @@ const styles = StyleSheet.create({
   },
   popupBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(8, 11, 17, 0.62)",
+    backgroundColor: "rgba(8, 8, 8, 0.75)",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
@@ -579,8 +573,8 @@ const styles = StyleSheet.create({
     maxHeight: "86%",
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "#2c3343",
-    backgroundColor: "#111724",
+    borderColor: "#2A2A2A",
+    backgroundColor: "#0F0F0F",
     overflow: "hidden",
   },
   rippleLayer: {
@@ -588,7 +582,7 @@ const styles = StyleSheet.create({
     width: 980,
     height: 980,
     borderRadius: 490,
-    backgroundColor: "rgba(165, 138, 255, 0.22)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     top: "50%",
     left: "50%",
     marginLeft: -490,
@@ -597,7 +591,7 @@ const styles = StyleSheet.create({
   sparkleDot: {
     position: "absolute",
     borderRadius: 999,
-    backgroundColor: "#d5c8ff",
+    backgroundColor: "#FFFFFF",
   },
   sparkleDotOne: {
     width: 10,
@@ -610,14 +604,14 @@ const styles = StyleSheet.create({
     height: 14,
     right: "22%",
     top: "26%",
-    backgroundColor: "#bfa6ff",
+    backgroundColor: "#AAAAAA",
   },
   sparkleDotThree: {
     width: 8,
     height: 8,
     right: "33%",
     top: "32%",
-    backgroundColor: "#f0e8ff",
+    backgroundColor: "#DDDDDD",
   },
   popupScroll: {
     flexGrow: 0,
@@ -631,13 +625,13 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 18,
     borderTopWidth: 1,
-    borderTopColor: "#242b3a",
-    backgroundColor: "#111724",
+    borderTopColor: "#1E1E1E",
+    backgroundColor: "#0F0F0F",
   },
   sectionLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 20,
-    color: "#b7adff",
+    color: "#666666",
     letterSpacing: 1,
     textTransform: "uppercase",
     marginBottom: 12,
@@ -645,15 +639,15 @@ const styles = StyleSheet.create({
   priorityCard: {
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#232834",
-    backgroundColor: "#141824",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0A0A0A",
     padding: 16,
     marginBottom: 12,
   },
   preRevealText: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 20,
-    color: "#cfd7e6",
+    color: "#888888",
     lineHeight: 22,
     marginTop: 14,
     letterSpacing: 0.8,
@@ -662,22 +656,22 @@ const styles = StyleSheet.create({
   milestone: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 25,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     lineHeight: 32,
     letterSpacing: 0.4,
   },
   reasonCard: {
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#232834",
-    backgroundColor: "#141824",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0A0A0A",
     padding: 16,
     marginBottom: 12,
   },
   reason: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 18,
-    color: "#cfd7e6",
+    color: "#888888",
     lineHeight: 24,
     letterSpacing: 0.5,
   },
@@ -691,13 +685,14 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: "center",
     borderRadius: 10,
+    backgroundColor: "#FFFFFF",
   },
   ctaBtnPressed: {
     opacity: 0.9,
     transform: [{ scale: 0.995 }],
   },
   ctaBtnText: {
-    color: "#f5f7fb",
+    color: "#080808",
     fontFamily: "ClashGrotesk-SemiBold",
     fontSize: 18,
     fontWeight: "600",

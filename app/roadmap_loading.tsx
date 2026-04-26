@@ -175,7 +175,7 @@ export default function RoadmapLoadingScreen({
               {
                 opacity: logoPulseAnim.interpolate({
                   inputRange: [0, 0.5, 1],
-                  outputRange: [0, 0.7, 0],
+                  outputRange: [0, 0.5, 0],
                 }),
                 transform: [
                   {
@@ -230,7 +230,7 @@ export default function RoadmapLoadingScreen({
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: "#080808",
   },
   container: {
     flex: 1,
@@ -250,9 +250,9 @@ const styles = StyleSheet.create({
     width: 154,
     height: 154,
     borderRadius: 44,
-    backgroundColor: "rgba(0, 212, 170, 0.12)",
-    shadowColor: "#00D4AA",
-    shadowOpacity: 0.58,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    shadowColor: "#FFFFFF",
+    shadowOpacity: 0.25,
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 0 },
     elevation: 20,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 28,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     marginBottom: 60,
     textAlign: "center",
     letterSpacing: 0.5,
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   phrase: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 20,
-    color: "#00A887",
+    color: "#888888",
     textAlign: "center",
     minHeight: 24,
     letterSpacing: 0.6,

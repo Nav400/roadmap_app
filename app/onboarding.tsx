@@ -1573,7 +1573,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
     (step === 8 && priorExperiences.length === 0);
   const nextBtnTextColor = nextBtnEnableAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["#2A3530", "#001F1A"],
+    outputRange: ["#222222", "#0A0A0A"],
   });
 
   function renderStepContent() {
@@ -1585,9 +1585,9 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
       return (
         <View style={{ gap: 12 }}>
           <TextInput
-            style={{ fontSize: 22, paddingVertical: 16, paddingHorizontal: 16, color: "#F0F4F8", fontFamily: "ClashGrotesk-Semibold", borderRadius: 8, borderWidth: 1, borderColor: "#1F2530", backgroundColor: "#111418", width: "100%" }}
+            style={{ fontSize: 22, paddingVertical: 16, paddingHorizontal: 16, color: "#FFFFFF", fontFamily: "ClashGrotesk-Semibold", borderRadius: 8, borderWidth: 1, borderColor: "#1E1E1E", backgroundColor: "#0F0F0F", width: "100%" }}
             placeholder="Your first name"
-            placeholderTextColor="#5a637a"
+            placeholderTextColor="#555555"
             value={userName}
             onChangeText={(text) => {
               setUserName(text);
@@ -1627,10 +1627,10 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
             }],
             pointerEvents: userName.trim().length > 0 ? "none" : "none",
           }}>
-            <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 25, color: "#8f98ab", paddingHorizontal: 4, paddingVertical: 10 }}>
-              Nice to meet you, <Text style={{ color: "#00D4AA", fontFamily: "ClashGrotesk-Semibold" }}>{userName.trim()}</Text> 
+            <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 25, color: "#666666", paddingHorizontal: 4, paddingVertical: 10 }}>
+              Nice to meet you, <Text style={{ color: "#FFFFFF", fontFamily: "ClashGrotesk-Semibold" }}>{userName.trim()}</Text> 
             </Text>
-            <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 21, color: "#8f98ab", paddingHorizontal: 4, paddingVertical: 0 }}>
+            <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 21, color: "#666666", paddingHorizontal: 4, paddingVertical: 0 }}>
               Let&apos;s build your custom roadmap!
             </Text>
             
@@ -1738,14 +1738,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                 isMajorSearchFocused && styles.majorSearchFocused,
               ]}
             >
-              <MaterialIcons name="search" size={20} color="#8e98b0" style={styles.majorSearchIcon} />
+              <MaterialIcons name="search" size={20} color="#666666" style={styles.majorSearchIcon} />
               <TextInput
                 value={majorQuery}
                 onChangeText={setMajorQuery}
                 onFocus={() => setIsMajorSearchFocused(true)}
                 onBlur={() => setIsMajorSearchFocused(false)}
                 placeholder="Search majors"
-                placeholderTextColor="#6e7790"
+                placeholderTextColor="#555555"
                 style={styles.majorSearchInput}
                 autoCorrect={false}
                 autoCapitalize="words"
@@ -1796,7 +1796,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                     <View style={styles.majorCategoryHeaderMeta}>
                       <View style={styles.majorCategoryChevronBtn}>
                         <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
-                          <MaterialIcons name="expand-more" size={24} color="#b7c1d7" />
+                          <MaterialIcons name="expand-more" size={24} color="#AAAAAA" />
                         </Animated.View>
                       </View>
                     </View>
@@ -1950,14 +1950,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                 isSchoolSearchFocused && styles.majorSearchFocused,
               ]}
             >
-              <MaterialIcons name="search" size={20} color="#8e98b0" style={styles.majorSearchIcon} />
+              <MaterialIcons name="search" size={20} color="#666666" style={styles.majorSearchIcon} />
               <TextInput
                 value={schoolQuery}
                 onChangeText={setSchoolQuery}
                 onFocus={() => setIsSchoolSearchFocused(true)}
                 onBlur={() => setIsSchoolSearchFocused(false)}
                 placeholder="Search college or university"
-                placeholderTextColor="#6e7790"
+                placeholderTextColor="#555555"
                 style={styles.majorSearchInput}
                 autoCorrect={false}
                 autoCapitalize="words"
@@ -2256,8 +2256,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                       style={({ pressed }) => [{
                         borderRadius: 16,
                         borderWidth: 1.5,
-                        borderColor: selectedGoals.includes(g) ? "#00D4AA" : "#1F2530",
-                        backgroundColor: selectedGoals.includes(g) ? "#001F1A" : "#111418",
+                        borderColor: selectedGoals.includes(g) ? "#FFFFFF" : "#1E1E1E",
+                        backgroundColor: selectedGoals.includes(g) ? "#0A0A0A" : "#0F0F0F",
                         paddingHorizontal: 18,
                         paddingVertical: 15,
                         flexDirection: "row" as const,
@@ -2279,14 +2279,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                         height: 22,
                         borderRadius: 11,
                         borderWidth: 1.5,
-                        borderColor: selectedGoals.includes(g) ? "#00D4AA" : "#252B32",
-                        backgroundColor: selectedGoals.includes(g) ? "#00D4AA" : "transparent",
+                        borderColor: selectedGoals.includes(g) ? "#FFFFFF" : "#2A2A2A",
+                        backgroundColor: selectedGoals.includes(g) ? "#FFFFFF" : "transparent",
                         alignItems: "center",
                         justifyContent: "center",
                         flexShrink: 0,
                       }}>
                         {selectedGoals.includes(g) && (
-                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#001F1A" }} />
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#0A0A0A" }} />
                         )}
                       </View>
                       <Text style={{
@@ -2294,7 +2294,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                         fontSize: 20,
                         letterSpacing: 0.3,
                         lineHeight: 24,
-                        color: selectedGoals.includes(g) ? "#8edbce" : "#8A95A3",
+                        color: selectedGoals.includes(g) ? "#CCCCCC" : "#666666",
                         flex: 1,
                       }}>
                         {g}
@@ -2310,18 +2310,18 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                 value={customGoalInput}
                 onChangeText={setCustomGoalInput}
                 placeholder="Add your own goal"
-                placeholderTextColor="#4a5568"
+                placeholderTextColor="#444444"
                 style={{
                   flex: 1,
                   minHeight: 50,
                   borderRadius: 14,
                   borderWidth: 1.5,
-                  borderColor: "#2a3347",
-                  backgroundColor: "#111827",
+                  borderColor: "#1E1E1E",
+                  backgroundColor: "#0F0F0F",
                   paddingHorizontal: 16,
                   fontFamily: "ClashGrotesk-Medium",
                   fontSize: 20,
-                  color: "#edf2ff",
+                  color: "#FFFFFF",
                   letterSpacing: 0.3,
                 }}
                 returnKeyType="done"
@@ -2333,15 +2333,15 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   paddingHorizontal: 18,
                   borderRadius: 14,
                   borderWidth: 1.5,
-                  borderColor: "#00D4AA",
-                  backgroundColor: "#001F1A",
+                  borderColor: "#FFFFFF",
+                  backgroundColor: "#0A0A0A",
                   alignItems: "center" as const,
                   justifyContent: "center" as const,
                   opacity: pressed ? 0.8 : 1,
                 }]}
                 onPress={addCustomGoal}
               >
-                <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 14, color: "#00D4AA", textTransform: "uppercase", letterSpacing: 1.2 }}>Add</Text>
+                <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 14, color: "#FFFFFF", textTransform: "uppercase", letterSpacing: 1.2 }}>Add</Text>
               </Pressable>
             </View>
           </>
@@ -2369,8 +2369,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   style={({ pressed }) => [{
                     borderRadius: 16,
                     borderWidth: 1.5,
-                    borderColor: isSelected ? "#00D4AA" : "#1F2530",
-                    backgroundColor: isSelected ? "#001F1A" : "#111418",
+                    borderColor: isSelected ? "#FFFFFF" : "#1E1E1E",
+                    backgroundColor: isSelected ? "#0A0A0A" : "#0F0F0F",
                     paddingHorizontal: 18,
                     paddingVertical: 16,
                     opacity: pressed ? 0.88 : 1,
@@ -2386,18 +2386,18 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
                     <View style={{
                       width: 22, height: 22, borderRadius: 11, borderWidth: 1.5,
-                      borderColor: isSelected ? "#00D4AA" : "#252B32",
-                      backgroundColor: isSelected ? "#00D4AA" : "transparent",
+                      borderColor: isSelected ? "#FFFFFF" : "#2A2A2A",
+                      backgroundColor: isSelected ? "#FFFFFF" : "transparent",
                       alignItems: "center", justifyContent: "center", flexShrink: 0,
                     }}>
-                      {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#001F1A" }} />}
+                      {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#0A0A0A" }} />}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 21, letterSpacing: 0.3, color: isSelected ? "#E0FFF8" : "#8A95A3", marginBottom: 6 }}>
+                      <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 21, letterSpacing: 0.3, color: isSelected ? "#FFFFFF" : "#666666", marginBottom: 6 }}>
                         {opt.label}
                       </Text>
-                      <View style={{ height: 1, backgroundColor: isSelected ? "rgba(0,212,170,0.2)" : "rgba(255,255,255,0.05)", marginBottom: 6 }} />
-                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 17, letterSpacing: 0.6, color: isSelected ? "#00A887" : "#4A5260", marginBottom: 0 }}>
+                      <View style={{ height: 1, backgroundColor: isSelected ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)", marginBottom: 6 }} />
+                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 17, letterSpacing: 0.6, color: isSelected ? "#CCCCCC" : "#444444", marginBottom: 0 }}>
                         {opt.sub}
                       </Text>
                       
@@ -2430,8 +2430,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   style={({ pressed }) => [{
                     borderRadius: 16,
                     borderWidth: 1.5,
-                    borderColor: isSelected ? "#00D4AA" : "#1F2530",
-                    backgroundColor: isSelected ? "#001F1A" : "#111418",
+                    borderColor: isSelected ? "#FFFFFF" : "#1E1E1E",
+                    backgroundColor: isSelected ? "#0A0A0A" : "#0F0F0F",
                     paddingHorizontal: 18,
                     paddingVertical: 16,
                     flexDirection: "row" as const,
@@ -2450,14 +2450,14 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   <View style={{
                     width: 22, height: 22, borderRadius: 11,
                     borderWidth: 1.5,
-                    borderColor: isSelected ? "#00D4AA" : "#252B32",
-                    backgroundColor: isSelected ? "#00D4AA" : "transparent",
+                    borderColor: isSelected ? "#FFFFFF" : "#2A2A2A",
+                    backgroundColor: isSelected ? "#FFFFFF" : "transparent",
                     alignItems: "center", justifyContent: "center", flexShrink: 0,
                   }}>
-                    {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#001F1A" }} />}
+                    {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#0A0A0A" }} />}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 20, letterSpacing: 0.4, color: isSelected ? "#E0FFF8" : "#8A95A3", marginBottom: 0 }}>
+                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 20, letterSpacing: 0.4, color: isSelected ? "#FFFFFF" : "#666666", marginBottom: 0 }}>
                       {opt.label}
                     </Text>
                     
@@ -2487,8 +2487,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                 style={({ pressed }) => [{
                   borderRadius: 16,
                   borderWidth: 1.5,
-                  borderColor: isSelected ? "#00D4AA" : "#1F2530",
-                  backgroundColor: isSelected ? "#001F1A" : "#111418",
+                  borderColor: isSelected ? "#FFFFFF" : "#1E1E1E",
+                  backgroundColor: isSelected ? "#0A0A0A" : "#0F0F0F",
                   paddingHorizontal: 18,
                   paddingVertical: 18,
                   opacity: pressed ? 0.88 : 1,
@@ -2504,22 +2504,22 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                 <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
                   <View style={{
                     width: 22, height: 22, borderRadius: 11, borderWidth: 1.5,
-                    borderColor: isSelected ? "#00D4AA" : "#252B32",
-                    backgroundColor: isSelected ? "#00D4AA" : "transparent",
+                    borderColor: isSelected ? "#FFFFFF" : "#2A2A2A",
+                    backgroundColor: isSelected ? "#FFFFFF" : "transparent",
                     alignItems: "center", justifyContent: "center", flexShrink: 0,
                     marginTop: 4,
                   }}>
-                    {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#001F1A" }} />}
+                    {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#0A0A0A" }} />}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 22, letterSpacing: 0.3, color: isSelected ? "#E0FFF8" : "#b2cdc7" }}>
+                    <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 22, letterSpacing: 0.3, color: isSelected ? "#FFFFFF" : "#CCCCCC" }}>
                       {opt.label}
                     </Text>
-                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 15, letterSpacing: 0.8, textTransform: "uppercase" as const, color: isSelected ? "#00A887" : "#3a4560", marginTop: 2, marginBottom: 8 }}>
+                    <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 15, letterSpacing: 0.8, textTransform: "uppercase" as const, color: isSelected ? "#CCCCCC" : "#333333", marginTop: 2, marginBottom: 8 }}>
                       {opt.sub}
                     </Text>
-                    <View style={{ height: 1, backgroundColor: isSelected ? "rgba(0,212,170,0.2)" : "rgba(255,255,255,0.05)", marginBottom: 8 }} />
-                    <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: isSelected ? "#00A887" : "#404c5e", letterSpacing: 0.2, lineHeight: 20 }}>
+                    <View style={{ height: 1, backgroundColor: isSelected ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)", marginBottom: 8 }} />
+                    <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: isSelected ? "#CCCCCC" : "#444444", letterSpacing: 0.2, lineHeight: 20 }}>
                       {opt.detail}
                     </Text>
                   </View>
@@ -2567,8 +2567,8 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                 style={({ pressed }) => [{
                   borderRadius: 16,
                   borderWidth: 1.5,
-                  borderColor: isSelected ? (isNone ? "#1f3330" : "#00B894") : "#232834",
-                  backgroundColor: isSelected ? (isNone ? "#0a1210" : "#0a1f1c") : "#11131a",
+                  borderColor: isSelected ? (isNone ? "#1E1E1E" : "#DDDDDD") : "#1E1E1E",
+                  backgroundColor: isSelected ? (isNone ? "#080808" : "#0A0A0A") : "#0F0F0F",
                   paddingHorizontal: 18,
                   paddingVertical: 14,
                   flexDirection: "row" as const,
@@ -2588,18 +2588,18 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   width: 22, height: 22,
                   borderRadius: 11,
                   borderWidth: 1.5,
-                  borderColor: isSelected ? (isNone ? "#1f3330" : "#00B894") : "#3a404d",
-                  backgroundColor: isSelected ? (isNone ? "#0a1f1c" : "#00B894") : "transparent",
+                  borderColor: isSelected ? (isNone ? "#1E1E1E" : "#DDDDDD") : "#3a404d",
+                  backgroundColor: isSelected ? (isNone ? "#0A0A0A" : "#DDDDDD") : "transparent",
                   alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>
-                  {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#001F1A" }} />}
+                  {isSelected && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#0A0A0A" }} />}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 22, letterSpacing: 0.4, marginBottom: 5, color: isSelected ? (isNone ? "#9ecfc8" : "#E0FFF8") : "#c2cad8" }}>
+                  <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 22, letterSpacing: 0.4, marginBottom: 5, color: isSelected ? (isNone ? "#888888" : "#FFFFFF") : "#c2cad8" }}>
                     {opt.label}
                   </Text>
-                  <View style={{ height: 1, backgroundColor: isSelected ? "rgba(0,212,170,0.2)" : "rgba(255,255,255,0.05)", marginBottom: 3 }} />
-                  <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 17, color: isSelected ? (isNone ? "#5a9e94" : "#00B894") : "#3e4a5a", marginTop: 2 }}>
+                  <View style={{ height: 1, backgroundColor: isSelected ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)", marginBottom: 3 }} />
+                  <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 17, color: isSelected ? (isNone ? "#666666" : "#DDDDDD") : "#444444", marginTop: 2 }}>
                     {opt.sub}
                   </Text>
                 </View>
@@ -2659,17 +2659,17 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
           showsVerticalScrollIndicator={false}
         >
           
-          <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 32, color: "#f5f7fb", letterSpacing: 0.4, lineHeight: 36, marginBottom: 8 }}>
+          <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 32, color: "#FFFFFF", letterSpacing: 0.4, lineHeight: 36, marginBottom: 8 }}>
             {userName.trim() ? `This is your\nroadmap, ${userName.trim()}.` : "Here's your roadmap."}
           </Text>
           <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 18, color: "#6b7585", lineHeight: 22, marginBottom: 28 }}>
             Review everything below. Tap{" "}
             
-            <Text style={{ fontFamily: "ClashGrotesk-Semibold", color: "#00D4AA" }}>Build My Roadmap</Text>{" "}
+            <Text style={{ fontFamily: "ClashGrotesk-Semibold", color: "#FFFFFF" }}>Build My Roadmap</Text>{" "}
             to generate your plan.
           </Text>
 
-          <View style={{ borderRadius: 10, borderWidth: 1, borderColor: "#1F2530", backgroundColor: "#0E1110", overflow: "hidden", marginBottom: 20 }}>
+          <View style={{ borderRadius: 10, borderWidth: 1, borderColor: "#1E1E1E", backgroundColor: "#0E1110", overflow: "hidden", marginBottom: 20 }}>
             {summaryRows.map(({ label, value }, i) => (
               <View
                 key={label}
@@ -2681,27 +2681,27 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   paddingHorizontal: 20,
                   paddingVertical: 14,
                   borderBottomWidth: i < summaryRows.length - 1 ? 1 : 0,
-                  borderBottomColor: "#1F2530",
+                  borderBottomColor: "#1E1E1E",
                 }}
               >
-                <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 15, letterSpacing: 1.2, textTransform: "uppercase" as const, color: "#4A5260", paddingTop: 2, minWidth: 80 }}>
+                <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 15, letterSpacing: 1.2, textTransform: "uppercase" as const, color: "#444444", paddingTop: 2, minWidth: 80 }}>
                   {label}
                 </Text>
-                <Text style={{ fontFamily: "ClashGrotesk-Medium", fontSize: 19, color: "#d4ddf0", flex: 1, textAlign: "right" as const, lineHeight: 22 }} numberOfLines={3}>
+                <Text style={{ fontFamily: "ClashGrotesk-Medium", fontSize: 19, color: "#DDDDDD", flex: 1, textAlign: "right" as const, lineHeight: 22 }} numberOfLines={3}>
                   {value}
                 </Text>
               </View>
             ))}
           </View>
 
-          <View style={{ height: 1, backgroundColor: "rgba(0,212,170,0.15)", marginBottom: 24 }} />
+          <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.15)", marginBottom: 24 }} />
 
           <Pressable
             style={({ pressed }) => [{ borderRadius: 16, overflow: "hidden" as const, marginBottom: 10, opacity: pressed ? 0.9 : 1 }]}
             onPress={handleSubmitWithAnimation}
           >
-            <LinearGradient colors={["#00D4AA", "#00A887"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ paddingVertical: 15, alignItems: "center" as const, borderRadius: 8 }}>
-              <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 18, color: "#001F1A", letterSpacing: 2, textTransform: "uppercase" as const }}>
+            <LinearGradient colors={["#FFFFFF", "#FFFFFF"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ paddingVertical: 15, alignItems: "center" as const, borderRadius: 8 }}>
+              <Text style={{ fontFamily: "ClashGrotesk-SemiBold", fontSize: 18, color: "#080808", letterSpacing: 2, textTransform: "uppercase" as const }}>
                 Build My Roadmap
               </Text>
             </LinearGradient>
@@ -2725,7 +2725,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               }).start();
             }}
           >
-            <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 18, color: "#758094", letterSpacing: 1.4, textTransform: "uppercase" as const }}>
+            <Text style={{ fontFamily: "ClashGrotesk-Semibold", fontSize: 18, color: "#555555", letterSpacing: 1.4, textTransform: "uppercase" as const }}>
               Go Back &amp; Edit
             </Text>
           </Pressable>
@@ -2762,7 +2762,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
                   ]}
                 >
                   <LinearGradient
-                    colors={["#00D4AA", "#00B894"]}
+                    colors={["#FFFFFF", "#FFFFFF"]}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
                     style={StyleSheet.absoluteFillObject}
@@ -2792,7 +2792,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
         <View style={styles.footer}>
           {step > 0 && (
             <Pressable style={({ pressed }) => [styles.secondaryBtn, pressed && styles.secondaryBtnPressed, { flexDirection: "row", alignItems: "center" }]} onPress={goBack}>
-              <MaterialIcons name="arrow-back-ios" size={16} color="#00D4AA" style={{ marginRight: 1 }} />
+              <MaterialIcons name="arrow-back-ios" size={16} color="#FFFFFF" style={{ marginRight: 1 }} />
               <Text style={styles.secondaryBtnText}>BACK</Text>
             </Pressable>
           )}
@@ -2803,7 +2803,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               style={[styles.ctaGradientLayer, { opacity: nextBtnEnableAnim }]}
             >
               <LinearGradient
-                colors={["#00D4AA", "#00A887"]}
+                colors={["#FFFFFF", "#FFFFFF"]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={styles.ctaGradient}
@@ -2822,7 +2822,7 @@ export default function OnboardingScreen({ onComplete, startAtQuestions = false 
               ]}
             >
               <LinearGradient
-                colors={["#1A2020", "#1A2020"]}
+                colors={["#1E1E1E", "#1E1E1E"]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={styles.ctaGradient}
@@ -2930,14 +2930,14 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 12,
-    color: "#b7adff",
+    color: "#888888",
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 8,
   },
   progressTrack: {
     height: 10,
-    backgroundColor: "#1F2530",
+    backgroundColor: "#1E1E1E",
     borderRadius: 5,
     marginBottom: 22,
     overflow: "hidden",
@@ -2950,7 +2950,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 28,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
     marginBottom: 6,
     lineHeight: 32,
@@ -2963,14 +2963,14 @@ const styles = StyleSheet.create({
   titleSmallRest: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 28,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
     lineHeight: 30,
   },
   subtitle: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 18,
-    color: "#aab3c3",
+    color: "#888888",
     lineHeight: 22,
     marginBottom: 28,
   },
@@ -3019,8 +3019,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#00D4AA",
-    backgroundColor: "#001F1A",
+    borderColor: "#FFFFFF",
+    backgroundColor: "#0A0A0A",
   },
   selectedSchoolPill: {
     width: "100%",
@@ -3030,8 +3030,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#00D4AA",
-    backgroundColor: "#001F1A",
+    borderColor: "#FFFFFF",
+    backgroundColor: "#0A0A0A",
   },
   selectedMajorPillPressed: {
     opacity: 0.92,
@@ -3040,7 +3040,7 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-SemiBold",
     fontSize: 18,
     letterSpacing: 0.7,
-    color: "#72d8c4",
+    color: "#AAAAAA",
     textAlign: "center",
   },
   majorSearchShell: {
@@ -3052,14 +3052,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#1F2530",
-    backgroundColor: "#111418",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0F0F0F",
     paddingHorizontal: 12,
     minHeight: 52,
   },
   majorSearchFocused: {
-    borderColor: "#00D4AA",
-    backgroundColor: "#0E1714",
+    borderColor: "#FFFFFF",
+    backgroundColor: "#0A0A0A",
   },
   majorSearchIcon: {
     marginRight: 10,
@@ -3068,7 +3068,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "ClashGrotesk-Medium",
     fontSize: 18,
-    color: "#edf2ff",
+    color: "#FFFFFF",
     paddingVertical: 10,
     letterSpacing: 0.5,
   },
@@ -3076,7 +3076,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: "#3a4254",
+    borderColor: "#333333",
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
@@ -3088,7 +3088,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    color: "#b7c1d7",
+    color: "#AAAAAA",
   },
   majorCategoryList: {
     gap: 12,
@@ -3098,8 +3098,8 @@ const styles = StyleSheet.create({
   majorCategoryCard: {
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1F2530",
-    backgroundColor: "#111418",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0F0F0F",
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
@@ -3158,8 +3158,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#181c24",
   },
   majorOptionSelected: {
-    backgroundColor: "#001F1A",
-    borderColor: "#00D4AA",
+    backgroundColor: "#0A0A0A",
+    borderColor: "#FFFFFF",
   },
   majorOptionText: {
     fontFamily: "ClashGrotesk-Medium",
@@ -3168,7 +3168,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   majorOptionTextSelected: {
-    color: "#00D4AA",
+    color: "#FFFFFF",
   },
   pillGroup: {
     flexDirection: "column",
@@ -3257,8 +3257,8 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.992 }],
   },
   pillSelected: {
-    backgroundColor: "#001F1A",
-    borderColor: "#00D4AA",
+    backgroundColor: "#0A0A0A",
+    borderColor: "#FFFFFF",
   },
   pillText: {
     fontFamily: "ClashGrotesk-Medium",
@@ -3268,7 +3268,7 @@ const styles = StyleSheet.create({
     color: "#b0b9c8",
   },
   pillTextSelected: {
-    color: "#00D4AA",
+    color: "#FFFFFF",
   },
   customGoalRow: {
     flexDirection: "row",
@@ -3287,7 +3287,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontFamily: "ClashGrotesk-Medium",
     fontSize: 18,
-    color: "#edf2ff",
+    color: "#FFFFFF",
     letterSpacing: 0.3,
   },
   customGoalAddBtn: {
@@ -3295,8 +3295,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#7c5cff",
-    backgroundColor: "#1d1835",
+    borderColor: "#FFFFFF",
+    backgroundColor: "#111111",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -3306,7 +3306,7 @@ const styles = StyleSheet.create({
   customGoalAddText: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 16,
-    color: "#ddd6ff",
+    color: "#FFFFFF",
     textTransform: "uppercase",
     letterSpacing: 0.7,
   },
@@ -3323,7 +3323,7 @@ const styles = StyleSheet.create({
   noMajorResultsTitle: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 20,
-    color: "#d4ddf0",
+    color: "#DDDDDD",
     marginBottom: 10,
     letterSpacing: 0.4,
   },
@@ -3339,8 +3339,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1F2530",
-    backgroundColor: "#111418",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0F0F0F",
     marginBottom: 14,
   },
   skillHeaderRow: {
@@ -3367,7 +3367,7 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-SemiBold",
     fontSize: 15,
     fontWeight: "300",
-    color: "#00A887",
+    color: "#CCCCCC",
     marginTop: 2,
     textTransform: "uppercase",
     letterSpacing: 1.2,
@@ -3385,7 +3385,7 @@ const styles = StyleSheet.create({
     minHeight: 54,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#252B32",
+    borderColor: "#2A2A2A",
     backgroundColor: "#161B20",
     paddingHorizontal: 8,
     paddingVertical: 8,
@@ -3393,8 +3393,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   skillRatingOptionSelected: {
-    borderColor: "#00D4AA",
-    backgroundColor: "#001F1A",
+    borderColor: "#FFFFFF",
+    backgroundColor: "#0A0A0A",
   },
   skillRatingOptionPressed: {
     opacity: 0.8,
@@ -3406,13 +3406,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   skillRatingTextSelected: {
-    color: "#00D4AA",
+    color: "#FFFFFF",
   },
   skillLevelLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 18,
     letterSpacing: 0.4,
-    color: "#00D4AA",
+    color: "#FFFFFF",
     minWidth: 132,
     textAlign: "right",
   },
@@ -3456,9 +3456,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 15,
     paddingBottom: 50,
-    backgroundColor: "#0A0C0F",
+    backgroundColor: "#080808",
     borderTopWidth: 1,
-    borderTopColor: "#1A2020",
+    borderTopColor: "#1E1E1E",
     gap: 10,
     zIndex: 40,
     elevation: 40,
@@ -3475,7 +3475,7 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: {
     fontFamily: "ClashGrotesk-Semibold",
-    color: "#00D4AA",
+    color: "#FFFFFF",
     fontSize: 17,
     letterSpacing: 1.2,
     textTransform: "uppercase",
@@ -3510,8 +3510,8 @@ const styles = StyleSheet.create({
     maxWidth: 520,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1F2530",
-    backgroundColor: "#111418",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0F0F0F",
     paddingHorizontal: 16,
     paddingVertical: 16,
     gap: 10,
@@ -3534,8 +3534,8 @@ const styles = StyleSheet.create({
     marginTop: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#00D4AA",
-    backgroundColor: "#001F1A",
+    borderColor: "#FFFFFF",
+    backgroundColor: "#0A0A0A",
     paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -3546,7 +3546,7 @@ const styles = StyleSheet.create({
   skillIntroPopupCloseText: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 17,
-    color: "#00D4AA",
+    color: "#FFFFFF",
     letterSpacing: 0.8,
     textTransform: "uppercase",
   },

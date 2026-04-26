@@ -76,7 +76,7 @@ function ProgressRing({ pct, size = 110 }: { pct: number; size?: number }) {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#1A2020"
+          stroke="#1E1E1E"
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -85,7 +85,7 @@ function ProgressRing({ pct, size = 110 }: { pct: number; size?: number }) {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#00D4AA"
+          stroke="#FFFFFF"
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={`${circumference} ${circumference}`}
@@ -95,8 +95,8 @@ function ProgressRing({ pct, size = 110 }: { pct: number; size?: number }) {
           origin={`${size / 2}, ${size / 2}`}
         />
       </Svg>
-      <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 35, color: "#f5f7fb" }}>{displayPct}%</Text>
-      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 20, color: "#8f98ab", letterSpacing: 0.5 }}>complete</Text>
+      <Text style={{ fontFamily: "ClashGrotesk-Bold", fontSize: 35, color: "#FFFFFF" }}>{displayPct}%</Text>
+      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 20, color: "#666666", letterSpacing: 0.5 }}>complete</Text>
     </View>
   );
 }
@@ -176,7 +176,7 @@ const blob3X = anim3.interpolate({
           {
             width: 320,
             height: 320,
-            backgroundColor: "#00D4AA",
+            backgroundColor: "#FFFFFF",
             borderRadius: 160,
             top: -60,
             left: -80,
@@ -191,7 +191,7 @@ const blob3X = anim3.interpolate({
           {
             width: 280,
             height: 280,
-            backgroundColor: "#007A6A",
+            backgroundColor: "#444444",
             borderRadius: 140,
             top: height * 0.3,
             right: -80,
@@ -206,7 +206,7 @@ const blob3X = anim3.interpolate({
           {
             width: 240,
             height: 240,
-            backgroundColor: "#00B894",
+            backgroundColor: "#DDDDDD",
             borderRadius: 120,
             bottom: 80,
             left: 20,
@@ -471,7 +471,7 @@ useEffect(() => {
 
   if (screen === "reveal") {
     return (
-      <View style={{ flex: 1, backgroundColor: "#070914" }}>
+      <View style={{ flex: 1, backgroundColor: "#080808" }}>
         <RevealScreen profile={profile} onContinue={() => setScreen("loading")} />
       </View>
     );
@@ -535,8 +535,8 @@ useEffect(() => {
                   <View style={{
                     borderRadius: 18,
                     borderWidth: 1,
-                    borderColor: streakActive ? "rgba(0,212,170,0.25)" : "#1F2530",
-                    backgroundColor: streakActive ? "rgba(0,212,170,0.06)" : "#111418",
+                    borderColor: streakActive ? "rgba(255,255,255,0.3)" : "#1E1E1E",
+                    backgroundColor: streakActive ? "rgba(255,255,255,0.06)" : "#0F0F0F",
                     padding: 16,
                     marginBottom: 12,
                     flexDirection: "row",
@@ -553,7 +553,7 @@ useEffect(() => {
                       <Text style={{
                         fontFamily: "ClashGrotesk-Semibold",
                         fontSize: 16,
-                        color: streakActive ? "#00D4AA" : "#4A5260",
+                        color: streakActive ? "#FFFFFF" : "#444444",
                         textTransform: "uppercase",
                         letterSpacing: 1,
                         marginBottom: 2,
@@ -563,7 +563,7 @@ useEffect(() => {
                       <Text style={{
                         fontFamily: "ClashGrotesk-Bold",
                         fontSize: 28,
-                        color: streakActive ? "#E0FFF8" : "#F0F4F8",
+                        color: streakActive ? "#FFFFFF" : "#FFFFFF",
                         letterSpacing: 0.3,
                       }}>
                         {streakCount} {streakCount === 1 ? "day" : "days"}
@@ -571,7 +571,7 @@ useEffect(() => {
                       <Text style={{
                         fontFamily: "ClashGrotesk-Regular",
                         fontSize: 16,
-                        color: streakActive ? "#00A887" : "#4A5260",
+                        color: streakActive ? "#CCCCCC" : "#444444",
                         marginTop: 2,
                       }}>
                         {streakActive
@@ -636,9 +636,9 @@ useEffect(() => {
                     <Switch
                       value={notificationsEnabled}
                       onValueChange={setNotificationsEnabled}
-                      trackColor={{ false: "#252B32", true: "#00A887" }}
-                      thumbColor="#f5f7fb"
-                      ios_backgroundColor="#4a5060"
+                      trackColor={{ false: "#2A2A2A", true: "#FFFFFF" }}
+                      thumbColor="#FFFFFF"
+                      ios_backgroundColor="#333333"
                     />
                   </View>
                   <View style={styles.settingRow}>
@@ -646,9 +646,9 @@ useEffect(() => {
                     <Switch
                       value={studyRemindersEnabled}
                       onValueChange={setStudyRemindersEnabled}
-                      trackColor={{ false: "#252B32", true: "#00A887" }}
-                      thumbColor="#f5f7fb"
-                      ios_backgroundColor="#4a5060"
+                      trackColor={{ false: "#2A2A2A", true: "#FFFFFF" }}
+                      thumbColor="#FFFFFF"
+                      ios_backgroundColor="#333333"
                     />
                   </View>
                 </ScrollView>
@@ -706,7 +706,7 @@ useEffect(() => {
                   handleMainTabPress(tab.key);
                 }}
               >
-                <MaterialIcons name={tab.icon} size={26} color={active ? "#00D4AA" : "#4A5260"} />
+                <MaterialIcons name={tab.icon} size={26} color={active ? "#FFFFFF" : "#444444"} />
                 <Text style={[styles.bottomNavLabel, active && styles.bottomNavLabelActive]}>{tab.label}</Text>
               </TouchableOpacity>
             );
@@ -758,12 +758,12 @@ useEffect(() => {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={["#00D4AA", "#00A887", "#008A6E"]}
+              colors={["#FFFFFF", "#FFFFFF"]}
               start={{ x: 0, y: 0.5 }}
               end={{ x: 1, y: 0.5 }}
               style={styles.ctaGradient}
             >
-              <Text style={styles.ctaBtnText}>GET STARTED</Text>
+              <Text style={[styles.ctaBtnText, { color: "#080808" }]}>GET STARTED</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -793,7 +793,7 @@ const styles = StyleSheet.create({
   },
   tabTransitionMask: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#0A0C0F",
+    backgroundColor: "#080808",
   },
   hiddenLayer: {
     display: "none",
@@ -805,7 +805,7 @@ const styles = StyleSheet.create({
   homeKicker: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 13,
-    color: "#b7adff",
+    color: "#888888",
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 6,
@@ -813,29 +813,29 @@ const styles = StyleSheet.create({
   homeTitle: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 34,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     marginBottom: 4,
     letterSpacing: 0.4,
   },
   homeSubtitle: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 18,
-    color: "#aab3c3",
+    color: "#888888",
     lineHeight: 25,
     marginBottom: 18,
   },
   homeCard: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#1F2530",
-    backgroundColor: "#111418",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0D0D0D",
     padding: 18,
     marginBottom: 12,
   },
   homeCardLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 12,
-    color: "#00D4AA",
+    color: "#FFFFFF",
     textTransform: "uppercase",
     letterSpacing: 2,
     marginBottom: 8,
@@ -843,14 +843,14 @@ const styles = StyleSheet.create({
   homeCardTitle: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 24,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     lineHeight: 28,
     marginBottom: 8,
   },
   homeCardBody: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 19,
-    color: "#c7cfde",
+    color: "#999999",
     letterSpacing: 0.5,
     lineHeight: 25,
     marginBottom: 30,
@@ -859,7 +859,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#00D4AA",
+    borderColor: "#FFFFFF",
     borderRadius: 8,
     paddingVertical: 13,
   },
@@ -867,7 +867,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#00D4AA",
+    borderColor: "#FFFFFF",
     borderRadius: 8,
     paddingVertical: 13,
   },
@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 14,
     letterSpacing: 2,
-    color: "#00D4AA",
+    color: "#FFFFFF",
   },
   profileContainer: {
     padding: 22,
@@ -884,8 +884,8 @@ const styles = StyleSheet.create({
   profileCard: {
     borderRadius: 16,
     fontSize: 13,
-    borderColor: "#262e42",
-    backgroundColor: "#121826",
+    borderColor: "#2A2A2A",
+    backgroundColor: "#0D0D0D",
     padding: 14,
     marginBottom: 10,
   },
@@ -900,13 +900,13 @@ const styles = StyleSheet.create({
   profileValue: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 18,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     lineHeight: 23,
   },
   settingsHeader: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 14,
-    color: "#b7adff",
+    color: "#888888",
     letterSpacing: 1,
     textTransform: "uppercase",
     marginTop: 10,
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
   settingText: {
     fontFamily: "ClashGrotesk-Medium",
     fontSize: 18,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
   },
   settingValue: {
     fontFamily: "ClashGrotesk-Regular",
@@ -936,8 +936,8 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderTopWidth: 1,
-    borderTopColor: "#1A2020",
-    backgroundColor: "#0A0C0F",
+    borderTopColor: "#1E1E1E",
+    backgroundColor: "#080808",
     flexDirection: "row",
     paddingTop: 13,
     paddingBottom: 0,
@@ -951,10 +951,10 @@ const styles = StyleSheet.create({
   bottomNavLabel: {
     fontFamily: "ClashGrotesk-Medium",
     fontSize: 13,
-    color: "#4A5260",
+    color: "#444444",
   },
   bottomNavLabelActive: {
-    color: "#00D4AA",
+    color: "#FFFFFF",
   },
   container: {
     flex: 1,
@@ -994,7 +994,7 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 52,
-    color: "#F0F4F8",
+    color: "#FFFFFF",
     lineHeight: 56,
     letterSpacing: -0.5,
     marginBottom: 80,
@@ -1012,7 +1012,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "#1F2530",
+    borderColor: "#1E1E1E",
   },
   statItem: {
     flex: 1,
@@ -1021,14 +1021,14 @@ const styles = StyleSheet.create({
   statNum: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#00D4AA",
+    color: "#FFFFFF",
     fontFamily: "ClashGrotesk-Bold",
     marginBottom: 2,
     letterSpacing: 0.5,
   },
   statDesc: {
     fontSize: 15,
-    color: "#9097a4",
+    color: "#666666",
     textAlign: "center",
     fontFamily: "ClashGrotesk-Regular",
     letterSpacing: 0.4,
@@ -1036,7 +1036,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 34,
-    backgroundColor: "#1F2530",
+    backgroundColor: "#1E1E1E",
   },
   ctaBtn: {
     borderRadius: 14,

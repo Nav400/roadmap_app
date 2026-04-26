@@ -55,24 +55,24 @@ const MONTH_INDEX: Record<string, number> = {
 };
 
 const TAG_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  foundation: { bg: "#0d3a66", border: "#4a90e2", text: "#a3d5ff" },
-  projects: { bg: "#0d5a5a", border: "#2db8b8", text: "#5fd4d4" },
-  community: { bg: "#2d5a2d", border: "#5ec45e", text: "#9fef9f" },
-  interviews: { bg: "#6a1a4a", border: "#ff5a9f", text: "#ffb3d9" },
-  networking: { bg: "#6a4a1a", border: "#ffaa33", text: "#ffd699" },
+  foundation: { bg: "#0e1a12", border: "#2a4a32", text: "#6dbb8a" },
+  projects:   { bg: "#0e1520", border: "#1e3a5a", text: "#5a9fd4" },
+  community:  { bg: "#1a120e", border: "#4a2e1e", text: "#c47b4a" },
+  interviews: { bg: "#170e1a", border: "#3d1e4a", text: "#a06ac4" },
+  networking: { bg: "#0e1818", border: "#1e4040", text: "#4ab8b8" },
 };
 
 const SKILL_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  python: { bg: "#0f3e66", border: "#4a90e2", text: "#a9d8ff" },
-  flask: { bg: "#3b2a59", border: "#a67eff", text: "#dbc9ff" },
-  cli: { bg: "#3f3f16", border: "#d4c24f", text: "#f4e78a" },
-  "file i/o": { bg: "#1f3f3f", border: "#56c8c8", text: "#aef0f0" },
-  html: { bg: "#5c2f1a", border: "#f29b6b", text: "#ffd9c3" },
-  css: { bg: "#15365f", border: "#5f9be0", text: "#bbd8ff" },
-  "github pages": { bg: "#3a3a3a", border: "#9a9a9a", text: "#e4e4e4" },
-  rest: { bg: "#22542e", border: "#5fce78", text: "#b9efc6" },
-  apis: { bg: "#2f2854", border: "#8a75dd", text: "#d8ceff" },
-  webhooks: { bg: "#523124", border: "#d18f6f", text: "#f6d3c4" },
+  python:         { bg: "#0e1520", border: "#1e3a5a", text: "#5a9fd4" },
+  flask:          { bg: "#0e1520", border: "#1e3a5a", text: "#5a9fd4" },
+  cli:            { bg: "#0e1818", border: "#1e4040", text: "#4ab8b8" },
+  "file i/o":     { bg: "#0e1818", border: "#1e4040", text: "#4ab8b8" },
+  html:           { bg: "#1a120e", border: "#4a2e1e", text: "#c47b4a" },
+  css:            { bg: "#170e1a", border: "#3d1e4a", text: "#a06ac4" },
+  "github pages": { bg: "#0e1a12", border: "#2a4a32", text: "#6dbb8a" },
+  rest:           { bg: "#0e1520", border: "#1e3a5a", text: "#5a9fd4" },
+  apis:           { bg: "#0e1818", border: "#1e4040", text: "#4ab8b8" },
+  webhooks:       { bg: "#170e1a", border: "#3d1e4a", text: "#a06ac4" },
 };
 
 type Milestone = (typeof FAKE_MILESTONES)[number];
@@ -631,7 +631,7 @@ export default function RoadmapScreen({
   }
 
   function getSkillColors(skillName: string) {
-    return SKILL_COLORS[skillName.toLowerCase()] || { bg: "#181c24", border: "#3a404d", text: "#b0b9c8" };
+    return SKILL_COLORS[skillName.toLowerCase()] || { bg: "#111111", border: "#2A2A2A", text: "#888888" };
   }
 
   function completeEvent(event: typeof FAKE_EVENTS[0]) {
@@ -788,7 +788,7 @@ export default function RoadmapScreen({
                 ]}
               >
                 <LinearGradient
-                  colors={["#00D4AA", "#00B894", "#7ab648"]}
+                  colors={["#FFFFFF", "#DDDDDD"]}
                   start={{ x: 0, y: 0.5 }}
                   end={{ x: 1, y: 0.5 }}
                   style={StyleSheet.absoluteFillObject}
@@ -888,8 +888,8 @@ export default function RoadmapScreen({
                             style={[
                               styles.tag,
                               {
-                                backgroundColor: m.done || isMilestoneCompleting ? "#222833" : getTagColors(m.tag).bg,
-                                borderColor: m.done || isMilestoneCompleting ? "#394150" : getTagColors(m.tag).border,
+                                backgroundColor: m.done || isMilestoneCompleting ? "#1A1A1A" : getTagColors(m.tag).bg,
+                                borderColor: m.done || isMilestoneCompleting ? "#2A2A2A" : getTagColors(m.tag).border,
                               },
                             ]}
                           >
@@ -897,7 +897,7 @@ export default function RoadmapScreen({
                               style={[
                                 styles.tagText,
                                 {
-                                  color: m.done || isMilestoneCompleting ? "#8a93a4" : getTagColors(m.tag).text,
+                                  color: m.done || isMilestoneCompleting ? "#555555" : getTagColors(m.tag).text,
                                 },
                               ]}
                             >
@@ -913,10 +913,10 @@ export default function RoadmapScreen({
                             const pct = Math.min(100, Math.round((checked / total) * 100));
                             return (
                               <View style={{ flex: 1, minWidth: 60 }}>
-                                <View style={{ height: 4, borderRadius: 999, backgroundColor: "#0d1a18", overflow: "hidden" }}>
-                                  <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#00D4AA" }} />
+                                <View style={{ height: 4, borderRadius: 999, backgroundColor: "#0A0A0A", overflow: "hidden" }}>
+                                  <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#FFFFFF" }} />
                                 </View>
-                                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#00D4AA", marginTop: 2 }}>{pct}% tasks done</Text>
+                                <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#FFFFFF", marginTop: 2 }}>{pct}% tasks done</Text>
                               </View>
                             );
                           })()}
@@ -1001,12 +1001,12 @@ export default function RoadmapScreen({
                       style={[
                         styles.skillTag,
                         {
-                          backgroundColor: isCompleting ? "#222833" : colors.bg,
-                          borderColor: isCompleting ? "#394150" : colors.border,
+                          backgroundColor: isCompleting ? "#1A1A1A" : colors.bg,
+                          borderColor: isCompleting ? "#2A2A2A" : colors.border,
                         },
                       ]}
                     >
-                      <Text style={[styles.skillTagText, { color: isCompleting ? "#8a93a4" : colors.text }]}>{s}</Text>
+                      <Text style={[styles.skillTagText, { color: isCompleting ? "#555555" : colors.text }]}>{s}</Text>
                     </View>
                     );
                   })}
@@ -1020,10 +1020,10 @@ export default function RoadmapScreen({
                   const pct = Math.min(100, Math.round((checked / total) * 100));
                   return (
                     <View style={{ marginTop: 8 }}>
-                      <View style={{ height: 4, borderRadius: 999, backgroundColor: "#0d1a18", overflow: "hidden" }}>
-                        <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#00D4AA" }} />
+                      <View style={{ height: 4, borderRadius: 999, backgroundColor: "#0A0A0A", overflow: "hidden" }}>
+                        <View style={{ width: `${pct}%`, height: "100%", borderRadius: 999, backgroundColor: "#FFFFFF" }} />
                       </View>
-                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#00D4AA", marginTop: 2 }}>{pct}% tasks done</Text>
+                      <Text style={{ fontFamily: "ClashGrotesk-Regular", fontSize: 11, color: "#FFFFFF", marginTop: 2 }}>{pct}% tasks done</Text>
                     </View>
                   );
                 })()}
@@ -1318,7 +1318,7 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 12,
-    color: "#b7adff",
+    color: "#888888",
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 8,
@@ -1326,7 +1326,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "ClashGrotesk-Bold",
     fontSize: 35,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
     marginBottom: 6,
     lineHeight: 36,
@@ -1334,14 +1334,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 21,
-    color: "#aab3c3",
+    color: "#888888",
     marginBottom: 20,
     letterSpacing: 0.4,
   },
   sectionLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 15,
-    color: "#00D4AA",
+    color: "#FFFFFF",
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -1355,20 +1355,20 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#232834",
-    backgroundColor: "#141824",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0A0A0A",
     padding: 12,
     alignItems: "center",
   },
   statVal: {
     fontFamily: "ClashGrotesk-SemiBold",
     fontSize: 28,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
   },
   statLabel: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 16,
-    color: "#aab3c3",
+    color: "#888888",
     letterSpacing: 0.4,
   },
   progressTrack: {
@@ -1394,12 +1394,12 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: "#3a404d",
-    backgroundColor: "#181c24",
+    borderColor: "#333333",
+    backgroundColor: "#111111",
   },
   tabActive: {
-    backgroundColor: "#0a1f1c",
-    borderColor: "#00D4AA",
+    backgroundColor: "#0A0A0A",
+    borderColor: "#FFFFFF",
   },
   tabPressed: {
     opacity: 0.85,
@@ -1408,11 +1408,11 @@ const styles = StyleSheet.create({
   tabText: {
     fontFamily: "ClashGrotesk-Medium",
     fontSize: 16,
-    color: "#b0b9c8",
+    color: "#888888",
     textTransform: "capitalize",
   },
   tabTextActive: {
-    color: "#00D4AA",
+    color: "#FFFFFF",
   },
   milestoneRow: {
     flexDirection: "row",
@@ -1420,16 +1420,16 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#232834",
-    backgroundColor: "#141824",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0A0A0A",
     marginBottom: 10,
   },
   milestoneRowTopPriority: {
-    borderColor: "#D4A853",
+    borderColor: "#b8860b",
     borderWidth: 1.5,
-    backgroundColor: "#1a1508",
-    shadowColor: "#D4A853",
-    shadowOpacity: 0.3,
+    backgroundColor: "#110e00",
+    shadowColor: "#d4a017",
+    shadowOpacity: 0.25,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
@@ -1439,8 +1439,8 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.995 }],
   },
   milestoneRowCompleting: {
-    backgroundColor: "#10151d",
-    borderColor: "#2d3440",
+    backgroundColor: "#0D0D0D",
+    borderColor: "#2A2A2A",
   },
   check: {
     position: "relative",
@@ -1448,7 +1448,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 1.5,
-    borderColor: "#3a404d",
+    borderColor: "#333333",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -1461,16 +1461,16 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 999,
     borderWidth: 2,
-    borderColor: "#00D4AA",
-    backgroundColor: "rgba(0, 212, 170, 0.15)",
+    borderColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   checkDone: {
-    backgroundColor: "#00B894",
-    borderColor: "#00B894",
+    backgroundColor: "#DDDDDD",
+    borderColor: "#DDDDDD",
   },
   checkMark: {
     fontSize: 12,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     fontFamily: "ClashGrotesk-Semibold",
   },
   milestoneBody: { flex: 1 },
@@ -1484,20 +1484,20 @@ const styles = StyleSheet.create({
   milestoneTitle: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 20,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     letterSpacing: 0.3,
     flex: 1,
   },
   milestoneTitleDone: {
-    color: "#7f8797",
+    color: "#555555",
   },
   milestoneDescDone: {
-    color: "#667080",
+    color: "#444444",
   },
   milestoneDesc: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 17,
-    color: "#aab3c3",
+    color: "#888888",
     lineHeight: 23,
     marginBottom: 8,
   },
@@ -1517,94 +1517,94 @@ const styles = StyleSheet.create({
     gap: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#232834",
-    backgroundColor: "#141824",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0A0A0A",
     padding: 14,
     marginBottom: 10,
     alignItems: "flex-start",
   },
   projectCardTopPriority: {
-    borderColor: "#D4A853",
+    borderColor: "#b8860b",
     borderWidth: 1.5,
-    backgroundColor: "#1a1508",
-    shadowColor: "#D4A853",
-    shadowOpacity: 0.3,
+    backgroundColor: "#110e00",
+    shadowColor: "#d4a017",
+    shadowOpacity: 0.25,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
   },
   projectCardCompleting: {
-    backgroundColor: "#0a0f14",
-    borderColor: "#1a2028",
+    backgroundColor: "#080808",
+    borderColor: "#1E1E1E",
   },
   priorityPill: {
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: "#2a1e05",
+    backgroundColor: "#1a1400",
     borderWidth: 1,
-    borderColor: "#D4A853",
+    borderColor: "#b8860b",
   },
   priorityPillText: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 10,
     letterSpacing: 0.35,
-    color: "#D4A853",
+    color: "#d4a017",
     textTransform: "uppercase",
   },
   topMilestonePriorityPill: {
-    backgroundColor: "#2a1e05",
-    borderColor: "#D4A853",
+    backgroundColor: "#1a1400",
+    borderColor: "#b8860b",
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   topMilestonePriorityPillText: {
-    color: "#f5e6c0",
+    color: "#d4a017",
     letterSpacing: 0.45,
   },
   topProjectPriorityPill: {
-    backgroundColor: "#2a1e05",
-    borderColor: "#D4A853",
+    backgroundColor: "#1a1400",
+    borderColor: "#b8860b",
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   topProjectPriorityPillText: {
-    color: "#f5e6c0",
+    color: "#d4a017",
     letterSpacing: 0.45,
   },
   projectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
   projectBody: { flex: 1 },
-  projectTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 19, color: "#f5f7fb", flex: 1, marginRight: 8 },
-  projectTitleGray: { color: "#7f8797" },
-  projectDesc: { fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: "#aab3c3", lineHeight: 22, marginBottom: 10 },
-  projectDescGray: { color: "#667080" },
+  projectTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 19, color: "#FFFFFF", flex: 1, marginRight: 8 },
+  projectTitleGray: { color: "#555555" },
+  projectDesc: { fontFamily: "ClashGrotesk-Regular", fontSize: 16, color: "#888888", lineHeight: 22, marginBottom: 10 },
+  projectDescGray: { color: "#444444" },
   skillTags: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
-  skillTag: { backgroundColor: "#181c24", borderRadius: 100, borderWidth: 1, borderColor: "#3a404d", paddingHorizontal: 9, paddingVertical: 4 },
-  skillTagText: { fontFamily: "ClashGrotesk-Regular", fontSize: 13, color: "#b0b9c8" },
+  skillTag: { backgroundColor: "#111111", borderRadius: 100, borderWidth: 1, borderColor: "#333333", paddingHorizontal: 9, paddingVertical: 4 },
+  skillTagText: { fontFamily: "ClashGrotesk-Regular", fontSize: 13, color: "#888888" },
   eventRow: {
     flexDirection: "row",
     gap: 12,
     padding: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#232834",
-    backgroundColor: "#141824",
+    borderColor: "#1E1E1E",
+    backgroundColor: "#0A0A0A",
     marginBottom: 10,
     alignItems: "flex-start",
   },
   eventDate: { width: 44, alignItems: "center" },
-  eventMonth: { fontFamily: "ClashGrotesk-Semibold", fontSize: 15, color: "#b7adff", textTransform: "uppercase", letterSpacing: 0.9 },
-  eventDay: { fontFamily: "ClashGrotesk-Bold", fontSize: 31, color: "#f5f7fb", lineHeight: 35 },
+  eventMonth: { fontFamily: "ClashGrotesk-Semibold", fontSize: 15, color: "#888888", textTransform: "uppercase", letterSpacing: 0.9 },
+  eventDay: { fontFamily: "ClashGrotesk-Bold", fontSize: 31, color: "#FFFFFF", lineHeight: 35 },
   eventBody: { flex: 1 },
-  eventTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 21, color: "#f5f7fb", marginBottom: 5, lineHeight: 25 },
-  eventMeta: { fontFamily: "ClashGrotesk-Regular", fontSize: 18, color: "#aab3c3", marginBottom: 6, lineHeight: 23 },
-  eventWhy: { fontFamily: "ClashGrotesk-Regular", fontSize: 17, color: "#8f98ab", lineHeight: 22 },
-  eventBadge: { borderRadius: 100, borderWidth: 1, borderColor: "#00D4AA", backgroundColor: "#0a1f1c", paddingHorizontal: 9, paddingVertical: 4, alignSelf: "flex-start" },
-  eventBadgeText: { fontFamily: "ClashGrotesk-Medium", fontSize: 11, color: "#00D4AA" },
+  eventTitle: { fontFamily: "ClashGrotesk-Semibold", fontSize: 21, color: "#FFFFFF", marginBottom: 5, lineHeight: 25 },
+  eventMeta: { fontFamily: "ClashGrotesk-Regular", fontSize: 18, color: "#888888", marginBottom: 6, lineHeight: 23 },
+  eventWhy: { fontFamily: "ClashGrotesk-Regular", fontSize: 17, color: "#666666", lineHeight: 22 },
+  eventBadge: { borderRadius: 100, borderWidth: 1, borderColor: "#FFFFFF", backgroundColor: "#0A0A0A", paddingHorizontal: 9, paddingVertical: 4, alignSelf: "flex-start" },
+  eventBadgeText: { fontFamily: "ClashGrotesk-Medium", fontSize: 11, color: "#FFFFFF" },
   completedSectionLabel: {
     fontFamily: "ClashGrotesk-Semibold",
     fontSize: 15,
-    color: "#00D4AA",
+    color: "#FFFFFF",
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 10,
@@ -1636,8 +1636,8 @@ const styles = StyleSheet.create({
     opacity: 0.84,
   },
   eventRowCompleting: {
-    backgroundColor: "#0a0f14",
-    borderColor: "#1a2028",
+    backgroundColor: "#080808",
+    borderColor: "#1E1E1E",
   },
   eventDateGray: {
     opacity: 0.55,
@@ -1686,11 +1686,11 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.995 }],
   },
   completedEventTitle: {
-    color: "#7f8797",
+    color: "#555555",
   },
   completedRowRestoring: {
-    backgroundColor: "#141824",
-    borderColor: "#232834",
+    backgroundColor: "#0A0A0A",
+    borderColor: "#1E1E1E",
     opacity: 0.9,
   },
   completedBadge: {
@@ -1710,7 +1710,7 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontFamily: "ClashGrotesk-Regular",
     fontSize: 18,
-    color: "#7f8797",
+    color: "#555555",
   },
   completionToast: {
     position: "absolute",
@@ -1720,7 +1720,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "rgba(10, 12, 15, 0.97)",
     borderWidth: 1,
-    borderColor: "#394150",
+    borderColor: "#2A2A2A",
     paddingVertical: 12,
     paddingHorizontal: 16,
     shadowColor: "#000",
@@ -1732,7 +1732,7 @@ const styles = StyleSheet.create({
   completionToastText: {
     fontFamily: "ClashGrotesk-Medium",
     fontSize: 15,
-    color: "#f5f7fb",
+    color: "#FFFFFF",
     textAlign: "center",
   },
 });
